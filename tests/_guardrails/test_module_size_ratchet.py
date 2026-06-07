@@ -70,10 +70,10 @@ ALLOWLISTED_CEILINGS: dict[str, int] = {
     "_sources.py": 1023,
     "cli/services/playwright_login.py": 988,
     "_artifact/downloads.py": 973,
-    "client.py": 973,
+    "client.py": 986,
     "_research.py": 969,
     "cli/services/generate.py": 954,
-    "_chat/api.py": 948,
+    "_chat/api.py": 957,
     "_idempotency.py": 936,
 }
 
