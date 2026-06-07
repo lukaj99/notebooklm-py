@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-06-06
+
+Maintenance patch on the 0.7.x line. Backports two fixes from `main`
+(cherry-picked ahead of the v0.8.0 breaking release).
+
+### Fixed
+
+- **Chat reads no longer time out on slow shared-notebook streams** (#1466,
+  #1468). `client.chat.ask` now uses a chat-specific per-read HTTP timeout
+  instead of inheriting the general client `timeout`, so shared notebooks that
+  are slow to emit the first streamed byte stop raising spurious timeouts. A new
+  optional `chat_timeout` keyword on `NotebookLMClient(...)` /
+  `NotebookLMClient.from_storage(...)` (and a matching `chat ask` CLI flag)
+  tunes the window; it defaults to 180 s. **Behavior note:** chat reads now wait
+  up to 180 s by default rather than inheriting the prior client timeout — pass
+  `chat_timeout=None` to restore the old inherit-`timeout` behavior.
+- **Dropped a misleading byte-count-mismatch WARNING from the chunked RPC
+  parser** (#1469). The decoder no longer logs a spurious size-mismatch warning
+  during normal chunked parsing.
+
+### Added
+
+- `chat_timeout` keyword argument on the client constructors and a corresponding
+  `chat ask` CLI option (additive; defaults preserve existing call sites).
+
 ## [0.7.0] - 2026-06-04
 
 ### Highlights
