@@ -64,12 +64,20 @@ MODULE_SIZE_BUDGET = 900
 ALLOWLISTED_CEILINGS: dict[str, int] = {
     "cli/source_cmd.py": 1498,
     "exceptions.py": 1426,
-    "_artifacts.py": 1420,
+    # _artifacts.py + _artifact/downloads.py: raised for the #1488 double-list
+    # fix, which threads an optional pre-fetched-list kwarg through every
+    # ``download_<x>`` method (and its public ``ArtifactsAPI`` delegate) plus the
+    # new ``_list_for_download`` seam so the download path issues ONE list RPC
+    # instead of two. The growth is the keyword-only params + ``is None`` guards
+    # on existing methods (ruff one-param-per-line wraps each 6-param signature);
+    # it is irreducible without splitting these modules, which is out of scope for
+    # the bug fix. New ceilings are the measured post-fix LOC.
+    "_artifacts.py": 1478,
     "_source/upload.py": 1236,
     "cli/session_cmd.py": 1080,
     "_sources.py": 1023,
     "cli/services/playwright_login.py": 988,
-    "_artifact/downloads.py": 973,
+    "_artifact/downloads.py": 1033,
     "client.py": 986,
     "_research.py": 969,
     "cli/services/generate.py": 954,
