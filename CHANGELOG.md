@@ -25,6 +25,15 @@ Maintenance patch on the 0.7.x line. Backports fixes from `main`
   shape. As part of the fix, `safe_index` rejects a `str`/`bytes` value at an
   intermediate descent hop (it is indexable but never a valid container, so
   descending it would smuggle a single character past drift detection).
+- **`download <type>` no longer exits 1 with no file written** (#1488). The
+  download path listed artifacts twice — the executor listed to select the
+  target, then each per-type download re-listed to re-find it by id — so the
+  second `LIST_ARTIFACTS` could not replay against a single-interaction VCR
+  cassette and aborted the download. The executor now lists once and threads
+  the already-fetched rows into the download method (which skips its redundant
+  second list); studio downloads also no longer trigger the note-backed
+  mind-map sub-fetch they never needed. Live behavior is unchanged for direct
+  `client.artifacts.download_*()` calls.
 
 ## [0.7.1] - 2026-06-06
 
