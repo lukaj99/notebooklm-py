@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-06-09
+
+Maintenance patch on the 0.7.x line. Backports fixes from `main`
+(cherry-picked ahead of the v0.8.0 breaking release).
+
+### Fixed
+
+- **Empty notebook summary no longer raises `UnknownRPCMethodError`** (#1485).
+  A brand-new, source-less notebook has no summary yet, so the `SUMMARIZE` RPC
+  returns an absent/`None` payload. `notebooks.get_summary()` and
+  `notebooks.get_description()` now treat that routine "no summary yet" state as
+  an empty summary (`""`) instead of mis-classifying it as wire-schema drift.
+  Genuinely-malformed payloads (a present-but-non-list `result[0]`, a scalar, or
+  a string where a nested list is expected) still raise. `get_summary` now shares
+  the `_extract_summary` descent with `get_description`, so both agree on every
+  shape. As part of the fix, `safe_index` rejects a `str`/`bytes` value at an
+  intermediate descent hop (it is indexable but never a valid container, so
+  descending it would smuggle a single character past drift detection).
+
 ## [0.7.1] - 2026-06-06
 
 Maintenance patch on the 0.7.x line. Backports two fixes from `main`
