@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Maintenance backports on the 0.7.x line (cherry-picked from `main` ahead of
+the v0.8.0 breaking release).
+
+### Fixed
+
+- **Markdown (`.md`) uploads no longer fail on Python 3.10** (backport of
+  #1628; fixes #1627). `mimetypes.guess_type` returns `None` for `.md` on
+  Python 3.10 and on hosts without a populated `/etc/mime.types`, so the upload
+  fell back to `application/octet-stream`; NotebookLM could not infer a parser
+  and processing failed server-side (status=ERROR), surfacing as
+  "Error uploading source" / `SourceProcessingError`. `.md`/`.markdown` are now
+  pinned to `text/markdown` before the opaque fallback.
+- **Clearer error when NotebookLM redirects to its region / anti-abuse access
+  gate** (backport of #1630). A redirect to `notebooklm.google` is now
+  classified and surfaced with an actionable message instead of an opaque
+  failure.
+
 ## [0.7.2] - 2026-06-18
 
 Maintenance patch on the 0.7.x line. Backports fixes from `main`

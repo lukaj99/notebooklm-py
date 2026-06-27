@@ -73,7 +73,11 @@ ALLOWLISTED_CEILINGS: dict[str, int] = {
     # it is irreducible without splitting these modules, which is out of scope for
     # the bug fix. New ceilings are the measured post-fix LOC.
     "_artifacts.py": 1478,
-    "_source/upload.py": 1236,
+    # +14 LOC backporting the .md content-type pin (#1628): the override map
+    # plus its rationale comment and the fallback branch in
+    # ``_resolve_upload_content_type``. Irreducible without splitting the module,
+    # which is out of scope for a maintenance backport.
+    "_source/upload.py": 1250,
     "cli/session_cmd.py": 1080,
     "_sources.py": 1023,
     "cli/services/playwright_login.py": 988,
