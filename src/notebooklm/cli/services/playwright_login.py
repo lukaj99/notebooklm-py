@@ -795,7 +795,9 @@ def run_playwright_login(plan: PlaywrightLoginPlan, io: LoginIO) -> None:
             # Retry navigation on transient connection errors with backoff
             for attempt in range(1, LOGIN_MAX_RETRIES + 1):
                 try:
-                    page.goto(f"{get_base_url()}/", timeout=30000)
+                    # wait_until="commit": the SPA never fires "load", so the
+                    # default would hang. See #1697 (and the #214 gotos below).
+                    page.goto(f"{get_base_url()}/", wait_until="commit", timeout=30000)
                     break
                 except PlaywrightError as exc:
                     error_str = str(exc)
@@ -854,7 +856,12 @@ def run_playwright_login(plan: PlaywrightLoginPlan, io: LoginIO) -> None:
                 io.emit("2. Authentication will be saved automatically once login is detected\n")
                 io.emit("[dim]Waiting for login (up to 5 minutes)...[/dim]")
                 try:
-                    page.wait_for_url(f"{get_base_url()}/**", timeout=300_000)
+                    # wait_until="commit", not the default "load": the SPA never
+                    # fires "load", so a load-gated wait hangs the full 5 min even
+                    # though sign-in succeeded and the URL already matches (#1697).
+                    # Cookies are read later at storage_state(), so resolving early
+                    # is safe.
+                    page.wait_for_url(f"{get_base_url()}/**", wait_until="commit", timeout=300_000)
                 except PlaywrightTimeout:
                     io.emit(
                         "[red]Login not detected within 5 minutes.[/red]\n"
