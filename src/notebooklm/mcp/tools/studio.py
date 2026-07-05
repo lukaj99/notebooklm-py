@@ -41,7 +41,12 @@ from .._confirm import DESTRUCTIVE, READ_ONLY, needs_confirmation
 from .._context import get_client, get_file_transfer
 from .._errors import mcp_errors
 from .._paginate import DEFAULT_LIMIT, paginate
-from .._resolve import resolve_artifact, resolve_notebook, resolve_sources
+from .._resolve import (
+    reject_non_canonical_id,
+    resolve_artifact,
+    resolve_notebook,
+    resolve_sources,
+)
 from ._passthrough import passthrough_child_id, passthrough_notebook_id
 from ._studio_download import (
     _DOWNLOAD_SPECS,
@@ -469,7 +474,13 @@ def register(mcp: Any) -> None:
                 notebook_resolver=passthrough_notebook_id,
                 source_resolver=_passthrough_sources,
             )
-            return _generation_payload(nb_id, result)
+            payload = _generation_payload(nb_id, result)
+            # Echo the resolved canonical source scope when one was passed (by
+            # id/prefix/title) so a title-scoped generation hands back the ids for
+            # deterministic chaining (#1808). Omitted when unscoped (all sources).
+            if resolved_source_ids is not None:
+                payload["source_ids"] = resolved_source_ids
+            return payload
 
     @mcp.tool(annotations=READ_ONLY)
     async def studio_status(ctx: Context, notebook: str, task_id: str) -> dict[str, Any]:
@@ -579,6 +590,12 @@ def register(mcp: Any) -> None:
                 artifact_id = resolved_id
             elif artifact_type is None:
                 raise ValidationError("Provide `artifact` (name/id) or `artifact_type`.")
+            # Strict IDs-only mode: an explicit `artifact_id` must be a full canonical
+            # id (the `artifact` name/id path already resolved via strict-gated
+            # resolve_artifact, so `artifact_id` here is that full UUID). Reject a
+            # prefix before either transport lists (#1808).
+            if artifact_id is not None:
+                reject_non_canonical_id(artifact_id, "artifact")
             spec = _DOWNLOAD_SPECS.get(artifact_type)
             if spec is None:
                 raise ValidationError(
@@ -674,7 +691,10 @@ def register(mcp: Any) -> None:
                 notebook_resolver=_passthrough_download_notebook,
                 artifact_resolver=_resolve_artifact_id,
             )
-            return to_jsonable(result)
+            # Echo the resolved canonical notebook_id (DownloadResult carries none)
+            # so a download-by-name response is chainable by id, matching the broker
+            # path above and the other studio tools (#1808).
+            return {"notebook_id": nb_id, **to_jsonable(result)}
 
     @mcp.tool
     async def studio_rename(
