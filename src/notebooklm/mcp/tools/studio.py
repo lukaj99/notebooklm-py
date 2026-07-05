@@ -590,11 +590,11 @@ def register(mcp: Any) -> None:
                 artifact_id = resolved_id
             elif artifact_type is None:
                 raise ValidationError("Provide `artifact` (name/id) or `artifact_type`.")
-            # Strict IDs-only mode: an explicit `artifact_id` must be a full canonical
-            # id (the `artifact` name/id path already resolved via strict-gated
-            # resolve_artifact, so `artifact_id` here is that full UUID). Reject a
+            # Strict IDs-only mode: only the explicit `artifact_id` path needs the
+            # guard — the `artifact` name/id path already ran through strict-gated
+            # resolve_artifact, so `artifact_id` is that full UUID there. Reject a
             # prefix before either transport lists (#1808).
-            if artifact_id is not None:
+            if artifact is None and artifact_id is not None:
                 reject_non_canonical_id(artifact_id, "artifact")
             spec = _DOWNLOAD_SPECS.get(artifact_type)
             if spec is None:
@@ -693,8 +693,9 @@ def register(mcp: Any) -> None:
             )
             # Echo the resolved canonical notebook_id (DownloadResult carries none)
             # so a download-by-name response is chainable by id, matching the broker
-            # path above and the other studio tools (#1808).
-            return {"notebook_id": nb_id, **to_jsonable(result)}
+            # path above and the other studio tools (#1808). Explicit key AFTER the
+            # spread so nb_id always wins if DownloadResult ever grows a notebook_id.
+            return {**to_jsonable(result), "notebook_id": nb_id}
 
     @mcp.tool
     async def studio_rename(

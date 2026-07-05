@@ -175,7 +175,7 @@ These conventions hold across every tool:
   full title or id instead of guessing (a label near-miss reached via `source_list(label=…)` gets the
   same enrichment on its `VALIDATION` error).
 - **Canonical IDs come back.** Every response echoes the canonical `notebook_id` (and, where a
-  tool touches one, `source_id` / `artifact_id` / `note_id`) — so a call made by *name* hands you
+  tool resolves them, the `source_ids` scope / `artifact_id`) — so a call made by *name* hands you
   the id to chain the next call on.
 - **Strict IDs-only mode (opt-in).** Set `NOTEBOOKLM_MCP_STRICT_IDS=1` on the server to require a
   **full canonical id** for every `notebook`/`source`/`note`/`artifact` reference: names, titles, and
