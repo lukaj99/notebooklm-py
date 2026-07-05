@@ -380,6 +380,24 @@ async def test_studio_list_compact(mcp_call, mock_client) -> None:
     assert items["audio"]["created_at"] == "2024-01-01T00:00:00+00:00"
 
 
+async def test_studio_list_compact_null_created_at(mcp_call, mock_client) -> None:
+    """A still-processing artifact (``created_at=None``) serializes ``created_at`` to
+    ``None`` in the compact row — mirrors the source-side null test."""
+    art = Artifact(
+        id="art1",
+        title="Generating",
+        _artifact_type=ArtifactTypeCode.AUDIO.value,
+        status=int(ArtifactStatus.PROCESSING),
+        created_at=None,
+    )
+    mock_client.notes.list = AsyncMock(return_value=[])
+    mock_client.artifacts.list = AsyncMock(return_value=[art])
+    result = await mcp_call("studio_list", {"notebook": NB_ID, "detail": "compact"})
+    row = result.structured_content["items"][0]
+    assert set(row) == {"id", "title", "type", "status_label", "created_at"}
+    assert row["created_at"] is None
+
+
 async def test_studio_list_compact_composes_with_kind_filter(mcp_call, mock_client) -> None:
     """``detail="compact"`` still honors the ``kind`` filter (shaping is orthogonal)."""
     mock_client.notes.list = AsyncMock(return_value=[FakeNote(id=_NOTE_ID, title="N", content="b")])

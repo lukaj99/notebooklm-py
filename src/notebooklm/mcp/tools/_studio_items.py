@@ -130,7 +130,10 @@ async def studio_items(
             "content": note.content,
         }
         if include_created_at:
-            item["created_at"] = to_jsonable(getattr(note, "created_at", None))
+            # Direct attribute access: ``created_at`` is an unconditional field on the
+            # typed ``Note`` (unlike ``status_str`` / ``url`` below, which some minimal
+            # rows omit and so keep the ``getattr`` guard).
+            item["created_at"] = to_jsonable(note.created_at)
         items.setdefault(str(note.id), item)
     for art in artifacts:
         art_id = str(art.id)
@@ -145,7 +148,10 @@ async def studio_items(
             "url": getattr(art, "url", None),
         }
         if include_created_at:
-            art_item["created_at"] = to_jsonable(getattr(art, "created_at", None))
+            # Direct attribute access — ``created_at`` is an unconditional field on the
+            # typed ``Artifact`` (``status_str`` / ``url`` above keep ``getattr`` because
+            # minimal fakes/rows can lack them).
+            art_item["created_at"] = to_jsonable(art.created_at)
         items[art_id] = art_item
     return list(items.values())
 
@@ -160,8 +166,11 @@ def compact_studio_item(item: dict[str, Any]) -> dict[str, Any]:
 
     Keeps only :data:`_COMPACT_STUDIO_FIELDS` (dropping a note's ``content`` and an
     artifact's ``url``) for a low-token ``studio_list(detail="compact")`` listing.
-    ``status_label`` / ``created_at`` fall back to ``None`` (a note carries no status;
-    ``created_at`` requires ``studio_items(include_created_at=True)``).
+    ``status_label`` falls back to ``None`` (a note carries no status).
+
+    Note: ``created_at`` is read with ``.get`` and is therefore ``None`` UNLESS the
+    ``item`` came from ``studio_items(..., include_created_at=True)``; the sole caller
+    (``studio_list``'s compact branch) always sets that flag.
     """
     return {k: item.get(k) for k in _COMPACT_STUDIO_FIELDS}
 
