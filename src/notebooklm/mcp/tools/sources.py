@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import asyncio
 import os
-import time
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -594,7 +593,9 @@ def _broker_upload(
     if mime_type:
         payload["mime"] = mime_type
     url = cfg.upload_url(payload)
-    expires_at = int(time.time()) + UPLOAD_TTL
+    # Read the deadline back from the signed token so expires_at / _iso match the
+    # token's ``exp`` exactly, rather than recomputing now() a hair later (drift).
+    expires_at = cfg.signer.verify(url.rsplit("/", 1)[1], op="ul")["exp"]
     expires_iso = (
         datetime.fromtimestamp(expires_at, tz=timezone.utc).isoformat().replace("+00:00", "Z")
     )
@@ -620,6 +621,7 @@ def _broker_upload(
         "url": url,
         "expires_at": expires_at,
         "expires_at_iso": expires_iso,
+        # Nominal TTL at mint time — expires_at / expires_at_iso are the authoritative deadline.
         "expires_in_seconds": UPLOAD_TTL,
         "mime_locked": mime_locked,
         # Human/browser path, first-class so an agent that cannot upload the bytes

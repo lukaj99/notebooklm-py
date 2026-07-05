@@ -107,8 +107,6 @@ async def test_source_add_file_with_config_returns_upload_url(mock_client, confi
     assert sc["expires_in_seconds"] == 15 * 60
     assert sc["expires_at_iso"].endswith("Z")
     # ISO string round-trips to the same instant as the unix expires_at.
-    from datetime import datetime, timezone
-
     parsed = datetime.fromisoformat(sc["expires_at_iso"].replace("Z", "+00:00"))
     assert parsed == datetime.fromtimestamp(sc["expires_at"], tz=timezone.utc)
     # The signed token carries the title + mime (so the browser round-trip keeps them).
@@ -121,6 +119,8 @@ async def test_source_add_file_with_config_returns_upload_url(mock_client, confi
     human = sc["human_upload"]
     assert human["url"] == sc["url"]
     assert "browser" in human["instructions"]
+    # The mobile case is what makes the human path first-class — lock it in (#1801).
+    assert "mobile" in human["instructions"]
     # mime was supplied → the request Content-Type is ignored, so no Content-Type hint.
     assert sc["mime_locked"] is True
     # The response self-documents the agent-direct path so an agent doesn't fall
