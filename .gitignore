@@ -51,3 +51,8 @@ src/notebooklm/_commit.py
 notebooklm.apk/
 frida-scripts/
 error.log
+
+# Local runtime artifacts (not source)
+.ruff_cache/
+.store/
+mydatabase.db

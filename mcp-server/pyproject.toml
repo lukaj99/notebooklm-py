@@ -1,0 +1,43 @@
+[project]
+name = "notebooklm-mcp"
+version = "0.1.0"
+description = "Model Context Protocol server for Google NotebookLM"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = [
+    "notebooklm-py>=0.3.0",
+    "mcp>=1.0.0,<2.0.0",
+    "starlette>=0.37.0",
+    "uvicorn[standard]>=0.30.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-timeout>=2.3.0",
+    "ruff>=0.4.0",
+]
+https = ["uvicorn[standard]>=0.30.0"]
+
+[project.scripts]
+notebooklm-mcp = "notebooklm_mcp.server:main"
+notebooklm-mcp-remote = "notebooklm_mcp.remote:main"
+notebooklm-mcp-sse = "notebooklm_mcp.sse_server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/notebooklm_mcp"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "C4", "UP", "SIM"]
+ignore = ["E501", "B008"]
