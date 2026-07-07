@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     request_timeout: float = 30.0
     cors_origins: list[str] = ["*"]
     log_level: str = "info"
+    # Shared secret required (via the X-API-Key header) on every /api/v1
+    # route except /health. Unset means the API fails closed — every
+    # request is rejected with 503 rather than silently served with no
+    # authentication at all. See deps.require_api_key.
+    api_key: str | None = None
 
     model_config = {"env_prefix": "NOTEBOOKLM_API_"}
 

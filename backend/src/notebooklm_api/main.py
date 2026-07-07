@@ -2,7 +2,7 @@
 
 import logging
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from notebooklm.exceptions import (
@@ -15,6 +15,7 @@ from notebooklm.exceptions import (
 )
 
 from .config import settings
+from .deps import require_api_key
 from .routes import artifacts, chat, notebooks, sources
 
 logger = logging.getLogger(__name__)
@@ -35,10 +36,15 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    app.include_router(notebooks.router, prefix="/api/v1")
-    app.include_router(sources.router, prefix="/api/v1")
-    app.include_router(chat.router, prefix="/api/v1")
-    app.include_router(artifacts.router, prefix="/api/v1")
+    # All routes below drive one owner's live Google NotebookLM account with
+    # no per-request authorization model of its own — require_api_key is the
+    # entire trust boundary once a request reaches this process. /health is
+    # intentionally the only unauthenticated route (liveness probes).
+    auth_dep = [Depends(require_api_key)]
+    app.include_router(notebooks.router, prefix="/api/v1", dependencies=auth_dep)
+    app.include_router(sources.router, prefix="/api/v1", dependencies=auth_dep)
+    app.include_router(chat.router, prefix="/api/v1", dependencies=auth_dep)
+    app.include_router(artifacts.router, prefix="/api/v1", dependencies=auth_dep)
 
     @app.exception_handler(AuthError)
     async def auth_error_handler(request: Request, exc: AuthError):
