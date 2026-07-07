@@ -44,7 +44,9 @@ def _split_scopes(value: str | None) -> tuple[str, ...]:
 def _split_emails(value: str | None) -> tuple[str, ...]:
     if not value:
         return ()
-    emails = tuple(email.strip().lower() for email in value.replace(";", ",").split(",") if email.strip())
+    emails = tuple(
+        email.strip().lower() for email in value.replace(";", ",").split(",") if email.strip()
+    )
     return tuple(dict.fromkeys(emails))
 
 
@@ -108,7 +110,9 @@ class RemoteServerConfig:
             raise ValueError("NOTEBOOKLM_MCP_PUBLIC_URL is required for remote HTTP mode")
 
         oauth_password = os.environ.get("NOTEBOOKLM_MCP_OAUTH_PASSWORD", "")
-        trusted_access_emails = _split_emails(os.environ.get("NOTEBOOKLM_MCP_TRUSTED_ACCESS_EMAILS"))
+        trusted_access_emails = _split_emails(
+            os.environ.get("NOTEBOOKLM_MCP_TRUSTED_ACCESS_EMAILS")
+        )
         if not oauth_password and not trusted_access_emails:
             raise ValueError(
                 "Set NOTEBOOKLM_MCP_OAUTH_PASSWORD or NOTEBOOKLM_MCP_TRUSTED_ACCESS_EMAILS"
@@ -137,8 +141,22 @@ class RemoteServerConfig:
                 "NOTEBOOKLM_MCP_TLS_CERTFILE and NOTEBOOKLM_MCP_TLS_KEYFILE must be set together"
             )
 
+        host = os.environ.get("NOTEBOOKLM_MCP_HOST", DEFAULT_HOST)
+        if trusted_access_emails and host not in {"127.0.0.1", "localhost", "::1"}:
+            # trusted_access_emails is enforced by trusting the
+            # cf-access-authenticated-user-email header, which is only safe
+            # if this process is unreachable except through the Cloudflare
+            # Access-gated tunnel (which forwards to loopback). Binding
+            # anywhere else would let a direct request forge that header
+            # and bypass authorization entirely.
+            raise ValueError(
+                "NOTEBOOKLM_MCP_TRUSTED_ACCESS_EMAILS requires NOTEBOOKLM_MCP_HOST to be "
+                "a loopback address (127.0.0.1, localhost, or ::1), since it trusts a "
+                "header that only a fronting Cloudflare Access tunnel may set safely"
+            )
+
         return cls(
-            host=os.environ.get("NOTEBOOKLM_MCP_HOST", DEFAULT_HOST),
+            host=host,
             port=_parse_int("NOTEBOOKLM_MCP_PORT", DEFAULT_PORT),
             public_base_url=_normalize_public_base_url(public_base_url_raw),
             oauth_password=oauth_password,

@@ -53,7 +53,7 @@ async def get_history(
     client: NotebookLMClient = Depends(get_client),
 ):
     conv_id = conversation_id or await client.chat.get_conversation_id(notebook_id)
-    pairs = await client.chat.get_history(notebook_id, limit=limit, conversation_id=conversation_id)
+    pairs = await client.chat.get_history(notebook_id, limit=limit, conversation_id=conv_id)
     return ChatHistoryResponse(
         conversation_id=conv_id,
         turns=[{"question": q, "answer": a} for q, a in pairs],
