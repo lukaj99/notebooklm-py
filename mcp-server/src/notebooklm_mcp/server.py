@@ -12,8 +12,8 @@ from pathlib import Path
 from typing import Any
 
 from mcp.server.auth.settings import AuthSettings
-from mcp.server.transport_security import TransportSecuritySettings
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 from notebooklm import NotebookLMClient
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -24,6 +24,7 @@ from .oauth import FileBackedOAuthProvider, PendingAuthorization
 # The in-memory provider defaults to 1 hour, which causes "Connection expired" errors.
 try:
     import fastmcp.server.auth.providers.in_memory as _in_memory_auth
+
     _in_memory_auth.DEFAULT_ACCESS_TOKEN_EXPIRY_SECONDS = 365 * 24 * 3600
 except (ImportError, AttributeError):
     pass
@@ -273,7 +274,6 @@ def create_mcp_server(
         website_url=SERVER_WEBSITE_URL,
         host=host,
         port=port,
-        
         sse_path="/mcp",
         message_path="/mcp/messages",
         auth=auth_settings,
@@ -411,6 +411,11 @@ def create_mcp_server(
                     ),
                     status_code=403,
                 )
+
+            # Owner identity (password or Cloudflare Access) verified for this
+            # client_id — remember it so OAUTH_AUTO_APPROVE can skip consent
+            # on future reconnects without ever skipping it on first contact.
+            await auth_provider.trust_client(pending.client_id)
 
             redirect_url = await auth_provider.approve_pending_authorization(grant_id)
             if redirect_url is None:

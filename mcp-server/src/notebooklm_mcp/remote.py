@@ -63,11 +63,19 @@ def main() -> None:
     logger.info("NotebookLM MCP resource URL: %s", config.resource_server_url)
     logger.info("NotebookLM MCP issuer URL: %s", config.issuer_url)
 
+    # workers=1 (uvicorn's default when unset) is load-bearing here, not
+    # just a performance choice: FileBackedOAuthProvider guards its state
+    # with an in-process asyncio.Lock and read-modify-write's a single JSON
+    # file. Multiple worker processes would each keep their own in-memory
+    # copy and race on the file, silently losing concurrent token issuance/
+    # revocation. Do not add --workers/-w > 1 to this entrypoint without
+    # first moving the OAuth state to a real datastore.
     uvicorn.run(
         mcp.streamable_http_app(),
         host=config.host,
         port=config.port,
         log_level="info",
+        workers=1,
         ssl_certfile=str(config.tls_certfile) if config.tls_certfile else None,
         ssl_keyfile=str(config.tls_keyfile) if config.tls_keyfile else None,
     )

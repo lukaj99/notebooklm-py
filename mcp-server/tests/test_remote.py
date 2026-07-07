@@ -145,3 +145,30 @@ def test_remote_config_requires_https_outside_localhost(monkeypatch):
         assert "must use https outside localhost" in str(exc)
     else:
         raise AssertionError("Expected ValueError for non-HTTPS public URL")
+
+
+def test_trusted_access_emails_requires_loopback_host(monkeypatch):
+    """trusted_access_emails trusts a header (cf-access-authenticated-user-
+    email) that is only safe if this process is unreachable except through
+    the Cloudflare Access-gated tunnel forwarding to loopback. Binding
+    anywhere else would let a direct request forge that header."""
+
+    monkeypatch.setenv("NOTEBOOKLM_MCP_PUBLIC_URL", "https://notebooklm.example.com")
+    monkeypatch.setenv("NOTEBOOKLM_MCP_TRUSTED_ACCESS_EMAILS", "owner@example.com")
+    monkeypatch.setenv("NOTEBOOKLM_MCP_HOST", "0.0.0.0")
+
+    try:
+        RemoteServerConfig.from_env()
+    except ValueError as exc:
+        assert "loopback address" in str(exc)
+    else:
+        raise AssertionError("Expected ValueError for non-loopback host with trusted emails")
+
+
+def test_trusted_access_emails_allows_loopback_host(monkeypatch):
+    monkeypatch.setenv("NOTEBOOKLM_MCP_PUBLIC_URL", "https://notebooklm.example.com")
+    monkeypatch.setenv("NOTEBOOKLM_MCP_TRUSTED_ACCESS_EMAILS", "owner@example.com")
+    monkeypatch.setenv("NOTEBOOKLM_MCP_HOST", "127.0.0.1")
+
+    config = RemoteServerConfig.from_env()
+    assert config.trusted_access_emails == ("owner@example.com",)

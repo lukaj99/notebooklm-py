@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import os
 import secrets
 import time
@@ -20,6 +21,19 @@ from mcp.shared.auth import OAuthClientInformationFull, OAuthToken
 from pydantic import AnyUrl, BaseModel, Field
 
 from .config import RemoteServerConfig
+
+
+def _hash_token(token: str) -> str:
+    """One-way digest used to key/store bearer tokens at rest.
+
+    Access and refresh tokens are only ever needed by value for a single
+    dict lookup (the raw value arrives in the Authorization header / token
+    request body and is hashed before comparison). Storing only the hash
+    means a leaked copy of the state file cannot be replayed as a bearer
+    token — see FileBackedOAuthProvider docstring.
+    """
+
+    return hashlib.sha256(token.encode()).hexdigest()
 
 
 class PendingAuthorization(BaseModel):
@@ -50,29 +64,51 @@ class StoredRefreshToken(RefreshToken):
 
 
 class OAuthState(BaseModel):
-    """File-backed state for dynamic clients and issued tokens."""
+    """File-backed state for dynamic clients and issued tokens.
+
+    ``access_tokens`` and ``refresh_tokens`` are keyed by ``sha256(raw
+    token)``, and the ``token``/``access_token``/``refresh_token`` fields
+    stored inside each entry are likewise the hash, never the raw secret.
+    The raw value is only ever handed to the client once, at issuance time
+    (see ``OAuthToken`` return values below) — it is never written to disk.
+    """
 
     clients: dict[str, OAuthClientInformationFull] = Field(default_factory=dict)
     pending_authorizations: dict[str, PendingAuthorization] = Field(default_factory=dict)
     authorization_codes: dict[str, AuthorizationCode] = Field(default_factory=dict)
     refresh_tokens: dict[str, StoredRefreshToken] = Field(default_factory=dict)
     access_tokens: dict[str, StoredAccessToken] = Field(default_factory=dict)
+    trusted_client_ids: set[str] = Field(default_factory=set)
 
 
 class FileBackedOAuthProvider(
     OAuthAuthorizationServerProvider[AuthorizationCode, StoredRefreshToken, StoredAccessToken]
 ):
-    """Minimal OAuth 2.1 AS/RS provider suitable for a single-user MCP server."""
+    """Minimal OAuth 2.1 AS/RS provider suitable for a single-user MCP server.
+
+    ``OAUTH_AUTO_APPROVE`` skips the interactive consent screen so a client
+    that has *already* completed one owner-approved authorization (password
+    or trusted Cloudflare Access identity — see ``trust_client``) can
+    reconnect without a manual click every time. It intentionally does NOT
+    let a brand-new, never-approved client skip consent: dynamic client
+    registration (``register_client``) has no credential of its own, so
+    auto-approving on first contact would let anyone who can reach
+    ``/register`` + ``/authorize`` mint a token with zero authentication.
+    """
 
     def __init__(self, config: RemoteServerConfig):
         self.config = config
         self._lock = asyncio.Lock()
         self._path = config.oauth_store_path
         self._state = self._load_state()
-        self.auto_approve = os.getenv('OAUTH_AUTO_APPROVE', '').lower() in ('true', '1')
+        self.auto_approve = os.getenv("OAUTH_AUTO_APPROVE", "").lower() in ("true", "1")
         if self.auto_approve:
             import logging
-            logging.getLogger(__name__).info('OAuth auto-approve enabled (OAUTH_AUTO_APPROVE=true)')
+
+            logging.getLogger(__name__).info(
+                "OAuth auto-approve enabled (OAUTH_AUTO_APPROVE=true) for "
+                "previously-trusted clients only"
+            )
 
     def _load_state(self) -> OAuthState:
         if not self._path.exists():
@@ -147,15 +183,35 @@ class FileBackedOAuthProvider(
         async with self._lock:
             self._prune_expired()
             self._state.pending_authorizations[grant_id] = pending
+            is_trusted_client = pending.client_id in self._state.trusted_client_ids
             self._save_state()
 
-        # Auto-approve: skip consent page, immediately approve and redirect with code
-        if self.auto_approve:
+        # Auto-approve only re-authorizes a client that has already been
+        # through owner-gated consent once before (see trust_client). A
+        # never-seen client_id always falls through to the consent page,
+        # regardless of OAUTH_AUTO_APPROVE — otherwise anyone able to hit
+        # the (intentionally open) /register + /authorize endpoints could
+        # mint a token with zero credentials.
+        if self.auto_approve and is_trusted_client:
             redirect_url = await self.approve_pending_authorization(grant_id)
             if redirect_url:
                 return redirect_url
 
         return f"{self.config.issuer_url}/oauth/consent?grant_id={grant_id}"
+
+    async def trust_client(self, client_id: str) -> None:
+        """Remember that a client has completed owner-gated consent once.
+
+        Called after a successful password (or trusted Cloudflare Access
+        identity) approval in the /oauth/consent route. Only clients
+        recorded here are eligible for OAUTH_AUTO_APPROVE on subsequent
+        reconnects.
+        """
+
+        async with self._lock:
+            self._prune_expired()
+            self._state.trusted_client_ids.add(client_id)
+            self._save_state()
 
     async def get_pending_authorization(self, grant_id: str) -> PendingAuthorization | None:
         async with self._lock:
@@ -227,28 +283,30 @@ class FileBackedOAuthProvider(
 
             access_value = secrets.token_urlsafe(48)
             refresh_value = secrets.token_urlsafe(48)
+            access_hash = _hash_token(access_value)
+            refresh_hash = _hash_token(refresh_value)
             access_expires_at = int(time.time()) + self.config.access_token_ttl_seconds
             refresh_expires_at = int(time.time()) + self.config.refresh_token_ttl_seconds
 
             access_token = StoredAccessToken(
-                token=access_value,
+                token=access_hash,
                 client_id=client.client_id or "",
                 scopes=authorization_code.scopes,
                 expires_at=access_expires_at,
                 resource=authorization_code.resource,
-                refresh_token=refresh_value,
+                refresh_token=refresh_hash,
             )
             refresh_token = StoredRefreshToken(
-                token=refresh_value,
+                token=refresh_hash,
                 client_id=client.client_id or "",
                 scopes=authorization_code.scopes,
                 expires_at=refresh_expires_at,
-                access_token=access_value,
+                access_token=access_hash,
                 resource=authorization_code.resource,
             )
 
-            self._state.access_tokens[access_value] = access_token
-            self._state.refresh_tokens[refresh_value] = refresh_token
+            self._state.access_tokens[access_hash] = access_token
+            self._state.refresh_tokens[refresh_hash] = refresh_token
             self._save_state()
 
         return OAuthToken(
@@ -265,7 +323,7 @@ class FileBackedOAuthProvider(
     ) -> StoredRefreshToken | None:
         async with self._lock:
             self._prune_expired()
-            token = self._state.refresh_tokens.get(refresh_token)
+            token = self._state.refresh_tokens.get(_hash_token(refresh_token))
             if token is None or token.client_id != client.client_id:
                 return None
             return token
@@ -278,34 +336,39 @@ class FileBackedOAuthProvider(
     ) -> OAuthToken:
         async with self._lock:
             self._prune_expired()
+            # refresh_token.token / .access_token are already hashes (this
+            # object came from load_refresh_token), so these pops line up
+            # with the hash-keyed dicts below.
             self._state.refresh_tokens.pop(refresh_token.token, None)
             if refresh_token.access_token:
                 self._state.access_tokens.pop(refresh_token.access_token, None)
 
             access_value = secrets.token_urlsafe(48)
             refresh_value = secrets.token_urlsafe(48)
+            access_hash = _hash_token(access_value)
+            refresh_hash = _hash_token(refresh_value)
             access_expires_at = int(time.time()) + self.config.access_token_ttl_seconds
             refresh_expires_at = int(time.time()) + self.config.refresh_token_ttl_seconds
 
             new_access_token = StoredAccessToken(
-                token=access_value,
+                token=access_hash,
                 client_id=client.client_id or "",
                 scopes=scopes,
                 expires_at=access_expires_at,
                 resource=refresh_token.resource,
-                refresh_token=refresh_value,
+                refresh_token=refresh_hash,
             )
             new_refresh_token = StoredRefreshToken(
-                token=refresh_value,
+                token=refresh_hash,
                 client_id=client.client_id or "",
                 scopes=scopes,
                 expires_at=refresh_expires_at,
-                access_token=access_value,
+                access_token=access_hash,
                 resource=refresh_token.resource,
             )
 
-            self._state.access_tokens[access_value] = new_access_token
-            self._state.refresh_tokens[refresh_value] = new_refresh_token
+            self._state.access_tokens[access_hash] = new_access_token
+            self._state.refresh_tokens[refresh_hash] = new_refresh_token
             self._save_state()
 
         return OAuthToken(
@@ -318,7 +381,7 @@ class FileBackedOAuthProvider(
     async def load_access_token(self, token: str) -> StoredAccessToken | None:
         async with self._lock:
             self._prune_expired()
-            return self._state.access_tokens.get(token)
+            return self._state.access_tokens.get(_hash_token(token))
 
     async def revoke_token(self, token: StoredAccessToken | StoredRefreshToken) -> None:
         async with self._lock:
