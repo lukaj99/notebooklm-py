@@ -45,3 +45,8 @@ docs/scratch/
 
 # Baked into the wheel by hatch_build.py; never committed.
 src/notebooklm/_commit.py
+
+# Local runtime artifacts (not source)
+.ruff_cache/
+.store/
+mydatabase.db
