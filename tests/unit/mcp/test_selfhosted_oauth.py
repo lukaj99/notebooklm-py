@@ -177,7 +177,7 @@ def test_metadata_advertises_registration_endpoint() -> None:
 # request whose Host wasn't its (localhost/``testserver``) allowlist — including
 # the deployment's own public origin — so claude.ai's discovery fetch got a
 # non-200 and dead-ended ("Couldn't connect to the server"). pyproject pins
-# ``fastmcp==3.4.2``; these fail loudly (under a realistic Host) if a float breaks it.
+# ``fastmcp==3.4.4``; these fail loudly (under a realistic Host) if a float breaks it.
 _HOST = "host.example.com"
 
 
@@ -213,7 +213,7 @@ def test_mcp_401_resource_metadata_is_fetchable() -> None:
     Precise regression guard for fastmcp 3.4.3: its Host-protection returned a
     non-200 (421/404) for ``/.well-known/oauth-protected-resource/mcp`` under the
     real connector Host, so claude.ai could not discover the auth server
-    ("Couldn't connect to the server"). pyproject pins ``fastmcp==3.4.2``.
+    ("Couldn't connect to the server"). pyproject pins ``fastmcp==3.4.4``.
     """
     with TestClient(_oauth_http_app()) as c:
         r = c.post(
