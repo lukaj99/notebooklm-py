@@ -34,7 +34,7 @@ This module is transport-neutral — no ``click`` / ``rich`` / ``cli`` /
 from __future__ import annotations
 
 import contextlib
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Literal, NoReturn, Protocol
 
@@ -68,6 +68,20 @@ class ResearchStatusResult:
     report: str
     public_dict: dict[str, Any]
     task_id: str = ""
+    # Raw backend status code carried through from ``ResearchTask.status_code``
+    # (issue #1922, F10). ``None`` when the poll had no code (empty / not-found).
+    # The MCP ``research_status`` tool surfaces it so an agent can distinguish
+    # failure sub-codes the coarse ``status`` flattens into ``failed``.
+    status_code: int | None = None
+    # Differentiated termination reason + remediation, derived from the raw
+    # code and the run's search source (issue #1964). ``termination_reason`` is
+    # the string value of ``ResearchTerminationReason`` (``no_results`` /
+    # ``cancelled`` / ``unknown`` / …) so adapters can serialize it directly;
+    # ``reason_message`` and ``hint`` are populated only for a run that did not
+    # succeed, so a caller never renders a bare ``failed`` with nothing to say.
+    termination_reason: str | None = None
+    reason_message: str | None = None
+    hint: str | None = None
 
 
 def _classify_status_kind(status_val: str) -> ResearchStatusKind:
@@ -99,6 +113,7 @@ async def poll_and_classify(
     # lowercase code the CLI render branches + the original status command keyed
     # off (matches ``execute_research_wait``'s ``status.status.value``).
     status_val = status.status.value
+    reason = status.termination_reason
     return ResearchStatusResult(
         kind=_classify_status_kind(status_val),
         status=status_val,
@@ -108,13 +123,17 @@ async def poll_and_classify(
         report=status.report,
         public_dict=status.to_public_dict(),
         task_id=status.task_id,
+        status_code=status.status_code,
+        termination_reason=reason.value if reason is not None else None,
+        reason_message=status.reason_message,
+        hint=status.hint,
     )
 
 
-async def poll_sources_for_import(
+async def poll_importable_research(
     client: Any, notebook_id: str, run_id: str
-) -> list[dict[str, Any]]:
-    """Poll a research run and return its importable sources, or raise.
+) -> tuple[list[dict[str, Any]], str]:
+    """Poll a research run and return its ``(importable sources, report)``, or raise.
 
     The single shared importable-state guard for the "import a completed run's
     found sources" flow — driven by BOTH the MCP ``research_import`` tool and the
@@ -131,14 +150,19 @@ async def poll_sources_for_import(
 
     * ``not_found`` — the pinned run is not among the polled runs (nothing to
       import; the typed ``NOT_FOUND`` sentinel, not a fallback to the current run);
-    * ``failed`` — the run will not complete;
+    * ``failed`` — the run produced no importable sources. The raised message
+      names WHY when the poll carried a termination reason (a Drive search that
+      matched nothing reads very differently from a cancelled or broken run —
+      issue #1964), falling back to the generic wording when it did not;
     * any non-``completed`` status (e.g. ``in_progress`` / ``no_research``) —
       only a completed run has a final source set;
     * ``completed`` with no sources — refuse the silent empty import.
 
     Returns the completed run's importable sources (the legacy ``list[dict]``
-    shape) on success. The caller then drives ``client.research.import_sources``
-    and shapes its own response.
+    shape) AND the run's report text on success. The report is returned so a
+    caller doing cited-only selection (:func:`~notebooklm.research.select_cited_sources`)
+    can match citations against it without a second poll; :func:`poll_sources_for_import`
+    delegates here and drops the report for callers that import everything.
 
     The ``run`` noun is surface-neutral (the MCP tool documents it as the
     ``task_id``); the message names no adapter-specific route or tool so the one
@@ -154,9 +178,26 @@ async def poll_sources_for_import(
     # in_progress/no_research/failed snapshot would import a partial/empty set as
     # a "success" — refuse with an action-appropriate message.
     if status.status == "failed":
+        # A run that simply matched nothing, or was cancelled, is NOT a broken
+        # run — telling the caller to "start a new research session" is the
+        # wrong remediation for it (issue #1964). Those two NAMED outcomes lead
+        # with their own explanation.
+        #
+        # Everything else keeps the historical guidance verbatim: an
+        # unrecognised code is coarsened to FAILED and treated as terminal, so
+        # "it will not complete" remains exactly the right advice — it just
+        # gains the observed code. (Review caught the first cut sending every
+        # code-carrying failure down the differentiated path, which silently
+        # dropped that guidance for genuinely-broken runs.)
+        detail = " ".join(part for part in (status.reason_message, status.hint) if part)
+        if status.termination_reason in ("no_results", "cancelled") and detail:
+            # "cannot be imported" rather than "has no sources": a run cancelled
+            # mid-flight can carry partially-discovered sources.
+            raise ValidationError(f"Research run {run_id!r} cannot be imported. {detail}")
+        suffix = f" {status.reason_message}" if status.reason_message else ""
         raise ValidationError(
             f"Research run {run_id!r} failed; it will not complete — start a new "
-            "research session rather than polling."
+            f"research session rather than polling.{suffix}"
         )
     if status.status != "completed":
         raise ValidationError(
@@ -165,7 +206,83 @@ async def poll_sources_for_import(
         )
     if not status.sources:
         raise ValidationError(f"Research run {run_id!r} completed with no sources to import.")
-    return status.sources
+    # ``report`` is typed ``str`` upstream (``ResearchTask.report`` defaults to
+    # ""), but coerce defensively so a drifted response that leaves it ``None``
+    # can't violate the return type or break ``select_cited_sources``.
+    return status.sources, status.report or ""
+
+
+async def poll_sources_for_import(
+    client: Any, notebook_id: str, run_id: str
+) -> list[dict[str, Any]]:
+    """Poll a research run and return its importable sources, or raise.
+
+    Thin wrapper over :func:`poll_importable_research` that drops the report for
+    callers (the REST import route) that import every source unconditionally. The
+    importable-state guard ladder lives in :func:`poll_importable_research` so the
+    two never drift.
+    """
+    sources, _report = await poll_importable_research(client, notebook_id, run_id)
+    return sources
+
+
+# ===========================================================================
+# research import
+# ===========================================================================
+
+
+@dataclass(frozen=True)
+class ResearchImportOutcome:
+    """Typed outcome of an idempotent research import (#1961).
+
+    ``newly_imported`` are the entries this call actually added;
+    ``already_present`` are the requested sources skipped because their URL
+    already existed in the notebook (each an ``{id, title, url}`` of the
+    EXISTING source). On a repeat import ``newly_imported`` is empty and
+    ``already_present`` lists the previously-imported sources.
+    """
+
+    newly_imported: list[dict[str, str]]
+    already_present: list[dict[str, str]]
+
+    @property
+    def newly_imported_count(self) -> int:
+        return len(self.newly_imported)
+
+    @property
+    def already_present_count(self) -> int:
+        return len(self.already_present)
+
+
+async def import_research_sources(
+    client: Any,
+    notebook_id: str,
+    task_id: str,
+    sources: Sequence[Any],
+    *,
+    allow_duplicate: bool = False,
+) -> ResearchImportOutcome:
+    """Import a completed run's sources idempotently, reporting skips.
+
+    Drives the timeout-tolerant ``client.research.import_sources_with_verification``
+    (which pre-filters requested sources whose URL already exists in the
+    notebook unless ``allow_duplicate`` is true) and lifts its ``already_present``
+    side channel into a typed result, so every adapter (the MCP tool today, a
+    REST route tomorrow) surfaces the same idempotency contract without
+    re-implementing URL dedup. The first three arguments are passed positionally
+    to match the underlying method's call shape.
+    """
+    imported = await client.research.import_sources_with_verification(
+        notebook_id,
+        task_id,
+        sources,
+        allow_duplicate=allow_duplicate,
+    )
+    already_present = list(getattr(imported, "already_present", []) or [])
+    return ResearchImportOutcome(
+        newly_imported=list(imported),
+        already_present=already_present,
+    )
 
 
 # ===========================================================================
@@ -249,6 +366,12 @@ class ResearchWaitResult:
     sources: list[dict[str, Any]] = field(default_factory=list)
     report: str = ""
     import_result: ResearchImportLike | None = None
+    # Why a ``failed`` wait ended, plus its remediation (issue #1964). Carried
+    # so the CLI can say "your Drive query matched nothing, try the filename"
+    # instead of a bare "Research failed"; ``None`` on success and whenever the
+    # poll carried no termination reason.
+    reason_message: str | None = None
+    hint: str | None = None
 
     @property
     def sources_count(self) -> int:
@@ -364,13 +487,22 @@ async def execute_research_wait(
 
     if status_val == "no_research":
         return _terminal("no_research")
+    # Both non-success exits carry the differentiated reason (#1964) so the
+    # renderer never has to show a bare "Research failed".
+    failure_detail: dict[str, Any] = {
+        "query": query,
+        "sources": sources,
+        "report": report,
+        "reason_message": status.reason_message,
+        "hint": status.hint,
+    }
     if status_val == "failed":
-        return _terminal("failed", query=query, sources=sources, report=report)
+        return _terminal("failed", **failure_detail)
 
     # wait_for_completion only returns completed/no_research/failed; keep a
     # narrow fallback so future terminal statuses cannot be rendered as success.
     if status_val != "completed":
-        return _terminal("failed", query=query, sources=sources, report=report)
+        return _terminal("failed", **failure_detail)
 
     import_result: ResearchImportLike | None = None
     if plan.import_all and sources and task_id:
@@ -404,6 +536,7 @@ async def execute_research_wait(
 
 __all__ = [
     "ResearchImportLike",
+    "ResearchImportOutcome",
     "ResearchStatusKind",
     "ResearchStatusResult",
     "ResearchWaitOutcome",
@@ -411,7 +544,9 @@ __all__ = [
     "ResearchWaitResult",
     "cancel_research",
     "execute_research_wait",
+    "import_research_sources",
     "poll_and_classify",
+    "poll_importable_research",
     "poll_sources_for_import",
     "validate_research_wait_flags",
 ]

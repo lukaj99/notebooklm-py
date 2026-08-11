@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+
 import pytest
 from fastapi.testclient import TestClient
 
-from notebooklm._types.research import ResearchStart
+from notebooklm._types.research import ResearchStart, ResearchStatus, ResearchTask
 
 from .fakes import FakeClient
 
@@ -50,6 +52,28 @@ def test_start_status_import_happy_path(authed_client: TestClient, fake_client: 
     # The import is keyed on the poll id, not the notebook's current task.
     assert fake_client.imported_research[0][0] == "nb-1"
     assert fake_client.imported_research[0][1] == poll_id
+
+
+def test_import_accepts_json_content_type_without_content_length(
+    authed_client: TestClient, fake_client: FakeClient
+) -> None:
+    resp = authed_client.post("/v1/notebooks/nb-1/research", json={"query": "topic"})
+    poll_id = resp.json()["poll_id"]
+    fake_client.set_research_completed(
+        "nb-1", poll_id, sources=[{"url": "https://a.example", "title": "A"}]
+    )
+
+    def _empty_body() -> Iterator[bytes]:
+        if False:
+            yield b""
+
+    resp = authed_client.post(
+        f"/v1/notebooks/nb-1/research/{poll_id}/import",
+        content=_empty_body(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert resp.status_code == 201
+    assert resp.json()["status"] == "imported"
 
 
 def test_deep_start_poll_id_is_report_id(authed_client: TestClient) -> None:
@@ -247,3 +271,47 @@ def test_unauthorized_is_401(raw_client: TestClient) -> None:
         "/v1/notebooks/nb-1/research", json={"query": "t"}, headers={"Host": "127.0.0.1"}
     )
     assert resp.status_code == 401
+
+
+def test_status_route_reports_termination_reason(
+    authed_client: TestClient, fake_client: FakeClient
+) -> None:
+    """#1964: the REST status route used to return a bare ``failed`` while the
+    import route below it already explained itself — the two disagreed about
+    what the server knew."""
+    resp = authed_client.post("/v1/notebooks/nb-1/research", json={"query": "q", "source": "drive"})
+    poll_id = resp.json()["poll_id"]
+    # Live-captured shape of a Drive search that matched nothing.
+    fake_client.research_tasks[("nb-1", poll_id)] = ResearchTask(
+        task_id=poll_id,
+        status=ResearchStatus.FAILED,
+        query="Example Document.md",
+        status_code=3,
+        source_type=2,
+    )
+
+    body = authed_client.get(f"/v1/notebooks/nb-1/research/{poll_id}").json()
+
+    assert body["status"] == "failed"
+    assert body["status_code"] == 3
+    assert body["termination_reason"] == "no_results"
+    assert body["reason_message"] == (
+        "The search of Google Drive found no matches for 'Example Document.md'."
+    )
+    assert "document id" in body["hint"]
+
+
+def test_status_route_omits_explanation_on_success(
+    authed_client: TestClient, fake_client: FakeClient
+) -> None:
+    resp = authed_client.post("/v1/notebooks/nb-1/research", json={"query": "q"})
+    poll_id = resp.json()["poll_id"]
+    fake_client.research_tasks[("nb-1", poll_id)] = ResearchTask(
+        task_id=poll_id, status=ResearchStatus.COMPLETED, query="q", status_code=2, source_type=1
+    )
+
+    body = authed_client.get(f"/v1/notebooks/nb-1/research/{poll_id}").json()
+
+    assert body["termination_reason"] == "completed"
+    assert body["reason_message"] is None
+    assert body["hint"] is None

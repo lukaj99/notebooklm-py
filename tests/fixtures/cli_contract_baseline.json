@@ -27,6 +27,15 @@
       "suggestions",
       "wait"
     ],
+    "collection": [
+      "add",
+      "create",
+      "delete",
+      "list",
+      "notebooks",
+      "remove",
+      "rename"
+    ],
     "download": [
       "audio",
       "cinematic-video",
@@ -98,6 +107,7 @@
     ],
     "skill": [
       "install",
+      "package",
       "show",
       "status",
       "uninstall"
@@ -105,6 +115,7 @@
     "source": [
       "add",
       "add-drive",
+      "add-drive-file",
       "add-research",
       "clean",
       "delete",
@@ -1202,7 +1213,7 @@
           "default": [],
           "envvar": null,
           "has_custom_shell_complete": false,
-          "help": "Opt in to persisting sibling-product cookies. Same syntax as 'notebooklm login --include-domains': youtube, docs, myaccount, mail, all. By default, only required Google auth/Drive/NotebookLM cookie domains are kept.",
+          "help": "Explicitly request known sibling-product hosts. Trusted Google-root subdomains returned by the browser are retained for compatibility. Syntax: 'notebooklm login --include-domains': youtube, docs, myaccount, mail, all. Distinct unrequested roots are discarded by default.",
           "is_flag": false,
           "kind": "option",
           "multiple": true,
@@ -1457,6 +1468,24 @@
           "default": false,
           "envvar": null,
           "has_custom_shell_complete": false,
+          "help": "Permit layer-3 browser recovery when stored cookies are fully expired. Uses the persisted browser profile (or NOTEBOOKLM_HEADLESS_REAUTH_CDP_URL). Does not launch or attach to a browser unless ordinary refresh fails.",
+          "is_flag": true,
+          "kind": "option",
+          "multiple": false,
+          "name": "allow_headless",
+          "opts": [
+            "--allow-headless"
+          ],
+          "required": false,
+          "secondary_opts": [],
+          "type": {
+            "name": "boolean"
+          }
+        },
+        {
+          "default": false,
+          "envvar": null,
+          "has_custom_shell_complete": false,
           "help": "Output as JSON",
           "is_flag": true,
           "kind": "option",
@@ -1497,6 +1526,288 @@
         }
       ],
       "short_help": "Clear current notebook context."
+    },
+    "collection": {
+      "class": "Group",
+      "commands": [
+        "add",
+        "create",
+        "delete",
+        "list",
+        "notebooks",
+        "remove",
+        "rename"
+      ],
+      "params": [],
+      "short_help": "Collection management commands..."
+    },
+    "collection add": {
+      "class": "Command",
+      "params": [
+        {
+          "kind": "argument",
+          "name": "collection_ref",
+          "nargs": 1,
+          "required": true,
+          "type": {
+            "name": "text"
+          }
+        },
+        {
+          "kind": "argument",
+          "name": "notebook_refs",
+          "nargs": -1,
+          "required": true,
+          "type": {
+            "name": "text"
+          }
+        },
+        {
+          "default": false,
+          "envvar": null,
+          "has_custom_shell_complete": false,
+          "help": "Output as JSON",
+          "is_flag": true,
+          "kind": "option",
+          "multiple": false,
+          "name": "json_output",
+          "opts": [
+            "--json"
+          ],
+          "required": false,
+          "secondary_opts": [],
+          "type": {
+            "name": "boolean"
+          }
+        }
+      ],
+      "short_help": "Add notebook(s) to a collection (append;..."
+    },
+    "collection create": {
+      "class": "Command",
+      "params": [
+        {
+          "kind": "argument",
+          "name": "name",
+          "nargs": 1,
+          "required": true,
+          "type": {
+            "name": "text"
+          }
+        },
+        {
+          "default": false,
+          "envvar": null,
+          "has_custom_shell_complete": false,
+          "help": "Output as JSON",
+          "is_flag": true,
+          "kind": "option",
+          "multiple": false,
+          "name": "json_output",
+          "opts": [
+            "--json"
+          ],
+          "required": false,
+          "secondary_opts": [],
+          "type": {
+            "name": "boolean"
+          }
+        }
+      ],
+      "short_help": "Create an empty, named collection."
+    },
+    "collection delete": {
+      "class": "Command",
+      "params": [
+        {
+          "kind": "argument",
+          "name": "collection_refs",
+          "nargs": -1,
+          "required": true,
+          "type": {
+            "name": "text"
+          }
+        },
+        {
+          "default": false,
+          "envvar": null,
+          "has_custom_shell_complete": false,
+          "help": "Skip confirmation",
+          "is_flag": true,
+          "kind": "option",
+          "multiple": false,
+          "name": "yes",
+          "opts": [
+            "--yes",
+            "-y"
+          ],
+          "required": false,
+          "secondary_opts": [],
+          "type": {
+            "name": "boolean"
+          }
+        },
+        {
+          "default": false,
+          "envvar": null,
+          "has_custom_shell_complete": false,
+          "help": "Output as JSON",
+          "is_flag": true,
+          "kind": "option",
+          "multiple": false,
+          "name": "json_output",
+          "opts": [
+            "--json"
+          ],
+          "required": false,
+          "secondary_opts": [],
+          "type": {
+            "name": "boolean"
+          }
+        }
+      ],
+      "short_help": "Delete one or more collections (the..."
+    },
+    "collection list": {
+      "class": "Command",
+      "params": [
+        {
+          "default": false,
+          "envvar": null,
+          "has_custom_shell_complete": false,
+          "help": "Output as JSON",
+          "is_flag": true,
+          "kind": "option",
+          "multiple": false,
+          "name": "json_output",
+          "opts": [
+            "--json"
+          ],
+          "required": false,
+          "secondary_opts": [],
+          "type": {
+            "name": "boolean"
+          }
+        }
+      ],
+      "short_help": "List all collections in the account (with..."
+    },
+    "collection notebooks": {
+      "class": "Command",
+      "params": [
+        {
+          "kind": "argument",
+          "name": "collection_ref",
+          "nargs": 1,
+          "required": true,
+          "type": {
+            "name": "text"
+          }
+        },
+        {
+          "default": false,
+          "envvar": null,
+          "has_custom_shell_complete": false,
+          "help": "Output as JSON",
+          "is_flag": true,
+          "kind": "option",
+          "multiple": false,
+          "name": "json_output",
+          "opts": [
+            "--json"
+          ],
+          "required": false,
+          "secondary_opts": [],
+          "type": {
+            "name": "boolean"
+          }
+        }
+      ],
+      "short_help": "Expand a collection to its member..."
+    },
+    "collection remove": {
+      "class": "Command",
+      "params": [
+        {
+          "kind": "argument",
+          "name": "collection_ref",
+          "nargs": 1,
+          "required": true,
+          "type": {
+            "name": "text"
+          }
+        },
+        {
+          "kind": "argument",
+          "name": "notebook_refs",
+          "nargs": -1,
+          "required": true,
+          "type": {
+            "name": "text"
+          }
+        },
+        {
+          "default": false,
+          "envvar": null,
+          "has_custom_shell_complete": false,
+          "help": "Output as JSON",
+          "is_flag": true,
+          "kind": "option",
+          "multiple": false,
+          "name": "json_output",
+          "opts": [
+            "--json"
+          ],
+          "required": false,
+          "secondary_opts": [],
+          "type": {
+            "name": "boolean"
+          }
+        }
+      ],
+      "short_help": "Un-assign notebook(s) from a collection..."
+    },
+    "collection rename": {
+      "class": "Command",
+      "params": [
+        {
+          "kind": "argument",
+          "name": "collection_ref",
+          "nargs": 1,
+          "required": true,
+          "type": {
+            "name": "text"
+          }
+        },
+        {
+          "kind": "argument",
+          "name": "new_name",
+          "nargs": 1,
+          "required": true,
+          "type": {
+            "name": "text"
+          }
+        },
+        {
+          "default": false,
+          "envvar": null,
+          "has_custom_shell_complete": false,
+          "help": "Output as JSON",
+          "is_flag": true,
+          "kind": "option",
+          "multiple": false,
+          "name": "json_output",
+          "opts": [
+            "--json"
+          ],
+          "required": false,
+          "secondary_opts": [],
+          "type": {
+            "name": "boolean"
+          }
+        }
+      ],
+      "short_help": "Rename a collection (preserves its emoji)."
     },
     "completion": {
       "class": "Command",
@@ -7336,6 +7647,27 @@
           }
         },
         {
+          "default": 300,
+          "envvar": null,
+          "has_custom_shell_complete": false,
+          "help": "Seconds to wait for a human to complete browser sign-in.",
+          "is_flag": false,
+          "kind": "option",
+          "multiple": false,
+          "name": "browser_timeout",
+          "opts": [
+            "--browser-timeout"
+          ],
+          "required": false,
+          "secondary_opts": [],
+          "type": {
+            "clamp": false,
+            "max": null,
+            "min": 1,
+            "name": "integer range"
+          }
+        },
+        {
           "default": null,
           "envvar": null,
           "has_custom_shell_complete": false,
@@ -7447,7 +7779,7 @@
           "default": [],
           "envvar": null,
           "has_custom_shell_complete": false,
-          "help": "Opt in to extracting sibling-product cookies (default: required Google auth/Drive cookies only). Pass labels comma-separated or repeat the flag: --include-domains=youtube,docs OR --include-domains=youtube --include-domains=docs. Supported labels: youtube, docs, myaccount, mail, all.",
+          "help": "Explicitly request known sibling hosts. Trusted Google-root subdomains returned by the browser are retained for compatibility. Pass labels or repeat the flag: --include-domains=youtube,docs OR --include-domains=youtube --include-domains=docs. Supported labels: youtube, docs, myaccount, mail, all.",
           "is_flag": false,
           "kind": "option",
           "multiple": true,
@@ -7483,7 +7815,7 @@
           "default": false,
           "envvar": null,
           "has_custom_shell_complete": false,
-          "help": "Re-mint web cookies from the stored master token (no prompt). For recovery / cron.",
+          "help": "Legacy forced re-mint; prefer 'notebooklm auth refresh'.",
           "is_flag": true,
           "kind": "option",
           "multiple": false,
@@ -8040,6 +8372,7 @@
         "ask",
         "auth",
         "clear",
+        "collection",
         "completion",
         "configure",
         "create",
@@ -9102,6 +9435,7 @@
       "class": "Group",
       "commands": [
         "install",
+        "package",
         "show",
         "status",
         "uninstall"
@@ -9215,6 +9549,75 @@
         }
       ],
       "short_help": "Install or update the NotebookLM skill for..."
+    },
+    "skill package": {
+      "class": "Command",
+      "params": [
+        {
+          "default": null,
+          "envvar": null,
+          "has_custom_shell_complete": false,
+          "help": "Archive path to write (default: ./notebooklm-skill.zip). If PATH is an existing directory or ends with a path separator, the default filename is written inside it.",
+          "is_flag": false,
+          "kind": "option",
+          "multiple": false,
+          "name": "output",
+          "opts": [
+            "--output",
+            "-o"
+          ],
+          "required": false,
+          "secondary_opts": [],
+          "type": {
+            "allow_dash": false,
+            "dir_okay": true,
+            "executable": false,
+            "exists": false,
+            "file_okay": true,
+            "name": "path",
+            "readable": true,
+            "resolve_path": false,
+            "writable": false
+          }
+        },
+        {
+          "default": false,
+          "envvar": null,
+          "has_custom_shell_complete": false,
+          "help": "Overwrite an existing archive file.",
+          "is_flag": true,
+          "kind": "option",
+          "multiple": false,
+          "name": "force",
+          "opts": [
+            "--force"
+          ],
+          "required": false,
+          "secondary_opts": [],
+          "type": {
+            "name": "boolean"
+          }
+        },
+        {
+          "default": false,
+          "envvar": null,
+          "has_custom_shell_complete": false,
+          "help": "Output as JSON",
+          "is_flag": true,
+          "kind": "option",
+          "multiple": false,
+          "name": "json_output",
+          "opts": [
+            "--json"
+          ],
+          "required": false,
+          "secondary_opts": [],
+          "type": {
+            "name": "boolean"
+          }
+        }
+      ],
+      "short_help": "Build a Claude-uploadable skill archive..."
     },
     "skill show": {
       "class": "Command",
@@ -9398,6 +9801,7 @@
       "commands": [
         "add",
         "add-drive",
+        "add-drive-file",
         "add-research",
         "clean",
         "delete",
@@ -9667,6 +10071,94 @@
         }
       ],
       "short_help": "Add a Google Drive document as a source."
+    },
+    "source add-drive-file": {
+      "class": "Command",
+      "params": [
+        {
+          "kind": "argument",
+          "name": "document_id",
+          "nargs": 1,
+          "required": true,
+          "type": {
+            "name": "text"
+          }
+        },
+        {
+          "default": null,
+          "envvar": "NOTEBOOKLM_NOTEBOOK",
+          "has_custom_shell_complete": true,
+          "help": "Notebook ID (uses current if not set). Supports partial IDs.",
+          "is_flag": false,
+          "kind": "option",
+          "multiple": false,
+          "name": "notebook_id",
+          "opts": [
+            "-n",
+            "--notebook"
+          ],
+          "required": false,
+          "secondary_opts": [],
+          "type": {
+            "name": "text"
+          }
+        },
+        {
+          "default": null,
+          "envvar": null,
+          "has_custom_shell_complete": false,
+          "help": "Custom title (default: the file's Drive name)",
+          "is_flag": false,
+          "kind": "option",
+          "multiple": false,
+          "name": "title",
+          "opts": [
+            "--title"
+          ],
+          "required": false,
+          "secondary_opts": [],
+          "type": {
+            "name": "text"
+          }
+        },
+        {
+          "default": false,
+          "envvar": null,
+          "has_custom_shell_complete": false,
+          "help": "Wait for processing to finish",
+          "is_flag": true,
+          "kind": "option",
+          "multiple": false,
+          "name": "wait",
+          "opts": [
+            "--wait"
+          ],
+          "required": false,
+          "secondary_opts": [],
+          "type": {
+            "name": "boolean"
+          }
+        },
+        {
+          "default": false,
+          "envvar": null,
+          "has_custom_shell_complete": false,
+          "help": "Output as JSON",
+          "is_flag": true,
+          "kind": "option",
+          "multiple": false,
+          "name": "json_output",
+          "opts": [
+            "--json"
+          ],
+          "required": false,
+          "secondary_opts": [],
+          "type": {
+            "name": "boolean"
+          }
+        }
+      ],
+      "short_help": "Add an upload-only Google Drive file..."
     },
     "source add-research": {
       "class": "Command",
@@ -10958,6 +11450,7 @@
     "ask",
     "auth",
     "clear",
+    "collection",
     "completion",
     "configure",
     "create",
@@ -11019,6 +11512,7 @@
     "chat",
     "note",
     "label",
+    "collection",
     "share",
     "research"
   ]

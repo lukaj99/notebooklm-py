@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -11,6 +12,13 @@ from .._types.common import _datetime_from_timestamp
 from ..exceptions import DecodingError
 from ..rpc import RPCMethod, safe_index
 from ..rpc.types import SourceStatus
+
+logger = logging.getLogger(__name__)
+
+#: Unmapped status codes already warned about, so a polled source does not
+#: re-emit the same drift line on every decode. Mirrors
+#: ``_types/sources.py::_warned_source_types``.
+_warned_status_codes: set[int] = set()
 
 __all__ = [
     "SourceFulltextRow",
@@ -102,6 +110,11 @@ class SourceRow:
     7      url block; ``[7][0]`` is the canonical source URL when
            present (takes precedence over ``metadata[5][0]`` and
            ``metadata[0]``).
+    9      Drive-file descriptor for Drive-hosted sources:
+           ``[drive_id, kind_int, mime, ""]``; ``[9][2]`` is the MIME.
+    19     top-level MIME string for Drive-hosted sources. Used with
+           ``[9][2]`` to disambiguate the type-code ``14`` overload
+           (native Sheet vs Drive-hosted PDF) — see :attr:`mime`.
     =====  ============================================================
 
     Position knowledge is centralised here. Consumer sites should NEVER
@@ -153,6 +166,15 @@ class SourceRow:
     _META_TYPE_POS: ClassVar[int] = 4
     _META_YOUTUBE_POS: ClassVar[int] = 5
     _META_URL_POS: ClassVar[int] = 7
+    # Drive-hosted sources carry the true file MIME here (#1832 live capture):
+    # the drive-file descriptor ``[drive_id, kind_int, mime, ""]`` at [9] and a
+    # top-level MIME string at [19]. Used to disambiguate the type_code==14
+    # overload (native Sheet vs Drive-hosted binary like a PDF), which the URL
+    # slots can't — Drive sources carry no URL (metadata[0]/[5]/[7] all null).
+    _META_DRIVE_DESCRIPTOR_POS: ClassVar[int] = 9
+    _META_MIME_POS: ClassVar[int] = 19
+    # Position of the MIME string inside the drive-file descriptor at [9].
+    _DRIVE_DESCRIPTOR_MIME_POS: ClassVar[int] = 2
 
     # Id-envelope inner positions (the three layouts at ``self._raw[0]``).
     _ID_ENVELOPE_PLAIN_POS: ClassVar[int] = 0
@@ -378,6 +400,50 @@ class SourceRow:
         return value if isinstance(value, int) else None
 
     @property
+    def mime(self) -> str | None:
+        """Source MIME type for Drive-hosted sources — ``None`` when absent.
+
+        Precedence:
+
+        1. :meth:`_mime_from_top_level` — ``metadata[19]`` (top-level slot).
+        2. :meth:`_mime_from_drive_descriptor` — ``metadata[9][2]`` (MIME
+           inside the drive-file descriptor).
+
+        Only Drive-hosted sources populate these; native uploads / web pages
+        leave them empty. Used to disambiguate the ``type_code == 14`` overload
+        (native Google Sheet vs Drive-hosted PDF) at decode time — see
+        :func:`notebooklm._types.sources._disambiguate_type_code` (#1832).
+        """
+        metadata = self.metadata
+        if metadata is None:
+            return None
+        return self._mime_from_top_level(metadata) or self._mime_from_drive_descriptor(metadata)
+
+    def _mime_from_top_level(self, metadata: list[Any]) -> str | None:
+        """Extract the MIME from ``metadata[19]`` (top-level slot).
+
+        Returns ``None`` when position 19 is absent or not a non-empty string.
+        """
+        if len(metadata) <= self._META_MIME_POS:
+            return None
+        value = metadata[self._META_MIME_POS]
+        return value if isinstance(value, str) and value else None
+
+    def _mime_from_drive_descriptor(self, metadata: list[Any]) -> str | None:
+        """Extract the MIME from ``metadata[9][2]`` (drive-file descriptor).
+
+        Returns ``None`` unless position 9 is a list long enough to hold the
+        descriptor MIME and that slot is a non-empty string.
+        """
+        if len(metadata) <= self._META_DRIVE_DESCRIPTOR_POS:
+            return None
+        descriptor = metadata[self._META_DRIVE_DESCRIPTOR_POS]
+        if not isinstance(descriptor, list) or len(descriptor) <= self._DRIVE_DESCRIPTOR_MIME_POS:
+            return None
+        value = descriptor[self._DRIVE_DESCRIPTOR_MIME_POS]
+        return value if isinstance(value, str) and value else None
+
+    @property
     def url(self) -> str | None:
         """Canonical source URL — ``None`` when absent.
 
@@ -588,31 +654,41 @@ class SourceRow:
         """Processing status from ``self._raw[3][1]``.
 
         Used by ``GET_NOTEBOOK`` source-list rows where every entry
-        carries a status block. Defaults to
-        :data:`SourceStatus.READY` when:
+        carries a status block. Returns :data:`SourceStatus.UNKNOWN` when:
 
         * position 3 is absent / non-list / too short, or
         * the status code is not one of the known enum values.
 
-        This mirrors the legacy ``SourceLister._extract_status``
-        contract — same fallback to :data:`SourceStatus.READY` on any
-        unrecognised code. The membership check uses ``SourceStatus(...)``
-        directly (catching :class:`ValueError`) rather than an explicit
-        member tuple so the adapter automatically accepts any new values
-        added to :class:`SourceStatus` without a parallel update here.
+        Unknown numeric codes emit a warning — once per code — so backend enum
+        drift is visible without repeating on every poll of the same source.
+        Structurally malformed status blocks fail closed without warning because
+        several valid non-listing response shapes omit the block entirely.
         """
         if (
             len(self._raw) <= self._STATUS_BLOCK_POS
             or not isinstance(self._raw[self._STATUS_BLOCK_POS], list)
             or len(self._raw[self._STATUS_BLOCK_POS]) <= self._STATUS_INNER_POS
         ):
-            return SourceStatus.READY
+            return SourceStatus.UNKNOWN
 
         status_code = self._raw[self._STATUS_BLOCK_POS][self._STATUS_INNER_POS]
+        if not isinstance(status_code, int) or isinstance(status_code, bool):
+            return SourceStatus.UNKNOWN
         try:
             return SourceStatus(status_code)
         except ValueError:
-            return SourceStatus.READY
+            # Warn once per code, like the sibling unmapped-enum path
+            # (``_types/sources.py::_warned_source_types``): ``SourceRow.status``
+            # is re-decoded on every poll, so an unmapped code on a source being
+            # waited on would otherwise repeat the same line ~17 times per wait.
+            if status_code not in _warned_status_codes:
+                _warned_status_codes.add(status_code)
+                logger.warning(
+                    "Unknown source status code %r from RPC %s; treating as UNKNOWN",
+                    status_code,
+                    self.method_id,
+                )
+            return SourceStatus.UNKNOWN
 
 
 @dataclass(frozen=True)

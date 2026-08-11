@@ -109,6 +109,7 @@ EXCLUDED_FROM_REQUIRED: dict[str, str] = {
     # domain wrapper translating these is a deliberate per-callsite contract
     # decision, not the transient-transport swallow this gate targets.
     "ArtifactNotFoundError": "semantic not-found, not transient transport",
+    "CollectionNotFoundError": "semantic not-found, not transient transport",
     "LabelNotFoundError": "semantic not-found, not transient transport",
     "MindMapNotFoundError": "semantic not-found, not transient transport",
     "NoteNotFoundError": "semantic not-found, not transient transport",
@@ -123,6 +124,7 @@ EXCLUDED_FROM_REQUIRED: dict[str, str] = {
     "RPCResponseTooLargeError": "payload-size fault, not retryable transport",
     "AuthExtractionError": "login/setup-time extraction fault",
     "ArtifactFeatureUnavailableError": "feature availability, not transport",
+    "ResearchStartUnavailableError": "research start returned no run, not transport",
 }
 
 # Files (relative to src/notebooklm, posix) with a baselined violation that is

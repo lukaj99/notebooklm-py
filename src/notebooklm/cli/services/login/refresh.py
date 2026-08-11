@@ -18,23 +18,28 @@ Top of the leaf-ward DAG: imports from :mod:`.browser_accounts`,
 from __future__ import annotations
 
 import logging
-import sys
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, NoReturn
+from typing import Any, Literal, NoReturn, Protocol
 
 import httpx
 
+# The write-time domain filter, the post-filter required-cookie revalidation
+# (#2086), the account-metadata embed, and the atomic storage-state write all
+# live in the canonical storage writer now (refactor (b), b-PR3); the CLI reaches
+# it through the public ``auth`` facade — ``cli/`` may not import private
+# ``_auth.*`` modules (tests/_guardrails/test_cli_boundary.py).
 from ....auth import (
+    ReplaceResult,
     cookie_names_from_storage,
     fetch_tokens_with_domains,
     missing_cookies_hint,
     read_account_metadata,
+    replace_profile_from_login,
     validate_with_recovery,
 )
 from ....client import NotebookLMClient
-from ....io import atomic_write_json
 from ....paths import get_storage_path
 from ...language_cmd import set_language
 from .browser_accounts import _enumerate_browser_accounts, _read_browser_cookies
@@ -54,6 +59,22 @@ from .profile_targets import (
 # Click command layer injects ``functools.partial(click.confirm,
 # default=False)`` so interactive runs prompt before overwriting.
 ConfirmCallback = Callable[[str], bool]
+
+
+class ReplaceProfileFromLogin(Protocol):
+    def __call__(
+        self,
+        path: Path,
+        state: Mapping[str, Any],
+        *,
+        include_domains: set[str] | None,
+        include_optional: bool = False,
+        account_mode: Literal["keep", "clear", "set"] = "keep",
+        account_authuser: int | None = None,
+        account_email: str | None = None,
+        backup: bool = False,
+    ) -> ReplaceResult: ...
+
 
 logger = logging.getLogger(__name__)
 
@@ -174,6 +195,7 @@ def _login_browser_cookies_single(
         profile=storage_profile,
         authuser=selected.authuser,
         email=selected.email,
+        include_domains=include_domains,
     )
     if isinstance(write_outcome, BrowserCookieOutcome):
         _exit_on_outcome(io, write_outcome)
@@ -307,6 +329,7 @@ def _login_all_accounts_from_browser(
             profile=target_profile,
             authuser=account.authuser,
             email=account.email,
+            include_domains=include_domains,
         )
         if isinstance(write_outcome, BrowserCookieOutcome):
             _exit_on_outcome(io, write_outcome)
@@ -357,6 +380,7 @@ def _refresh_from_browser_cookies(
         profile=profile,
         authuser=selected.authuser,
         email=selected.email,
+        include_domains=include_domains,
         quiet=True,
     )
     if isinstance(write_outcome, BrowserCookieOutcome):
@@ -417,43 +441,56 @@ def _login_with_browser_cookies(
         )
         io.fail(1)
 
-    # Create parent directory (avoid mode= on Windows to prevent ACL issues)
+    # The write-time domain filter, the post-filter required-cookie
+    # revalidation (#2086), the account-metadata embed, and the atomic write all
+    # happen inside the canonical storage writer, under the storage lock.
+    # ``validate_with_recovery`` above still runs FIRST (recovery must see the
+    # full jar). Even on a default-account login (authuser=0, no email) the
+    # account binding is CLEARED in the same write so refreshed cookies cannot
+    # keep routing to an older account.
+    account_mode: Literal["clear", "set"] = "set" if (authuser or email) else "clear"
     try:
-        storage_path.parent.mkdir(parents=True, exist_ok=True)
-        # Atomic write with chmod 0o600 — avoids non-atomic + world-readable
-        # window from plain write_text + post-hoc chmod.
-        deps.atomic_write_json(storage_path, storage_state)
-        if sys.platform != "win32":
-            # On Unix: ensure directory has restrictive permissions
-            # (atomic_write_json handles the file mode).
-            storage_path.parent.chmod(0o700)
+        outcome = deps.replace_profile_from_login(
+            storage_path,
+            storage_state,
+            include_domains=include_domains,
+            account_mode=account_mode,
+            account_authuser=authuser if account_mode == "set" else None,
+            account_email=email if account_mode == "set" else None,
+        )
     except OSError as e:
-        logger.error("Failed to save authentication to %s: %s", storage_path, e)
+        # G6: redact the bound exception in the log line (use the type name) so
+        # subprocess stderr / payload data captured in ``e`` is not persisted in
+        # caller log destinations — matching ``cookie_writes._write_extracted_cookies``.
+        logger.error("Failed to save authentication to %s: %s", storage_path, type(e).__name__)
         _emit(io, f"[red]Failed to save authentication to {storage_path}.[/red]\nDetails: {e}")
         io.fail(1)
 
-    # Record account metadata so future calls target the same Google account.
-    # Even on a default-account login (authuser=0, no email), remove stale
-    # metadata so refreshed cookies cannot keep routing to an older account.
-    if authuser or email:
-        from ....auth import write_account_metadata
+    if outcome.required_cookies_dropped:
+        # A required cookie's only copy sat on a non-allowlisted domain and was
+        # dropped by the write-time filter; the writer wrote nothing. Same
+        # contract as #2086 (io.fail(1), not-exists).
+        hint = deps.missing_cookies_hint(set(outcome.present_names), browser_label=browser_name)
+        _emit(
+            io,
+            "[red]Required authentication cookies were dropped by the "
+            "write-time cookie-domain policy.[/red]\n"
+            f"Missing after domain filtering: {', '.join(outcome.missing_required)} "
+            "(the only copies were scoped to non-allowlisted domains).\n\n"
+            f"{hint}",
+        )
+        io.fail(1)
+    if outcome.lock_unavailable:
+        logger.error("Failed to save authentication to %s: storage lock unavailable", storage_path)
+        _emit(
+            io,
+            f"[red]Failed to save authentication to {storage_path}.[/red]\n"
+            "Details: storage lock unavailable (another process may hold it).",
+        )
+        io.fail(1)
 
-        try:
-            write_account_metadata(storage_path, authuser=authuser, email=email)
-        except OSError as e:
-            logger.error("Failed to save account metadata for %s: %s", storage_path, e)
-            _emit(
-                io,
-                f"[yellow]Warning: cookies saved but account metadata write failed.[/yellow]\n"
-                f"Details: {e}",
-            )
-    else:
-        from ....auth import clear_account_metadata
-
-        try:
-            clear_account_metadata(storage_path)
-        except OSError as e:
-            logger.warning("Failed to clear stale account metadata for %s: %s", storage_path, e)
+    # replace_profile_from_login already scrubbed the legacy sibling context.json[account]
+    # key after its native profile write (_auth/profile_migration.py).
 
     saved_msg = f"\n[green]Authentication saved to:[/green] {storage_path}"
     if email:
@@ -544,7 +581,6 @@ class RefreshDeps:
     module layout by import string.
     """
 
-    atomic_write_json: Callable[..., Any]
     cookie_names_from_storage: Callable[..., Any]
     confirm_profile_account_overwrite: Callable[..., Any]
     email_to_profile_name: Callable[..., Any]
@@ -556,6 +592,7 @@ class RefreshDeps:
     profiles_by_account_email: Callable[..., Any]
     read_account_metadata: Callable[..., Any]
     read_browser_cookies: Callable[..., Any]
+    replace_profile_from_login: ReplaceProfileFromLogin
     resolve_all_accounts_target: Callable[..., Any]
     select_account: Callable[..., Any]
     select_refresh_account: Callable[..., Any]
@@ -566,7 +603,6 @@ class RefreshDeps:
 
 def default_refresh_deps() -> RefreshDeps:
     return RefreshDeps(
-        atomic_write_json=atomic_write_json,
         cookie_names_from_storage=cookie_names_from_storage,
         confirm_profile_account_overwrite=_confirm_profile_account_overwrite,
         email_to_profile_name=email_to_profile_name,
@@ -578,6 +614,7 @@ def default_refresh_deps() -> RefreshDeps:
         profiles_by_account_email=_profiles_by_account_email,
         read_account_metadata=read_account_metadata,
         read_browser_cookies=_read_browser_cookies,
+        replace_profile_from_login=replace_profile_from_login,
         resolve_all_accounts_target=_resolve_all_accounts_target,
         select_account=_select_account,
         select_refresh_account=_select_refresh_account,

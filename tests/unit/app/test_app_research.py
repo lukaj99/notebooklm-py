@@ -26,6 +26,8 @@ from notebooklm._app.research import (
     cancel_research,
     execute_research_wait,
     poll_and_classify,
+    poll_importable_research,
+    poll_sources_for_import,
     validate_research_wait_flags,
 )
 from notebooklm.exceptions import ValidationError
@@ -40,6 +42,8 @@ def _task(
     sources: list[dict[str, Any]] | None = None,
     summary: str = "",
     report: str = "",
+    status_code: int | None = None,
+    source_type: int | None = None,
 ) -> ResearchTask:
     coerced = tuple(ResearchSource.from_public_dict(s) for s in (sources or []))
     return ResearchTask(
@@ -49,6 +53,8 @@ def _task(
         sources=coerced,
         summary=summary,
         report=report,
+        status_code=status_code,
+        source_type=source_type,
     )
 
 
@@ -160,6 +166,197 @@ async def test_poll_classifies_failed_as_other() -> None:
 
     assert result.kind == "other"
     assert result.status == "failed"
+
+
+# ===========================================================================
+# poll_importable_research / poll_sources_for_import
+# ===========================================================================
+
+
+async def test_poll_importable_returns_sources_and_report() -> None:
+    client = _client(
+        poll=_task(
+            status=ResearchStatus.COMPLETED,
+            sources=[{"title": "S", "url": "http://example.com/1"}],
+            report="# Report",
+        )
+    )
+    sources, report = await poll_importable_research(client, "nb_1", "run_1")
+    assert report == "# Report"
+    assert sources[0]["url"] == "http://example.com/1"
+    # The pinned run id is threaded through poll as the discriminator.
+    client.research.poll.assert_awaited_once_with("nb_1", "run_1")
+
+
+async def test_poll_sources_for_import_drops_report() -> None:
+    """The thin wrapper returns just the sources (REST import path)."""
+    client = _client(
+        poll=_task(
+            status=ResearchStatus.COMPLETED,
+            sources=[{"title": "S", "url": "http://example.com/1"}],
+            report="# Report",
+        )
+    )
+    sources = await poll_sources_for_import(client, "nb_1", "run_1")
+    assert sources[0]["url"] == "http://example.com/1"
+
+
+@pytest.mark.parametrize(
+    "status",
+    [
+        ResearchStatus.NOT_FOUND,
+        ResearchStatus.FAILED,
+        ResearchStatus.IN_PROGRESS,
+        ResearchStatus.NO_RESEARCH,
+    ],
+)
+async def test_poll_importable_refuses_non_completed(status: ResearchStatus) -> None:
+    client = _client(
+        poll=_task(status=status, sources=[{"title": "S", "url": "http://example.com/1"}])
+    )
+    with pytest.raises(ValidationError):
+        await poll_importable_research(client, "nb_1", "run_1")
+
+
+async def test_poll_importable_refuses_completed_empty() -> None:
+    client = _client(poll=_task(status=ResearchStatus.COMPLETED, sources=[]))
+    with pytest.raises(ValidationError):
+        await poll_importable_research(client, "nb_1", "run_1")
+
+
+# ---------------------------------------------------------------------------
+# Differentiated termination reasons (#1964)
+# ---------------------------------------------------------------------------
+
+
+async def test_poll_and_classify_surfaces_reason_message_and_hint() -> None:
+    """An empty Drive search reaches the adapter with a reason and remediation,
+    not a bare ``failed``."""
+    client = _client(
+        poll=_task(
+            status=ResearchStatus.FAILED,
+            query="Example Document.md",
+            status_code=3,
+            source_type=2,
+        )
+    )
+    result = await poll_and_classify(client, "nb_1", "run_1")
+    assert result.status == "failed"
+    assert result.status_code == 3
+    assert result.termination_reason == "no_results"
+    assert "no matches" in result.reason_message
+    assert "document id" in result.hint
+
+
+async def test_poll_and_classify_leaves_reason_fields_none_on_success() -> None:
+    client = _client(poll=_task(status=ResearchStatus.COMPLETED, status_code=2, source_type=1))
+    result = await poll_and_classify(client, "nb_1", "run_1")
+    assert result.termination_reason == "completed"
+    assert result.reason_message is None
+    assert result.hint is None
+
+
+async def test_poll_and_classify_reason_none_without_status_code() -> None:
+    client = _client(poll=_task(status=ResearchStatus.NO_RESEARCH))
+    result = await poll_and_classify(client, "nb_1", "run_1")
+    assert result.termination_reason is None
+    assert result.reason_message is None
+
+
+async def test_poll_importable_empty_drive_search_explains_instead_of_misdirecting() -> None:
+    """Regression for #1964: the old message told the caller to 'start a new
+    research session', which is the wrong remediation for a query that simply
+    matched nothing."""
+    client = _client(
+        poll=_task(
+            status=ResearchStatus.FAILED,
+            query="Example Document.md",
+            status_code=3,
+            source_type=2,
+        )
+    )
+    with pytest.raises(ValidationError) as excinfo:
+        await poll_importable_research(client, "nb_1", "run_1")
+    message = str(excinfo.value)
+    assert "no matches" in message
+    assert "document id" in message
+    assert "start a new research session" not in message
+
+
+async def test_poll_importable_cancelled_run_says_it_was_cancelled() -> None:
+    client = _client(
+        poll=_task(status=ResearchStatus.FAILED, query="q", status_code=4, source_type=1)
+    )
+    with pytest.raises(ValidationError) as excinfo:
+        await poll_importable_research(client, "nb_1", "run_1")
+    assert "cancelled" in str(excinfo.value)
+
+
+async def test_poll_importable_unnameable_failure_keeps_historical_message() -> None:
+    """A FAILED task carrying no status code keeps the original wording.
+
+    Defensive rather than observed: the parser only produces FAILED from a
+    non-null code, so this pairing should not arise from a real poll. It pins
+    the branch against a hand-built or future task that reaches it.
+    """
+    client = _client(poll=_task(status=ResearchStatus.FAILED, query="q"))
+    with pytest.raises(ValidationError) as excinfo:
+        await poll_importable_research(client, "nb_1", "run_1")
+    assert "start a new research session" in str(excinfo.value)
+
+
+async def test_poll_importable_unknown_code_keeps_terminal_guidance() -> None:
+    """An unrecognised code is coarsened to FAILED and treated as terminal, so
+    "it will not complete" is still the right advice — the first cut sent every
+    code-carrying failure down the differentiated path and silently dropped it
+    for genuinely-broken runs.
+    """
+    client = _client(
+        poll=_task(status=ResearchStatus.FAILED, query="q", status_code=7, source_type=1)
+    )
+    with pytest.raises(ValidationError) as excinfo:
+        await poll_importable_research(client, "nb_1", "run_1")
+    message = str(excinfo.value)
+    assert "it will not complete" in message
+    assert "start a new research session" in message
+    # ...and it still reports what was actually observed.
+    assert "unrecognised backend status code (7)" in message
+
+
+async def test_poll_importable_cancelled_run_with_partial_sources_wording() -> None:
+    """A cancelled run can carry partially-discovered sources, so the refusal
+    must not assert it "has no sources"."""
+    client = _client(
+        poll=_task(
+            status=ResearchStatus.FAILED,
+            query="q",
+            sources=[{"title": "Partial", "url": "http://example.com/1"}],
+            status_code=4,
+            source_type=1,
+        )
+    )
+    with pytest.raises(ValidationError) as excinfo:
+        await poll_importable_research(client, "nb_1", "run_1")
+    message = str(excinfo.value)
+    assert "cannot be imported" in message
+    assert "has no sources" not in message
+
+
+@pytest.mark.parametrize(
+    ("status_code", "expected_reason"),
+    [(1, "in_progress"), (2, "completed"), (3, "no_results"), (4, "cancelled"), (7, "unknown")],
+)
+async def test_poll_and_classify_converts_every_reason_to_its_string(
+    status_code: int, expected_reason: str
+) -> None:
+    """The enum→str narrowing at the _app boundary must hold for every reason,
+    not just the two the happy-path tests exercise."""
+    client = _client(
+        poll=_task(status=ResearchStatus.FAILED, query="q", status_code=status_code, source_type=1)
+    )
+    result = await poll_and_classify(client, "nb_1", "run_1")
+    assert result.termination_reason == expected_reason
+    assert isinstance(result.termination_reason, str)
 
 
 # ===========================================================================
@@ -387,3 +584,58 @@ async def test_wait_runs_inside_injected_wait_context() -> None:
     )
 
     assert events == ["enter", "exit"]
+
+
+# ---------------------------------------------------------------------------
+# import_research_sources (#1961 idempotent import wrapper)
+# ---------------------------------------------------------------------------
+
+
+async def test_import_research_sources_reports_already_present() -> None:
+    from notebooklm._app.research import ResearchImportOutcome, import_research_sources
+    from notebooklm._research import _imported_result
+
+    client = MagicMock()
+    client.research = MagicMock()
+    client.research.import_sources_with_verification = AsyncMock(
+        return_value=_imported_result(
+            [{"id": "new_1", "title": "New"}],
+            [{"id": "old_1", "title": "Old", "url": "https://old.example.com"}],
+        )
+    )
+
+    outcome = await import_research_sources(
+        client, "nb_1", "task_1", [{"url": "https://new.example.com", "title": "New"}]
+    )
+
+    assert isinstance(outcome, ResearchImportOutcome)
+    assert outcome.newly_imported == [{"id": "new_1", "title": "New"}]
+    assert outcome.already_present == [
+        {"id": "old_1", "title": "Old", "url": "https://old.example.com"}
+    ]
+    assert outcome.newly_imported_count == 1
+    assert outcome.already_present_count == 1
+    # First three args are positional (MCP tests assert args[0]/args[1]); the
+    # opt-out threads through as a keyword.
+    args, kwargs = client.research.import_sources_with_verification.await_args
+    assert args[0] == "nb_1"
+    assert args[1] == "task_1"
+    assert args[2] == [{"url": "https://new.example.com", "title": "New"}]
+    assert kwargs == {"allow_duplicate": False}
+
+
+async def test_import_research_sources_plain_list_return_has_empty_already_present() -> None:
+    from notebooklm._app.research import import_research_sources
+
+    client = MagicMock()
+    client.research = MagicMock()
+    client.research.import_sources_with_verification = AsyncMock(
+        return_value=[{"id": "new_1", "title": "New"}]
+    )
+
+    outcome = await import_research_sources(client, "nb_1", "task_1", [], allow_duplicate=True)
+
+    assert outcome.newly_imported == [{"id": "new_1", "title": "New"}]
+    assert outcome.already_present == []
+    _, kwargs = client.research.import_sources_with_verification.await_args
+    assert kwargs == {"allow_duplicate": True}

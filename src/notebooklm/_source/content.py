@@ -10,6 +10,7 @@ from typing import Any, Literal
 from .._row_adapters.sources import SourceFulltextRow, SourceGuideRow
 from .._runtime.contracts import RpcCaller
 from .._types.research import SourceGuide
+from .._types.sources import _disambiguate_type_code, _pdf_url_title_fallback
 from ..rpc import RPCMethod
 from ..types import SourceFulltext, SourceNotFoundError, _extract_source_url
 
@@ -52,12 +53,13 @@ class SourceContentRenderer:
 
         if output_format == "markdown":
             try:
-                from markdownify import markdownify as md
+                import markdownify  # noqa: F401  # presence guard; conversion is below
             except ImportError:
                 raise ImportError(
                     "The 'markdown' format requires the 'markdownify' package. "
                     "Install it with: pip install 'notebooklm-py[markdown]'"
                 ) from None
+            from .markdown import html_to_markdown
 
         params = [[source_id], [3], [3]] if output_format == "markdown" else [[source_id], [2], [2]]
 
@@ -93,7 +95,16 @@ class SourceContentRenderer:
             # value into ``SourceFulltext._type_code`` (#1485
             # absence-vs-malformed policy).
             source_row = fulltext_row.source_row
-            source_type = source_row.type_code if source_row is not None else None
+            # Disambiguate the type_code==14 native-Sheet/Drive-PDF overload by
+            # the row MIME, mirroring ``Source.from_row`` so ``source fulltext``
+            # / ``source_read`` decode a Drive-hosted PDF as PDF, not
+            # GOOGLE_SPREADSHEET (#1832). GET_SOURCE carries the same MIME at
+            # metadata[19] / metadata[9][2] as GET_NOTEBOOK (live-captured).
+            source_type = (
+                _disambiguate_type_code(source_row.type_code, source_row.mime)
+                if source_row is not None
+                else None
+            )
             type_slot = fulltext_row.raw_metadata_type_slot
             if source_type is None and type_slot is not None:
                 self._logger.warning(
@@ -110,7 +121,7 @@ class SourceContentRenderer:
             # rendition" (warned + empty below).
             html_content = fulltext_row.html_content
             if html_content is not None:
-                content = md(html_content, heading_style="ATX")
+                content = html_to_markdown(html_content, source_type=source_type)
             else:
                 self._logger.warning(
                     "Source %s (type=%s) has no HTML rendition for output_format='markdown'; "
@@ -136,7 +147,11 @@ class SourceContentRenderer:
 
         return SourceFulltext(
             source_id=source_id,
-            title=title,
+            # Same #1850 direct-PDF-URL title fallback as ``Source.from_row``,
+            # so ``source fulltext`` shows the basename too (not the raw URL).
+            # ``or title`` keeps the ``str`` type: the helper only ever returns
+            # the (str) input title or a derived stem, never ``None`` here.
+            title=_pdf_url_title_fallback(title, url, source_type) or title,
             content=content,
             _type_code=source_type,
             url=url,

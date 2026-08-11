@@ -240,9 +240,10 @@ async def test_cancel_upload_session_delegates_to_pipeline() -> None:
     # ``_cancel_upload_session`` awaits the pipeline without returning its
     # value (its public contract is ``-> None``), so assert on the recorded
     # call rather than the return value.
+    # No base-URL argument: the pipeline derives ``Origin``/``Referer`` from the
+    # *validated* upload URL, so there is nothing for this wrapper to forward.
     result = await api._cancel_upload_session(
         "https://upload.example/resumable",
-        "https://notebooklm.example",
         "0",
     )
 
@@ -250,7 +251,6 @@ async def test_cancel_upload_session_delegates_to_pipeline() -> None:
     args, kwargs = pipeline.calls["cancel_upload_session"]
     assert args == (
         "https://upload.example/resumable",
-        "https://notebooklm.example",
         "0",
     )
     assert "logger" in kwargs
@@ -338,12 +338,16 @@ def test_sources_upload_helpers_are_pure_delegators() -> None:
     # uploader-delegating helper would be silently skipped by the loop below.
     # ``__init__`` is excluded: it only *wires* the uploader (configuring the
     # shared lister/poller and source-limit lookup), it does not delegate an
-    # upload operation to it.
+    # upload operation to it. ``add_drive_file`` (#1884) is excluded too: it only
+    # reads the ``self._uploader.live_cookies`` seam to authenticate the Drive
+    # fetch — it does not re-implement or delegate a resumable-upload operation
+    # (its upload leg goes through the public ``self.add_file``, already covered).
+    _uploader_seam_only = {"__init__", "add_drive_file"}
     uploader_methods = {
         node.name
         for node in class_def.body
         if isinstance(node, func_types)
-        and node.name != "__init__"
+        and node.name not in _uploader_seam_only
         and "self._uploader" in ast.unparse(node)
     }
     assert uploader_methods == set(expected), (

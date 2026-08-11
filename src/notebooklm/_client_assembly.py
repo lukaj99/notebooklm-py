@@ -43,6 +43,7 @@ from ._artifacts import ArtifactsAPI
 from ._chat import ChatAPI
 from ._client_composed import ClientComposed
 from ._client_seams import resolve_client_seams
+from ._collections import CollectionsAPI
 from ._labels import LabelsAPI
 from ._mind_map import NoteBackedMindMapService
 from ._mind_maps_api import MindMapsAPI
@@ -51,6 +52,7 @@ from ._notebooks import NotebooksAPI
 from ._notes import NotesAPI
 from ._research import ResearchAPI
 from ._runtime.config import (
+    DEFAULT_CHAT_RESPONSE_MAX_BYTES,
     DEFAULT_CHAT_TIMEOUT,
     DEFAULT_CONNECT_TIMEOUT,
     DEFAULT_KEEPALIVE_MIN_INTERVAL,
@@ -106,6 +108,7 @@ def _assemble_client(
     cookie_saver: CookieSaver | None = None,
     cookie_rotator: CookieRotator | None = None,
     chat_timeout: float | None = DEFAULT_CHAT_TIMEOUT,
+    chat_response_max_bytes: int | None = DEFAULT_CHAT_RESPONSE_MAX_BYTES,
     # --- Production-default overrides (test factory only) -----------------
     # ``NotebookLMClient.__init__`` never passes these; the sentinels
     # resolve to the exact behavior the constructor had when this logic
@@ -170,10 +173,11 @@ def _assemble_client(
     # runs this exact function, so tests exercise the same code path as
     # production.
     client._auth = auth
-    # Per-client memo for ``get_account_email`` (a successful live probe runs at
-    # most once per process). Set here — not in ``__init__`` — so the factory-built
-    # shell has it too (test_client_factory_parity, incidents #1196/#1225).
+    # Per-client, route-keyed memo for ``get_account_email``. Set here — not in
+    # ``__init__`` — so the factory-built shell has it too
+    # (test_client_factory_parity, incidents #1196/#1225).
     client._account_email_cache = None
+    client._account_email_cache_route = None
 
     # Production default: the client's own ``refresh_auth`` bound method.
     # The test factory overrides this (typically with ``None`` or a fake)
@@ -228,6 +232,10 @@ def _assemble_client(
                 "saturation as opaque httpx.PoolTimeout instead of "
                 "clean back-pressure."
             )
+    if chat_response_max_bytes is not None and chat_response_max_bytes < 1:
+        raise ValueError(
+            f"chat_response_max_bytes must be >= 1 when supplied (got {chat_response_max_bytes!r})"
+        )
 
     # The client is the composition root: :func:`compose_client_internals`
     # binds composition state onto ``client._composed`` and returns only the
@@ -268,9 +276,9 @@ def _assemble_client(
         max_concurrent_uploads=max_concurrent_uploads,
         max_concurrent_rpcs=max_concurrent_rpcs,
         on_rpc_event=on_rpc_event,
-        # Injectable seams — pass-through to the lifecycle. ``None``
-        # (default) preserves the late-binding contract via
-        # ``_default_cookie_saver`` / ``_default_cookie_rotator``.
+        # Injectable seams — pass-through to the lifecycle. A ``None`` cookie
+        # saver selects the canonical typed store path; a ``None`` rotator
+        # preserves its historical late-bound default.
         cookie_saver=cookie_saver,
         cookie_rotator=cookie_rotator,
         async_client_factory=async_client_factory,
@@ -364,6 +372,7 @@ def _assemble_client(
         reqid=internals.collaborators.reqid,
         loop_guard=internals.collaborators.lifecycle,
         chat_timeout=chat_timeout,
+        chat_response_max_bytes=chat_response_max_bytes,
         notebooks=client.notebooks,
     )
     client.notes = NotesAPI(
@@ -388,3 +397,7 @@ def _assemble_client(
     # SourcesAPI) for the membership->Source join in ``labels.sources()``;
     # wired after ``client.sources`` exists. Same client/bound loop (ADR-0004).
     client.labels = LabelsAPI(internals.executor, list_sources=client.sources.list)
+    # Collections (account-level notebook groups). Takes a narrow ``list_notebooks``
+    # callable for the membership->Notebook join in ``collections.notebooks()``;
+    # wired after ``client.notebooks`` exists. Same client/bound loop (ADR-0004).
+    client.collections = CollectionsAPI(internals.executor, list_notebooks=client.notebooks.list)

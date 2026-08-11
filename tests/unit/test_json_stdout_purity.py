@@ -38,6 +38,7 @@ from notebooklm.rpc.types import ShareAccess, ShareViewLevel
 from notebooklm.types import (
     Artifact,
     AskResult,
+    Collection,
     Label,
     Note,
     Notebook,
@@ -161,6 +162,17 @@ def _stub_labels() -> list[Label]:
     ]
 
 
+def _stub_collections() -> list[Collection]:
+    return [
+        Collection(
+            id="col123def456ghi789jkl",
+            name="Research",
+            emoji="📁",
+            notebook_ids=["abc123def456ghi789jkl"],
+        ),
+    ]
+
+
 def _stub_share_status(notebook_id: str = "abc123def456ghi789jkl") -> ShareStatus:
     return ShareStatus(
         notebook_id=notebook_id,
@@ -192,6 +204,7 @@ def _make_client(extra_setup=None) -> MagicMock:
         "notes",
         "sharing",
         "labels",
+        "collections",
     ):
         setattr(client, ns, MagicMock())
 
@@ -256,6 +269,17 @@ def _make_client(extra_setup=None) -> MagicMock:
     client.labels.add_sources = AsyncMock(return_value=_stub_labels()[0])
     client.labels.remove_sources = AsyncMock(return_value=_stub_labels()[0])
     client.labels.delete = AsyncMock(return_value=None)
+
+    # collection group (account-level): list backs resolve_collection_id too; the
+    # CRUD verbs return a Collection (delete -> None); notebooks() expands to
+    # Notebook objects.
+    client.collections.list = AsyncMock(return_value=_stub_collections())
+    client.collections.notebooks = AsyncMock(return_value=_stub_notebooks())
+    client.collections.create = AsyncMock(return_value=_stub_collections()[0])
+    client.collections.rename = AsyncMock(return_value=_stub_collections()[0])
+    client.collections.add_notebooks = AsyncMock(return_value=_stub_collections()[0])
+    client.collections.remove_notebooks = AsyncMock(return_value=_stub_collections()[0])
+    client.collections.delete = AsyncMock(return_value=None)
 
     if extra_setup is not None:
         extra_setup(client)
@@ -603,6 +627,31 @@ JSON_COMMANDS: list[tuple[str, list[str], object]] = [
         ],
         None,
     ),
+    # collection group (account-level; no -n). list backs resolve_collection_id;
+    # CRUD verbs return a Collection (delete -> None); notebooks expands members.
+    ("collection_list", ["collection", "list", "--json"], None),
+    ("collection_notebooks", ["collection", "notebooks", "col123def456ghi789jkl", "--json"], None),
+    ("collection_create", ["collection", "create", "Research Q3", "--json"], None),
+    (
+        "collection_rename",
+        ["collection", "rename", "col123def456ghi789jkl", "Research Q4", "--json"],
+        None,
+    ),
+    (
+        "collection_add",
+        ["collection", "add", "col123def456ghi789jkl", "abc123def456ghi789jkl", "--json"],
+        None,
+    ),
+    (
+        "collection_remove",
+        ["collection", "remove", "col123def456ghi789jkl", "abc123def456ghi789jkl", "--json"],
+        None,
+    ),
+    (
+        "collection_delete",
+        ["collection", "delete", "col123def456ghi789jkl", "--yes", "--json"],
+        None,
+    ),
     # notebook group (top-level via session/notebook modules)
     ("notebook_list", ["list", "--json"], None),
     ("notebook_metadata", ["metadata", "-n", "abc123def456ghi789jkl", "--json"], None),
@@ -790,6 +839,12 @@ _SESSION_LOCAL_RATIONALE = (
     "tests/unit/cli/test_cli_session_local.py + test_auth_subcommands.py "
     "(incl. auth refresh --verify failure and the --browser-cookies refusal)."
 )
+_SKILL_PACKAGE_RATIONALE = (
+    "Local artifact build (no NotebookLMClient); the ``--json`` success "
+    "payload AND the OUTPUT_EXISTS / SKILL_SOURCE_MISSING / WRITE_FAILED "
+    "error envelopes are asserted directly in "
+    "tests/unit/cli/test_skill.py::TestSkillPackage."
+)
 
 
 JSON_SUCCESS_WAIVED: dict[tuple[str, ...], str] = {
@@ -802,6 +857,7 @@ JSON_SUCCESS_WAIVED: dict[tuple[str, ...], str] = {
     ("profile", "delete"): _PROFILE_RATIONALE,
     ("profile", "rename"): _PROFILE_RATIONALE,
     ("profile", "switch"): _PROFILE_RATIONALE,
+    ("skill", "package"): _SKILL_PACKAGE_RATIONALE,
     ("skill", "status"): _INTROSPECTION_RATIONALE,
     # artifact group — get/poll/wait need a real or fully-stubbed generation
     # status payload that round-trips through the artifact formatter chain.
@@ -866,6 +922,7 @@ JSON_SUCCESS_WAIVED: dict[tuple[str, ...], str] = {
     # mutations or wait-loops.
     ("source", "add"): _MUTATION_RATIONALE_SUCCESS,
     ("source", "add-drive"): _MUTATION_RATIONALE_SUCCESS,
+    ("source", "add-drive-file"): _MUTATION_RATIONALE_SUCCESS,
     ("source", "clean"): _MUTATION_RATIONALE_SUCCESS,
     ("source", "delete"): _MUTATION_RATIONALE_SUCCESS,
     ("source", "delete-by-title"): _MUTATION_RATIONALE_SUCCESS,
@@ -890,6 +947,7 @@ JSON_ERROR_WAIVED: dict[tuple[str, ...], str] = {
     ("profile", "delete"): _PROFILE_RATIONALE,
     ("profile", "rename"): _PROFILE_RATIONALE,
     ("profile", "switch"): _PROFILE_RATIONALE,
+    ("skill", "package"): _SKILL_PACKAGE_RATIONALE,
     ("skill", "status"): _INTROSPECTION_RATIONALE,
     # artifact group — error envelope is covered for list + wait. Remaining
     # entries are mutations that surface @with_client's UNEXPECTED_ERROR
@@ -952,6 +1010,7 @@ JSON_ERROR_WAIVED: dict[tuple[str, ...], str] = {
     # source group — list error is covered; remaining mutations + introspection.
     ("source", "add"): _MUTATION_RATIONALE_ERROR,
     ("source", "add-drive"): _MUTATION_RATIONALE_ERROR,
+    ("source", "add-drive-file"): _MUTATION_RATIONALE_ERROR,
     ("source", "clean"): _MUTATION_RATIONALE_ERROR,
     ("source", "delete"): _MUTATION_RATIONALE_ERROR,
     ("source", "delete-by-title"): _MUTATION_RATIONALE_ERROR,
@@ -964,6 +1023,15 @@ JSON_ERROR_WAIVED: dict[tuple[str, ...], str] = {
     ("source", "wait"): _MUTATION_RATIONALE_ERROR,
     # `use` context mutation — covered by session_characterization.
     ("use",): _MUTATION_RATIONALE_ERROR,
+    # collection group — success sweep is the primary contract (real entries in
+    # JSON_COMMANDS); error envelopes can grow incrementally like label/note/share.
+    ("collection", "list"): _INTROSPECTION_RATIONALE,
+    ("collection", "notebooks"): _INTROSPECTION_RATIONALE,
+    ("collection", "create"): _MUTATION_RATIONALE_ERROR,
+    ("collection", "rename"): _MUTATION_RATIONALE_ERROR,
+    ("collection", "add"): _MUTATION_RATIONALE_ERROR,
+    ("collection", "remove"): _MUTATION_RATIONALE_ERROR,
+    ("collection", "delete"): _MUTATION_RATIONALE_ERROR,
 }
 
 

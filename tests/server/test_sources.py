@@ -10,6 +10,10 @@ from notebooklm._types.notebooks import Notebook
 from notebooklm._types.sources import Source
 from notebooklm.rpc.types import SourceStatus
 from notebooklm.server._pagination import MAX_LIMIT
+from notebooklm.server.routes.sources import (
+    MAX_BATCH_URLS,
+    MAX_WAIT_SOURCE_IDS,
+)
 
 from .fakes import FakeClient
 
@@ -65,6 +69,41 @@ def test_upload_over_limit_is_413(authed_client: TestClient, monkeypatch: object
     files = {"file": ("big.bin", io.BytesIO(b"way too many bytes"), "application/octet-stream")}
     resp = authed_client.post("/v1/notebooks/nb-1/sources/file", files=files)
     assert resp.status_code == 413
+
+
+def test_unauthenticated_file_upload_rejected_before_mutation_limiter(
+    monkeypatch: object,
+) -> None:
+    from collections.abc import AsyncIterator
+    from contextlib import asynccontextmanager
+
+    import pytest
+
+    from notebooklm.server._limits import ServerLimiters
+    from notebooklm.server.app import create_app
+
+    assert isinstance(monkeypatch, pytest.MonkeyPatch)
+
+    @asynccontextmanager
+    async def _forbid_acquire(self: ServerLimiters, group: object) -> AsyncIterator[None]:
+        raise AssertionError(f"unauthenticated upload acquired {group} limiter")
+        yield
+
+    @asynccontextmanager
+    async def _factory() -> AsyncIterator[FakeClient]:
+        yield FakeClient()
+
+    monkeypatch.setattr(ServerLimiters, "acquire", _forbid_acquire)
+    app = create_app(client_factory=_factory)
+    with TestClient(app, client=("127.0.0.1", 5555), raise_server_exceptions=False) as client:
+        resp = client.post(
+            "/v1/notebooks/nb-1/sources/file",
+            headers={"Host": "127.0.0.1"},
+            files={"file": ("doc.txt", io.BytesIO(b"file-bytes"), "text/plain")},
+        )
+
+    assert resp.status_code == 401
+    assert resp.json()["error"]["category"] == "auth"
 
 
 def test_poll_known_source_returns_200_pending_then_ready(
@@ -399,20 +438,38 @@ def test_add_drive_source(authed_client: TestClient, fake_client: FakeClient) ->
     assert mime == "application/vnd.google-apps.document"
 
 
-def test_add_drive_default_mime(authed_client: TestClient, fake_client: FakeClient) -> None:
+def test_add_drive_missing_mime_is_422(authed_client: TestClient, fake_client: FakeClient) -> None:
+    """``mime_type`` is required — an omitted value is rejected (422) with no add
+    RPC, so no error source stub is left behind (#1827)."""
     resp = authed_client.post("/v1/notebooks/nb-1/sources/drive", json={"document_id": "doc-1"})
+    assert resp.status_code == 422
+    assert fake_client.added_drive == []
+
+
+def test_add_drive_pdf_kind_not_spreadsheet(
+    authed_client: TestClient, fake_client: FakeClient
+) -> None:
+    """A Drive PDF add surfaces as ``kind='pdf'``, not ``google_spreadsheet`` (#1828)."""
+    resp = authed_client.post(
+        "/v1/notebooks/nb-1/sources/drive",
+        json={"document_id": "doc-pdf", "title": "Report.pdf", "mime_type": "pdf"},
+    )
     assert resp.status_code == 201
-    # Default choice ``google-doc`` → Google Docs MIME.
-    assert fake_client.added_drive[0][3] == "application/vnd.google-apps.document"
+    assert resp.json()["kind"] == "pdf"
 
 
 def test_add_drive_bad_mime_is_422(authed_client: TestClient) -> None:
-    # mime_type is a Literal → rejected at the schema boundary.
+    # mime_type is a Literal → rejected at the schema boundary. A before-validator
+    # enriches the 422 with the file-upload hint (Google-native + PDF only).
     resp = authed_client.post(
         "/v1/notebooks/nb-1/sources/drive",
         json={"document_id": "doc-1", "mime_type": "bogus"},
     )
     assert resp.status_code == 422
+    body = resp.text.lower()
+    assert "not importable via drive" in body
+    assert "download" in body
+    assert "file" in body
 
 
 # --- Phase 4: batch URL add --------------------------------------------------
@@ -562,6 +619,50 @@ def test_add_batch_mid_item_rate_limit_is_top_level_429(
     assert "results" not in resp.json()
 
 
+def test_add_batch_mid_item_source_add_error_isolates_not_aborts(
+    authed_client: TestClient, fake_client: FakeClient, monkeypatch: object
+) -> None:
+    # A per-URL SourceAddError (bad domain) is a 4xx INPUT failure specific to the
+    # one URL — it must isolate as a per-item source_add error (422 partition) while
+    # the rest of the batch proceeds, NOT abort with a misleading top-level 5xx
+    # (regression for #1905; the same shared classifier the MCP tool uses).
+    import pytest
+
+    from notebooklm.exceptions import SourceAddError
+
+    assert isinstance(monkeypatch, pytest.MonkeyPatch)
+    _seed_notebook(fake_client)
+
+    real_add_url = fake_client.sources.add_url
+
+    async def _maybe_bad(notebook_id: str, url: str) -> object:
+        if "bad-domain" in url:
+            raise SourceAddError(url)
+        return await real_add_url(notebook_id, url)
+
+    monkeypatch.setattr(fake_client.sources, "add_url", _maybe_bad)
+    resp = authed_client.post(
+        "/v1/notebooks/nb-1/sources/batch",
+        json={
+            "urls": [
+                "https://good-a.example.com",
+                "https://bad-domain.example.com",
+                "https://good-b.example.com",
+            ]
+        },
+    )
+    # Isolated, not aborted: a 201 batch envelope with per-item results.
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["status"] == "added"
+    assert body["added"] == 2
+    assert body["failed"] == 1
+    assert [item["status"] for item in body["results"]] == ["added", "error", "added"]
+    err = body["results"][1]["error"]
+    assert err["category"] == "source_add"
+    assert err["retriable"] is False
+
+
 def test_add_batch_per_item_error_is_redacted(
     authed_client: TestClient, fake_client: FakeClient, monkeypatch: object
 ) -> None:
@@ -595,6 +696,16 @@ def test_add_batch_empty_is_400(authed_client: TestClient) -> None:
     assert resp.status_code == 400
 
 
+def test_add_batch_over_limit_is_422(authed_client: TestClient, fake_client: FakeClient) -> None:
+    _seed_notebook(fake_client)
+    urls = [f"https://{i}.example.com" for i in range(MAX_BATCH_URLS + 1)]
+
+    resp = authed_client.post("/v1/notebooks/nb-1/sources/batch", json={"urls": urls})
+
+    assert resp.status_code == 422
+    assert not fake_client.sources_store.get("nb-1")
+
+
 # --- Phase 4: source_wait ----------------------------------------------------
 
 
@@ -609,6 +720,65 @@ def test_wait_specific_source_ready(authed_client: TestClient, fake_client: Fake
     assert len(body["ready"]) == 1
     assert body["ready"][0]["status_label"] == "ready"
     assert body["timed_out"] == [] and body["failed"] == [] and body["not_found"] == []
+    # Explicit counts mirror the MCP aggregate (#1822): additive, total folds all four.
+    assert body["ready_count"] == 1
+    assert body["timed_out_count"] == body["failed_count"] == body["not_found_count"] == 0
+    assert body["total_count"] == 1
+
+
+def test_wait_explicit_source_ids_over_max_is_validation_error(
+    authed_client: TestClient, fake_client: FakeClient
+) -> None:
+    source_ids = [f"src-{i}" for i in range(MAX_WAIT_SOURCE_IDS + 1)]
+    resp = authed_client.post("/v1/notebooks/nb-1/sources/wait", json={"source_ids": source_ids})
+    assert resp.status_code == 422
+    assert resp.json()["error"]["category"] == "validation"
+    assert fake_client.wait_calls == []
+
+
+def test_wait_duplicate_source_ids_are_deduped(
+    authed_client: TestClient, fake_client: FakeClient
+) -> None:
+    _seed_source(fake_client, "nb-1", "src-1")
+    resp = authed_client.post(
+        "/v1/notebooks/nb-1/sources/wait",
+        json={"source_ids": ["src-1", "src-1", "src-1"], "timeout": 1.0},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert [source["id"] for source in body["ready"]] == ["src-1"]
+    assert fake_client.wait_calls == ["src-1"]
+
+
+def test_wait_all_sources_over_max_is_validation_error(
+    authed_client: TestClient, fake_client: FakeClient
+) -> None:
+    for i in range(MAX_WAIT_SOURCE_IDS + 1):
+        _seed_source(fake_client, "nb-1", f"src-{i}")
+    resp = authed_client.post("/v1/notebooks/nb-1/sources/wait", json={"timeout": 1.0})
+    assert resp.status_code == 400
+    assert resp.json()["error"]["category"] == "validation"
+    assert fake_client.wait_calls == []
+
+
+def test_wait_all_sources_resolves_every_id_in_one_request(
+    authed_client: TestClient, fake_client: FakeClient
+) -> None:
+    """The multi-source wait resolves every requested id through the single
+    snapshot loop (#1870) — every id is waited on and reported ready."""
+    source_ids = [f"src-{i}" for i in range(12)]
+    for source_id in source_ids:
+        _seed_source(fake_client, "nb-1", source_id)
+
+    resp = authed_client.post(
+        "/v1/notebooks/nb-1/sources/wait",
+        json={"source_ids": source_ids, "timeout": 1.0},
+    )
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert {source["id"] for source in body["ready"]} == set(source_ids)
+    assert set(fake_client.wait_calls) == set(source_ids)
 
 
 def test_wait_all_sources_partial(authed_client: TestClient, fake_client: FakeClient) -> None:
@@ -626,6 +796,11 @@ def test_wait_all_sources_partial(authed_client: TestClient, fake_client: FakeCl
     assert ready_ids == {"src-ok"}
     assert body["timed_out"][0]["source_id"] == "src-slow"
     assert body["failed"][0]["source_id"] == "src-bad"
+    assert body["ready_count"] == 1
+    assert body["timed_out_count"] == 1
+    assert body["failed_count"] == 1
+    assert body["not_found_count"] == 0
+    assert body["total_count"] == 3
 
 
 def test_wait_not_found_bucket(authed_client: TestClient, fake_client: FakeClient) -> None:

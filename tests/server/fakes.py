@@ -13,12 +13,13 @@ record the calls each namespace received.
 
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone
 from typing import Any
 
 from notebooklm._types.artifacts import Artifact, GenerationState, GenerationStatus
 from notebooklm._types.chat import AskResult, ChatSettings
-from notebooklm._types.common import AccountLimits
+from notebooklm._types.common import AccountLimits, UserSettings
 from notebooklm._types.notebooks import Notebook, PromptSuggestion
 from notebooklm._types.notes import Note
 from notebooklm._types.research import (
@@ -167,18 +168,59 @@ class FakeSources:
     async def wait_until_ready(
         self, notebook_id: str, source_id: str, *, timeout: float, initial_interval: float
     ) -> Source:
-        # Scriptable per-source outcome; default "ready".
-        outcome = self._s.wait_outcomes.get(source_id, "ready")
-        if outcome == "timeout":
-            raise SourceTimeoutError(source_id, timeout)
-        if outcome == "processing":
-            raise SourceProcessingError(source_id)
-        if outcome == "not_found":
-            raise SourceNotFoundError(source_id)
-        src = self._s.sources_store.get(notebook_id, {}).get(source_id)
-        title = src.title if src is not None else "src"
-        url = src.url if src is not None else None
-        return Source(id=source_id, title=title, url=url, status=SourceStatus.READY)
+        self._s.wait_calls.append(source_id)
+        self._s.wait_active += 1
+        self._s.wait_max_active = max(self._s.wait_max_active, self._s.wait_active)
+        try:
+            if self._s.wait_delay:
+                await asyncio.sleep(self._s.wait_delay)
+            # Scriptable per-source outcome; default "ready".
+            outcome = self._s.wait_outcomes.get(source_id, "ready")
+            if outcome == "timeout":
+                raise SourceTimeoutError(source_id, timeout)
+            if outcome == "processing":
+                raise SourceProcessingError(source_id)
+            if outcome == "not_found":
+                raise SourceNotFoundError(source_id)
+            src = self._s.sources_store.get(notebook_id, {}).get(source_id)
+            title = src.title if src is not None else "src"
+            url = src.url if src is not None else None
+            return Source(id=source_id, title=title, url=url, status=SourceStatus.READY)
+        finally:
+            self._s.wait_active -= 1
+
+    async def wait_all_until_ready(
+        self,
+        notebook_id: str,
+        source_ids: list[str],
+        *,
+        timeout: float = 120.0,
+        initial_interval: float = 1.0,
+        **kwargs: Any,  # max_interval/backoff_factor/transient_error_types — signature parity
+    ) -> list[Source | SourceNotFoundError | SourceProcessingError | SourceTimeoutError]:
+        # Single-snapshot multi-source wait (#1870): one result per id, in input
+        # order, with terminal failures RETURNED (not raised) — mirrors the real
+        # ``client.sources.wait_all_until_ready``.
+        results: list[
+            Source | SourceNotFoundError | SourceProcessingError | SourceTimeoutError
+        ] = []
+        for source_id in source_ids:
+            self._s.wait_calls.append(source_id)
+            outcome = self._s.wait_outcomes.get(source_id, "ready")
+            if outcome == "timeout":
+                results.append(SourceTimeoutError(source_id, timeout))
+            elif outcome == "processing":
+                results.append(SourceProcessingError(source_id))
+            elif outcome == "not_found":
+                results.append(SourceNotFoundError(source_id))
+            else:
+                src = self._s.sources_store.get(notebook_id, {}).get(source_id)
+                title = src.title if src is not None else "src"
+                url = src.url if src is not None else None
+                results.append(
+                    Source(id=source_id, title=title, url=url, status=SourceStatus.READY)
+                )
+        return results
 
     async def delete(self, notebook_id: str, source_id: str) -> None:
         self._s.sources_store.get(notebook_id, {}).pop(source_id, None)
@@ -565,6 +607,12 @@ class FakeSettings:
     async def get_output_language(self) -> str | None:
         return self._s.output_language
 
+    async def get_user_settings(self) -> UserSettings:
+        return UserSettings(
+            limits=self._s.account_limits,
+            output_language=self._s.output_language,
+        )
+
 
 class FakeClient:
     """Scriptable in-memory client mirroring the namespaces the routes use."""
@@ -589,6 +637,10 @@ class FakeClient:
         self.renamed_mind_maps: list[tuple[str, str, str, Any]] = []
         self.last_mind_map_generate: dict[str, Any] | None = None
         self.wait_outcomes: dict[str, str] = {}
+        self.wait_calls: list[str] = []
+        self.wait_delay = 0.0
+        self.wait_active = 0
+        self.wait_max_active = 0
         self.suggest_rows: list[PromptSuggestion] = [
             PromptSuggestion(title="Q1", prompt="Ask about X"),
             PromptSuggestion(title="Q2", prompt="Ask about Y"),
@@ -604,7 +656,7 @@ class FakeClient:
         # server_info(include_account=True) surface.
         self.account_email: str | None = "user@example.com"
         self.account_authuser: int = 0
-        self.account_limits = AccountLimits(notebook_limit=100, source_limit=50)
+        self.account_limits = AccountLimits(notebook_limit=100, source_limit=50, tier=1)
         self.output_language: str | None = "en"
 
         self.new_source_status: SourceStatus = SourceStatus.PROCESSING

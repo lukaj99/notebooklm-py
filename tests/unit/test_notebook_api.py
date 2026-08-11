@@ -7,6 +7,12 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from notebooklm._notebook_payloads import (
+    build_create_notebook_params as canonical_build_create_notebook_params,
+)
+from notebooklm._notebook_payloads import (
+    build_get_notebook_params as canonical_build_get_notebook_params,
+)
 from notebooklm._notebooks import (
     NotebooksAPI,
     build_create_notebook_params,
@@ -70,7 +76,7 @@ def _create_invalid_argument_error(
     *, method_id: str = RPCMethod.CREATE_NOTEBOOK.value, rpc_code: int = 3
 ) -> RPCError:
     return RPCError(
-        "RPC CCqFvf returned null result with status code 3 (Invalid argument).",
+        "The server rejected this request (invalid argument).",
         method_id=method_id,
         rpc_code=rpc_code,
     )
@@ -98,6 +104,11 @@ def test_build_get_notebook_params_matches_live_payload() -> None:
         None,
         0,
     ]
+
+
+def test_notebook_payload_builders_keep_their_compatibility_import_path() -> None:
+    assert build_create_notebook_params is canonical_build_create_notebook_params
+    assert build_get_notebook_params is canonical_build_get_notebook_params
 
 
 def test_direct_notebooks_api_construction_remains_supported() -> None:
@@ -295,7 +306,7 @@ def test_get_share_url_remains_sync_url_formatter(monkeypatch: pytest.MonkeyPatc
     url = api.get_share_url("nb_123", artifact_id="art_456")
 
     assert isinstance(url, str)
-    assert url == "https://notebooklm.google.com/notebook/nb_123?artifactId=art_456"
+    assert url == "https://notebook.google.com/notebook/nb_123?artifactId=art_456"
 
 
 def _set_account_limit(api: NotebooksAPI, limit: int | None) -> AsyncMock:
@@ -530,6 +541,7 @@ class TestCreateNotebookQuotaDetection:
             notebook_limit=500,
             source_limit=300,
             raw_limits=(6, 500, 300, 500000, 2),
+            tier=2,
         )
         api._rpc.rpc_call.assert_awaited_once_with(
             RPCMethod.GET_USER_SETTINGS,

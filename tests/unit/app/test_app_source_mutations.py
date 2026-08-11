@@ -26,6 +26,7 @@ import pytest
 
 from notebooklm._app.resolve import resolve_ref
 from notebooklm._app.source_mutations import (
+    SourceAddDriveFilePlan,
     SourceAddDrivePlan,
     SourceDeleteByTitlePlan,
     SourceDeletePlan,
@@ -34,6 +35,7 @@ from notebooklm._app.source_mutations import (
     SourceRenamePlan,
     build_id_ambiguity_error,
     execute_source_add_drive,
+    execute_source_add_drive_file,
     execute_source_delete,
     execute_source_delete_by_title,
     execute_source_refresh,
@@ -44,7 +46,7 @@ from notebooklm._app.source_mutations import (
     resolve_source_for_delete,
 )
 from notebooklm.exceptions import NotebookLMError, ValidationError
-from notebooklm.types import DriveMimeType, Source
+from notebooklm.types import DriveMimeType, Source, SourceType
 
 _FULL_UUID = "11111111-2222-3333-4444-555555555555"
 
@@ -410,15 +412,17 @@ async def test_refresh_resolves_then_refreshes() -> None:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("choice", "expected_mime"),
+    ("choice", "expected_mime", "expected_kind"),
     [
-        ("google-doc", DriveMimeType.GOOGLE_DOC.value),
-        ("google-slides", DriveMimeType.GOOGLE_SLIDES.value),
-        ("google-sheets", DriveMimeType.GOOGLE_SHEETS.value),
-        ("pdf", DriveMimeType.PDF.value),
+        ("google-doc", DriveMimeType.GOOGLE_DOC.value, SourceType.GOOGLE_DOCS),
+        ("google-slides", DriveMimeType.GOOGLE_SLIDES.value, SourceType.GOOGLE_SLIDES),
+        ("google-sheets", DriveMimeType.GOOGLE_SHEETS.value, SourceType.GOOGLE_SPREADSHEET),
+        ("pdf", DriveMimeType.PDF.value, SourceType.PDF),
     ],
 )
-async def test_add_drive_maps_mime(choice: str, expected_mime: str) -> None:
+async def test_add_drive_maps_mime(
+    choice: str, expected_mime: str, expected_kind: SourceType
+) -> None:
     client = _client()
     added = Source(id="src_drive", title="Drive Doc")
     client.sources.add_drive = AsyncMock(return_value=added)
@@ -432,7 +436,57 @@ async def test_add_drive_maps_mime(choice: str, expected_mime: str) -> None:
     assert result.source is added
     assert result.file_id == "fid"
     assert result.mime_type == choice
+    # The declared mime stamps the source's kind (#1828).
+    assert result.source.kind == expected_kind
     client.sources.add_drive.assert_awaited_once_with("nb_1", "fid", "Drive Doc", expected_mime)
+
+
+def test_drive_mime_maps_have_matching_keys() -> None:
+    """The two Drive-mime dicts are both keyed by ``DriveMimeChoice`` and indexed on
+    the same add path: validation checks ``_DRIVE_MIME_MAP`` but the type-code stamp
+    indexes ``_DRIVE_MIME_SOURCE_TYPE``. If a future choice is added to one but not the
+    other, a validated add would raise ``KeyError`` (→ UNEXPECTED) instead of the clean
+    ``VALIDATION`` the code promises. Guard their key sets together (a module-level
+    ``assert`` would be stripped under ``python -O``)."""
+    from notebooklm._app.source_mutations import _DRIVE_MIME_MAP, _DRIVE_MIME_SOURCE_TYPE
+
+    assert _DRIVE_MIME_MAP.keys() == _DRIVE_MIME_SOURCE_TYPE.keys()
+
+
+def test_source_type_to_code_matches_decoder_map() -> None:
+    """``_SOURCE_TYPE_TO_CODE`` is pinned by hand (the ``_app`` boundary forbids
+    importing the private decoder map to invert it), so guard it against drift: each
+    (SourceType → code) entry must round-trip through the canonical decoder map."""
+    from notebooklm._app.source_mutations import _SOURCE_TYPE_TO_CODE
+    from notebooklm._types.sources import _SOURCE_TYPE_CODE_MAP
+
+    for source_type, code in _SOURCE_TYPE_TO_CODE.items():
+        assert _SOURCE_TYPE_CODE_MAP[code] == source_type
+
+
+@pytest.mark.asyncio
+async def test_add_drive_pdf_not_mislabeled_as_spreadsheet() -> None:
+    """A Drive PDF add must not surface as ``kind='google_spreadsheet'`` (#1828).
+
+    The NotebookLM backend returns an ambiguous type code for Drive-hosted PDFs —
+    code ``14``, which the client otherwise maps to GOOGLE_SPREADSHEET. The declared
+    ``mime_type='pdf'`` is authoritative, so ``execute_source_add_drive`` re-stamps
+    the returned source's type code to PDF.
+    """
+    client = _client()
+    # Simulate the backend's ambiguous code (14 → GOOGLE_SPREADSHEET) on the raw add.
+    added = Source(id="src_pdf", title="Report.pdf", _type_code=14)
+    assert added.kind is SourceType.GOOGLE_SPREADSHEET  # the bug, pre-stamp
+    client.sources.add_drive = AsyncMock(return_value=added)
+    plan = SourceAddDrivePlan(
+        notebook_id="nb_1",
+        file_id="fid",
+        title="Report.pdf",
+        mime_type="pdf",
+    )
+    result = await execute_source_add_drive(client, plan)
+    assert result.source.kind == SourceType.PDF
+    assert result.source.kind != SourceType.GOOGLE_SPREADSHEET
 
 
 @pytest.mark.asyncio
@@ -452,6 +506,51 @@ async def test_add_drive_bad_mime_raises_validation_error() -> None:
     )
     with pytest.raises(ValidationError) as excinfo:
         await execute_source_add_drive(client, plan)
+    msg = str(excinfo.value)
     # The message lists the valid keys so the caller can self-correct.
-    assert "google-doc" in str(excinfo.value)
+    assert "google-doc" in msg
+    # ...and steers upload-only Drive files (e.g. epub) to the `file` source path.
+    assert "file" in msg
+    assert "download" in msg.lower()
+    client.sources.add_drive.assert_not_called()
+
+
+# ===========================================================================
+# execute_source_add_drive_file — thin delegate to the public client (#1884)
+# ===========================================================================
+
+
+@pytest.mark.asyncio
+async def test_add_drive_file_delegates_to_public_client() -> None:
+    """The executor forwards to ``client.sources.add_drive_file`` and echoes the id."""
+    client = _client()
+    added = Source(id="src_epub", title="Book.epub")
+    client.sources.add_drive_file = AsyncMock(return_value=added)
+    plan = SourceAddDriveFilePlan(
+        notebook_id="nb_1",
+        document_id="1W20RJpJUD2JqXSEiM9Il48_fsdOtZ5fD",
+        title="Book",
+        wait=True,
+        wait_timeout=90.0,
+    )
+    result = await execute_source_add_drive_file(client, plan)
+    assert result.source is added
+    assert result.notebook_id == "nb_1"
+    assert result.document_id == "1W20RJpJUD2JqXSEiM9Il48_fsdOtZ5fD"
+    client.sources.add_drive_file.assert_awaited_once_with(
+        "nb_1",
+        "1W20RJpJUD2JqXSEiM9Il48_fsdOtZ5fD",
+        title="Book",
+        wait=True,
+        wait_timeout=90.0,
+    )
+
+
+@pytest.mark.asyncio
+async def test_add_drive_file_uses_only_the_public_surface() -> None:
+    """The executor never touches the native ``add_drive`` RPC (auto-route ≠ native)."""
+    client = _client()
+    client.sources.add_drive_file = AsyncMock(return_value=Source(id="s", title="t"))
+    plan = SourceAddDriveFilePlan(notebook_id="nb_1", document_id="a" * 33)
+    await execute_source_add_drive_file(client, plan)
     client.sources.add_drive.assert_not_called()

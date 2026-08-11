@@ -3,7 +3,9 @@
   <img src="https://raw.githubusercontent.com/teng-lin/notebooklm-py/main/notebooklm-py.png" alt="notebooklm-py logo" width="128">
 </p>
 
-**A Comprehensive NotebookLM Skill & Unofficial Python API.** Full programmatic access to NotebookLM's features—including capabilities the web UI doesn't expose—via Python, CLI, and AI agents like Claude Code, Codex, and OpenClaw.
+**A Comprehensive Google Gemini Notebook Skill & Unofficial Python API.** Full programmatic access to NotebookLM's features—including capabilities the web UI doesn't expose—via Python, CLI, and AI agents like Claude Code, Codex, and OpenClaw.
+
+> **Note (July 2026):** Google rebranded **NotebookLM** to **[Gemini Notebook](https://blog.google/innovation-and-ai/products/gemini-notebook/notebooklm-gemini-notebook/)**. It remains the same standalone product (now also reachable inside the Gemini app), existing links redirect automatically, and this library drives the same underlying service and works unchanged. The package keeps the `notebooklm-py` name.
 
 [![PyPI version](https://img.shields.io/pypi/v/notebooklm-py.svg)](https://pypi.org/project/notebooklm-py/)
 [![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)](https://pypi.org/project/notebooklm-py/)
@@ -222,7 +224,7 @@ notebooklm generate mind-map                       # interactive studio map (def
 notebooklm generate data-table "compare key concepts"
 
 # 5. Download artifacts
-notebooklm download audio ./podcast.mp3
+notebooklm download audio ./podcast.m4a
 notebooklm download video ./overview.mp4
 notebooklm download cinematic-video ./documentary.mp4
 notebooklm download quiz --format markdown ./quiz.md
@@ -272,7 +274,7 @@ async def main():
         # Generate content (podcast, video, quiz, etc.)
         status = await client.artifacts.generate_audio(nb.id, instructions="make it fun")
         await client.artifacts.wait_for_completion(nb.id, status.task_id)
-        await client.artifacts.download_audio(nb.id, "podcast.mp3")
+        await client.artifacts.download_audio(nb.id, "podcast.m4a")
 
         # Generate quiz and download as JSON
         status = await client.artifacts.generate_quiz(nb.id)
@@ -295,6 +297,7 @@ asyncio.run(main())
 - **[MCP Guide](docs/mcp-guide.md)** - MCP server setup, transports, and tool reference
 - **[REST API Server](docs/installation.md#rest-api-server)** - Experimental localhost FastAPI server
 - **[Configuration](docs/configuration.md)** - Storage and settings
+- **[Quota & Tier Limits](docs/quota-limits.md)** - Per-tier notebook/source/studio limits and how they map to `AccountLimits.tier`
 - **[Release Guide](docs/releasing.md)** - Release checklist and packaging verification
 - **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
 - **[API Stability](docs/stability.md)** - Versioning policy and stability guarantees
@@ -308,10 +311,6 @@ asyncio.run(main())
 - **[RPC Reference](docs/rpc-reference.md)** - Payload structures
 - **[Changelog](CHANGELOG.md)** - Version history and release notes
 - **[Security](SECURITY.md)** - Security policy and credential handling
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/image?repos=teng-lin/notebooklm-py&type=timeline&legend=top-left)](https://www.star-history.com/?repos=teng-lin%2Fnotebooklm-py&type=timeline&legend=top-left)
 
 ## License
 

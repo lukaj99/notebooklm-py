@@ -18,7 +18,15 @@ import pytest
 # Skip cleanly when the `mcp` extra (fastmcp) is absent; see conftest.py.
 pytest.importorskip("fastmcp")
 
+from fastmcp import Client  # noqa: E402 - after importorskip guard
 from fastmcp.exceptions import ToolError  # noqa: E402 - after importorskip guard
+
+from notebooklm import ResearchStartUnavailableError  # noqa: E402 - after importorskip guard
+from notebooklm.types import (  # noqa: E402 - after importorskip guard
+    ResearchSource,
+    ResearchStatus,
+    ResearchTask,
+)
 
 from .conftest import AsyncMock  # noqa: E402 - after importorskip guard
 
@@ -66,6 +74,40 @@ class FakeResearchTask:
     summary: str = ""
     report: str = ""
     task_id: str = TASK_ID
+    status_code: int | None = None
+    source_type: int | None = None
+
+    # Delegate the #1964 derivations to a REAL ``ResearchTask`` rather than
+    # restating them here, so this fake cannot drift from the shipped
+    # reason/message/hint logic the tool depends on. Delegation (not
+    # class-attribute aliasing of each property) keeps working when the real
+    # model grows an internal helper the derivations call.
+    @property
+    def _derived(self) -> ResearchTask:
+        """Real model carrying exactly the inputs the derivations read."""
+        return ResearchTask(
+            task_id=self.task_id,
+            # Not read by any derived property, but a real value keeps the
+            # model valid if that ever changes.
+            status=ResearchStatus.FAILED,
+            query=self.query,
+            # Only emptiness matters (the code-3-with-sources guard).
+            sources=tuple(ResearchSource(url=s.url, title=s.title) for s in self.sources),
+            status_code=self.status_code,
+            source_type=self.source_type,
+        )
+
+    @property
+    def termination_reason(self) -> Any:
+        return self._derived.termination_reason
+
+    @property
+    def reason_message(self) -> str | None:
+        return self._derived.reason_message
+
+    @property
+    def hint(self) -> str | None:
+        return self._derived.hint
 
     def to_public_dict(self) -> dict[str, Any]:
         return {
@@ -89,7 +131,7 @@ class FakeNotebook:
 async def test_research_start(mcp_call, mock_client) -> None:
     mock_client.research.start = AsyncMock(return_value=FakeResearchStart(task_id=TASK_ID))
     result = await mcp_call("research_start", {"notebook": NB_ID, "query": "quantum computing"})
-    assert result.structured_content["task_id"] == TASK_ID
+    assert result.structured_content["poll_task_id"] == TASK_ID
     mock_client.research.start.assert_awaited_once_with(NB_ID, "quantum computing", "web", "fast")
 
 
@@ -120,7 +162,7 @@ async def test_research_start_resolves_notebook_by_name(mcp_call, mock_client) -
     )
     mock_client.research.start = AsyncMock(return_value=FakeResearchStart(task_id=TASK_ID))
     result = await mcp_call("research_start", {"notebook": "My Notebook", "query": "q"})
-    assert result.structured_content["task_id"] == TASK_ID
+    assert result.structured_content["poll_task_id"] == TASK_ID
     mock_client.research.start.assert_awaited_once_with(NB_ID, "q", "web", "fast")
 
 
@@ -132,9 +174,9 @@ async def test_research_start_surfaces_poll_task_id_fast(mcp_call, mock_client) 
     result = await mcp_call("research_start", {"notebook": NB_ID, "query": "q"})
     sc = result.structured_content
     assert sc["poll_task_id"] == TASK_ID
-    # The raw start fields are still present (purely additive).
-    assert sc["task_id"] == TASK_ID
-    assert sc["report_id"] is None
+    # #1909: the raw internal ids are dropped — poll_task_id is the only id field.
+    assert "task_id" not in sc
+    assert "report_id" not in sc
 
 
 async def test_research_start_poll_task_id_prefers_report_id_deep(mcp_call, mock_client) -> None:
@@ -173,6 +215,32 @@ async def test_research_start_deep_without_report_id_rejected(mcp_call, mock_cli
     assert "VALIDATION" in msg
     # The raw session id is surfaced for traceability (the run started server-side).
     assert "session-x" in msg
+
+
+async def test_research_start_deep_unavailable_does_not_leak_rpc_method_id(
+    mcp_call, mock_client
+) -> None:
+    """#1849: MCP must not expose the deep RPC method id as a fake pollable id."""
+    mock_client.research.start = AsyncMock(
+        side_effect=ResearchStartUnavailableError(
+            NB_ID,
+            "deep",
+            method_id="QA9ei",
+            found_ids=["QA9ei"],
+        )
+    )
+
+    with pytest.raises(ToolError) as excinfo:
+        await mcp_call(
+            "research_start", {"notebook": NB_ID, "query": "q", "source": "web", "mode": "deep"}
+        )
+
+    msg = str(excinfo.value)
+    assert "RPC:" in msg
+    assert "Deep research failed to start" in msg
+    assert "NotebookLM returned no research run" in msg
+    assert "QA9ei" not in msg
+    assert "Found IDs" not in msg
 
 
 # ---------------------------------------------------------------------------
@@ -372,7 +440,9 @@ async def test_research_import(mcp_call, mock_client) -> None:
             task_id=TASK_ID,
         )
     )
-    mock_client.research.import_sources = AsyncMock(return_value=[{"id": "src-1", "title": "A"}])
+    mock_client.research.import_sources_with_verification = AsyncMock(
+        return_value=[{"id": "src-1", "title": "A"}]
+    )
     result = await mcp_call("research_import", {"notebook": NB_ID, "poll_task_id": TASK_ID})
     assert result.structured_content["notebook_id"] == NB_ID
     assert result.structured_content["imported"] == [{"id": "src-1", "title": "A"}]
@@ -383,10 +453,162 @@ async def test_research_import(mcp_call, mock_client) -> None:
     # The requested id is threaded through ``poll`` as the discriminator so the
     # freshly-polled sources belong to that task (not the notebook's current task).
     mock_client.research.poll.assert_awaited_once_with(NB_ID, TASK_ID)
-    mock_client.research.import_sources.assert_awaited_once()
-    called = mock_client.research.import_sources.await_args.args
+    # #1920: the import routes through the timeout-tolerant verification variant
+    # (reconciles a committed partial import on timeout), not the naive one-shot.
+    mock_client.research.import_sources_with_verification.assert_awaited_once()
+    called = mock_client.research.import_sources_with_verification.await_args.args
     assert called[0] == NB_ID
     assert called[1] == TASK_ID
+
+
+async def test_research_import_reconciles_committed_partial_on_timeout(
+    mcp_call, mock_client
+) -> None:
+    """#1920 Part 1: routing through import_sources_with_verification means a
+    timeout that hid a committed import is reconciled (returned as imported), not
+    re-raised as if nothing landed. The MCP tool just delegates to the variant;
+    the reconciliation lives in (and is unit-tested at) the library layer, so
+    here we assert the tool returns whatever the verification variant resolved."""
+    mock_client.research.poll = AsyncMock(
+        return_value=FakeResearchTask(
+            status=FakeResearchStatus.COMPLETED,
+            sources=[FakeSource(url="http://a", title="A")],
+            task_id=TASK_ID,
+        )
+    )
+    # The verification variant reconciled a committed source after a timeout.
+    mock_client.research.import_sources_with_verification = AsyncMock(
+        return_value=[{"id": "committed-1", "title": "A"}]
+    )
+    # The naive one-shot path must NOT be used.
+    mock_client.research.import_sources = AsyncMock(return_value=[])
+    result = await mcp_call("research_import", {"notebook": NB_ID, "poll_task_id": TASK_ID})
+    assert result.structured_content["imported"] == [{"id": "committed-1", "title": "A"}]
+    mock_client.research.import_sources_with_verification.assert_awaited_once()
+    mock_client.research.import_sources.assert_not_called()
+
+
+async def test_research_import_max_sources_caps(mcp_call, mock_client) -> None:
+    """#1920 Part 2: max_sources bounds how many sources are imported."""
+    mock_client.research.poll = AsyncMock(
+        return_value=FakeResearchTask(
+            status=FakeResearchStatus.COMPLETED,
+            sources=[
+                FakeSource(url="http://a", title="A"),
+                FakeSource(url="http://b", title="B"),
+                FakeSource(url="http://c", title="C"),
+            ],
+            task_id=TASK_ID,
+        )
+    )
+    mock_client.research.import_sources_with_verification = AsyncMock(
+        return_value=[{"id": "src-1", "title": "A"}, {"id": "src-2", "title": "B"}]
+    )
+    result = await mcp_call(
+        "research_import", {"notebook": NB_ID, "poll_task_id": TASK_ID, "max_sources": 2}
+    )
+    # Only the first two sources are handed to the importer.
+    imported_sources = mock_client.research.import_sources_with_verification.await_args.args[2]
+    assert len(imported_sources) == 2
+    # ``sources_found`` stays the total the run discovered; ``sources_selected``
+    # is the post-cap count handed to the importer.
+    assert result.structured_content["sources_found"] == 3
+    assert result.structured_content["sources_selected"] == 2
+
+
+async def test_research_import_max_sources_rejects_zero(mcp_call, mock_client) -> None:
+    """max_sources < 1 is rejected up front (before any poll/import)."""
+    mock_client.research.poll = AsyncMock(return_value=FakeResearchTask())
+    mock_client.research.import_sources_with_verification = AsyncMock(return_value=[])
+    with pytest.raises(ToolError) as excinfo:
+        await mcp_call(
+            "research_import", {"notebook": NB_ID, "poll_task_id": TASK_ID, "max_sources": 0}
+        )
+    assert "VALIDATION" in str(excinfo.value)
+    mock_client.research.poll.assert_not_called()
+    mock_client.research.import_sources_with_verification.assert_not_called()
+
+
+async def test_research_import_cited_only_selects_cited(mcp_call, mock_client) -> None:
+    """#1920 Part 2: cited_only imports only sources the report cites."""
+    mock_client.research.poll = AsyncMock(
+        return_value=FakeResearchTask(
+            status=FakeResearchStatus.COMPLETED,
+            report="See [A](http://a) for details.",
+            sources=[
+                FakeSource(url="http://a", title="A"),
+                FakeSource(url="http://b", title="B"),
+            ],
+            task_id=TASK_ID,
+        )
+    )
+    mock_client.research.import_sources_with_verification = AsyncMock(
+        return_value=[{"id": "src-a", "title": "A"}]
+    )
+    result = await mcp_call(
+        "research_import", {"notebook": NB_ID, "poll_task_id": TASK_ID, "cited_only": True}
+    )
+    imported_sources = mock_client.research.import_sources_with_verification.await_args.args[2]
+    urls = {src["url"] for src in imported_sources}
+    assert urls == {"http://a"}
+    assert result.structured_content["sources_found"] == 2
+    assert result.structured_content["sources_selected"] == 1
+    assert "cited_only_fallback" not in result.structured_content
+
+
+async def test_research_import_cited_only_fallback_when_none_cited(mcp_call, mock_client) -> None:
+    """cited_only with an uncited report falls back to all sources and flags it."""
+    mock_client.research.poll = AsyncMock(
+        return_value=FakeResearchTask(
+            status=FakeResearchStatus.COMPLETED,
+            report="No links here.",
+            sources=[
+                FakeSource(url="http://a", title="A"),
+                FakeSource(url="http://b", title="B"),
+            ],
+            task_id=TASK_ID,
+        )
+    )
+    mock_client.research.import_sources_with_verification = AsyncMock(
+        return_value=[{"id": "src-a", "title": "A"}, {"id": "src-b", "title": "B"}]
+    )
+    result = await mcp_call(
+        "research_import", {"notebook": NB_ID, "poll_task_id": TASK_ID, "cited_only": True}
+    )
+    imported_sources = mock_client.research.import_sources_with_verification.await_args.args[2]
+    assert len(imported_sources) == 2
+    assert result.structured_content["sources_found"] == 2
+    assert result.structured_content["sources_selected"] == 2
+    assert result.structured_content["cited_only_fallback"] is True
+
+
+async def test_research_import_cited_only_then_max_sources_order(mcp_call, mock_client) -> None:
+    """cited_only applies first, then max_sources caps the cited subset (#1920)."""
+    mock_client.research.poll = AsyncMock(
+        return_value=FakeResearchTask(
+            status=FakeResearchStatus.COMPLETED,
+            report="See [A](http://a) and [B](http://b).",
+            sources=[
+                FakeSource(url="http://a", title="A"),
+                FakeSource(url="http://b", title="B"),
+                FakeSource(url="http://c", title="C"),
+            ],
+            task_id=TASK_ID,
+        )
+    )
+    mock_client.research.import_sources_with_verification = AsyncMock(
+        return_value=[{"id": "src-a", "title": "A"}]
+    )
+    result = await mcp_call(
+        "research_import",
+        {"notebook": NB_ID, "poll_task_id": TASK_ID, "cited_only": True, "max_sources": 1},
+    )
+    imported_sources = mock_client.research.import_sources_with_verification.await_args.args[2]
+    # cited_only narrows {a,b,c} → cited {a,b}; max_sources=1 then keeps the first
+    # cited source (a), never an uncited one (c).
+    assert [src["url"] for src in imported_sources] == ["http://a"]
+    assert result.structured_content["sources_found"] == 3
+    assert result.structured_content["sources_selected"] == 1
 
 
 async def test_research_import_empty_poll_task_id_rejected(mcp_call, mock_client) -> None:
@@ -514,11 +736,266 @@ async def test_research_cancel_empty_poll_task_id_rejected(mcp_call, mock_client
     mock_client.research.cancel.assert_not_called()
 
 
+# ---------------------------------------------------------------------------
+# F10 (#1922): research_status surfaces the raw backend status code
+# ---------------------------------------------------------------------------
+
+
+async def test_research_status_surfaces_status_code(mcp_call, mock_client) -> None:
+    """The raw ``task_info[4]`` code is surfaced so an agent can tell a
+    "no matches" failure sub-code from a genuine error (the coarse ``status``
+    flattens both to ``failed``)."""
+    mock_client.research.poll = AsyncMock(
+        return_value=FakeResearchTask(status=FakeResearchStatus.FAILED, status_code=7)
+    )
+    result = await mcp_call("research_status", {"notebook": NB_ID})
+    assert result.structured_content["status"] == "failed"
+    assert result.structured_content["status_code"] == 7
+
+
+async def test_research_status_status_code_none_when_absent(mcp_call, mock_client) -> None:
+    """A poll carrying no code surfaces ``status_code: None`` (not omitted)."""
+    mock_client.research.poll = AsyncMock(
+        return_value=FakeResearchTask(status=FakeResearchStatus.IN_PROGRESS)
+    )
+    result = await mcp_call("research_status", {"notebook": NB_ID})
+    assert result.structured_content["status_code"] is None
+
+
+# ---------------------------------------------------------------------------
+# #1964: an empty Drive search is differentiated from a genuine failure
+# ---------------------------------------------------------------------------
+
+
+async def test_research_status_empty_drive_search_reports_no_results(mcp_call, mock_client) -> None:
+    """The reported bug: a Drive run that matched nothing arrived as an
+    undifferentiated ``failed`` with no reason and no remediation."""
+    mock_client.research.poll = AsyncMock(
+        return_value=FakeResearchTask(
+            status=FakeResearchStatus.FAILED,
+            query="Example Document.md",
+            status_code=3,
+            source_type=2,
+        )
+    )
+    result = await mcp_call("research_status", {"notebook": NB_ID})
+    content = result.structured_content
+    assert content["status"] == "failed"
+    assert content["termination_reason"] == "no_results"
+    # Full-text, not substring: a substring still passes on a message that has
+    # gone ungrammatical or dropped the corpus name.
+    assert content["reason_message"] == (
+        "The search of Google Drive found no matches for 'Example Document.md'."
+    )
+    assert content["hint"] == (
+        "Try the exact Drive filename, the document URL, or add the "
+        "document directly by its document id."
+    )
+    # A query that found nothing is not a cancelled run.
+    assert "cancelled" not in content
+
+
+async def test_research_status_reason_distinguishes_cancel_from_no_results(
+    mcp_call, mock_client
+) -> None:
+    mock_client.research.poll = AsyncMock(
+        return_value=FakeResearchTask(
+            status=FakeResearchStatus.FAILED, query="q", status_code=4, source_type=1
+        )
+    )
+    result = await mcp_call("research_status", {"notebook": NB_ID})
+    assert result.structured_content["termination_reason"] == "cancelled"
+    # The wire code alone is enough to report the cancel — no prior
+    # ``research_cancel`` call was made in this process.
+    assert result.structured_content["cancelled"] is True
+
+
+async def test_research_status_unknown_terminal_code_is_not_guessed(mcp_call, mock_client) -> None:
+    """An uncaptured code must surface as ``unknown`` — never folded into
+    ``no_results``, which would tell an agent to rewrite a fine query."""
+    mock_client.research.poll = AsyncMock(
+        return_value=FakeResearchTask(status=FakeResearchStatus.FAILED, query="q", status_code=7)
+    )
+    content = (await mcp_call("research_status", {"notebook": NB_ID})).structured_content
+    assert content["termination_reason"] == "unknown"
+    assert content["status_code"] == 7
+    # Assert the UNKNOWN texts specifically — `is not None` passes on the Drive
+    # hint just as happily, which would hide a mis-routed reason.
+    assert content["reason_message"] == (
+        "The research run for 'q' reported an unrecognised backend status code (7)."
+    )
+    assert content["hint"] == (
+        "This client treats an unrecognised code as terminal — start a new run."
+    )
+    # An unnameable failure is not a cancel.
+    assert "cancelled" not in content
+
+
+async def test_research_status_success_omits_reason_message_and_hint(mcp_call, mock_client) -> None:
+    """A successful poll's payload is unchanged — the explanation keys appear
+    only when there is something to explain."""
+    mock_client.research.poll = AsyncMock(
+        return_value=FakeResearchTask(status=FakeResearchStatus.COMPLETED, status_code=2)
+    )
+    content = (await mcp_call("research_status", {"notebook": NB_ID})).structured_content
+    assert content["termination_reason"] == "completed"
+    assert "reason_message" not in content
+    assert "hint" not in content
+
+
+async def test_research_import_empty_drive_search_error_is_actionable(
+    mcp_call, mock_client
+) -> None:
+    """Importing a run that matched nothing must explain why rather than
+    telling the caller their run broke."""
+    mock_client.research.poll = AsyncMock(
+        return_value=FakeResearchTask(
+            status=FakeResearchStatus.FAILED,
+            query="Example Document.md",
+            status_code=3,
+            source_type=2,
+        )
+    )
+    with pytest.raises(ToolError) as excinfo:
+        await mcp_call("research_import", {"notebook": NB_ID, "poll_task_id": TASK_ID})
+    assert "no matches" in str(excinfo.value)
+
+
+# ---------------------------------------------------------------------------
+# F9 (#1922): a cancelled run's later ``failed`` poll is annotated ``cancelled``
+# ---------------------------------------------------------------------------
+
+
+async def test_research_cancel_then_failed_status_is_annotated_cancelled(
+    server_factory, mock_client
+) -> None:
+    """After a successful cancel, a later ``failed`` poll for that run is flagged
+    ``cancelled: true`` (cancel intent is tracked client-side; the backend
+    surfaces a cancelled run as a generic FAILED). Both tool calls share one
+    open client so they hit the same lifespan ``AppState``."""
+    server = server_factory()
+    mock_client.research.cancel = AsyncMock(return_value=None)
+    async with Client(server) as client:
+        mock_client.research.poll = AsyncMock(
+            return_value=FakeResearchTask(status=FakeResearchStatus.IN_PROGRESS, task_id=TASK_ID)
+        )
+        await client.call_tool("research_cancel", {"notebook": NB_ID, "poll_task_id": TASK_ID})
+
+        mock_client.research.poll = AsyncMock(
+            return_value=FakeResearchTask(status=FakeResearchStatus.FAILED, task_id=TASK_ID)
+        )
+        result = await client.call_tool(
+            "research_status", {"notebook": NB_ID, "poll_task_id": TASK_ID}
+        )
+    assert result.structured_content["status"] == "failed"
+    assert result.structured_content["cancelled"] is True
+
+
+async def test_research_cancel_then_failed_status_annotated_unfiltered_poll(
+    server_factory, mock_client
+) -> None:
+    """The annotation keys off the polled ``task_id`` too, so an unfiltered
+    ``research_status`` (no pin) after a cancel is still flagged."""
+    server = server_factory()
+    mock_client.research.cancel = AsyncMock(return_value=None)
+    async with Client(server) as client:
+        mock_client.research.poll = AsyncMock(
+            return_value=FakeResearchTask(status=FakeResearchStatus.IN_PROGRESS, task_id=TASK_ID)
+        )
+        await client.call_tool("research_cancel", {"notebook": NB_ID, "poll_task_id": TASK_ID})
+
+        mock_client.research.poll = AsyncMock(
+            return_value=FakeResearchTask(status=FakeResearchStatus.FAILED, task_id=TASK_ID)
+        )
+        result = await client.call_tool("research_status", {"notebook": NB_ID})
+    assert result.structured_content["cancelled"] is True
+
+
+async def test_research_cancel_intent_evicted_on_terminal_poll(server_factory, mock_client) -> None:
+    """The cancel intent is evicted once the run reaches a terminal poll, so the
+    tracker cannot grow without bound: the FIRST failed poll is annotated, a
+    SECOND poll of the same terminal run is no longer annotated (#1922, F9)."""
+    server = server_factory()
+    mock_client.research.cancel = AsyncMock(return_value=None)
+    async with Client(server) as client:
+        mock_client.research.poll = AsyncMock(
+            return_value=FakeResearchTask(status=FakeResearchStatus.IN_PROGRESS, task_id=TASK_ID)
+        )
+        await client.call_tool("research_cancel", {"notebook": NB_ID, "poll_task_id": TASK_ID})
+
+        mock_client.research.poll = AsyncMock(
+            return_value=FakeResearchTask(status=FakeResearchStatus.FAILED, task_id=TASK_ID)
+        )
+        first = await client.call_tool(
+            "research_status", {"notebook": NB_ID, "poll_task_id": TASK_ID}
+        )
+        second = await client.call_tool(
+            "research_status", {"notebook": NB_ID, "poll_task_id": TASK_ID}
+        )
+    assert first.structured_content["cancelled"] is True
+    assert "cancelled" not in second.structured_content
+
+
+async def test_research_status_failed_without_cancel_not_annotated(mcp_call, mock_client) -> None:
+    """A genuine failure (never cancelled) is NOT annotated — absence of the
+    ``cancelled`` key means "not a tracked cancel"."""
+    mock_client.research.poll = AsyncMock(
+        return_value=FakeResearchTask(status=FakeResearchStatus.FAILED, task_id=TASK_ID)
+    )
+    result = await mcp_call("research_status", {"notebook": NB_ID, "poll_task_id": TASK_ID})
+    assert result.structured_content["status"] == "failed"
+    assert "cancelled" not in result.structured_content
+
+
+async def test_research_cancel_does_not_annotate_different_task(
+    server_factory, mock_client
+) -> None:
+    """Cancel intent for one run does not leak onto a DIFFERENT failed run."""
+    other = "research-task-2"
+    server = server_factory()
+    mock_client.research.cancel = AsyncMock(return_value=None)
+    async with Client(server) as client:
+        mock_client.research.poll = AsyncMock(
+            return_value=FakeResearchTask(status=FakeResearchStatus.IN_PROGRESS, task_id=TASK_ID)
+        )
+        await client.call_tool("research_cancel", {"notebook": NB_ID, "poll_task_id": TASK_ID})
+
+        mock_client.research.poll = AsyncMock(
+            return_value=FakeResearchTask(status=FakeResearchStatus.FAILED, task_id=other)
+        )
+        result = await client.call_tool(
+            "research_status", {"notebook": NB_ID, "poll_task_id": other}
+        )
+    assert "cancelled" not in result.structured_content
+
+
+async def test_research_cancel_then_completed_status_not_annotated(
+    server_factory, mock_client
+) -> None:
+    """``cancelled`` only annotates a ``failed`` outcome — a cancel that lost the
+    race and the run completed anyway is not mislabelled."""
+    server = server_factory()
+    mock_client.research.cancel = AsyncMock(return_value=None)
+    async with Client(server) as client:
+        mock_client.research.poll = AsyncMock(
+            return_value=FakeResearchTask(status=FakeResearchStatus.IN_PROGRESS, task_id=TASK_ID)
+        )
+        await client.call_tool("research_cancel", {"notebook": NB_ID, "poll_task_id": TASK_ID})
+
+        mock_client.research.poll = AsyncMock(
+            return_value=FakeResearchTask(status=FakeResearchStatus.COMPLETED, task_id=TASK_ID)
+        )
+        result = await client.call_tool(
+            "research_status", {"notebook": NB_ID, "poll_task_id": TASK_ID}
+        )
+    assert "cancelled" not in result.structured_content
+
+
 async def test_research_start_then_status_poll_shape(mcp_call, mock_client) -> None:
-    """start→status: start returns a task_id, status polls the notebook."""
+    """start→status: start returns poll_task_id, status polls the notebook."""
     mock_client.research.start = AsyncMock(return_value=FakeResearchStart(task_id=TASK_ID))
     started = await mcp_call("research_start", {"notebook": NB_ID, "query": "q"})
-    assert started.structured_content["task_id"] == TASK_ID
+    assert started.structured_content["poll_task_id"] == TASK_ID
 
     mock_client.research.poll = AsyncMock(
         return_value=FakeResearchTask(status=FakeResearchStatus.COMPLETED)
@@ -705,13 +1182,15 @@ async def test_research_import_task_id_alias_matches_poll_task_id(mcp_call, mock
             task_id=TASK_ID,
         )
     )
-    mock_client.research.import_sources = AsyncMock(return_value=[{"id": "src-1", "title": "A"}])
+    mock_client.research.import_sources_with_verification = AsyncMock(
+        return_value=[{"id": "src-1", "title": "A"}]
+    )
     result = await mcp_call("research_import", {"notebook": NB_ID, "task_id": TASK_ID})
     sc = result.structured_content
     assert sc["imported"] == [{"id": "src-1", "title": "A"}]
     assert sc["poll_task_id"] == TASK_ID
     mock_client.research.poll.assert_awaited_once_with(NB_ID, TASK_ID)
-    assert mock_client.research.import_sources.await_args.args[1] == TASK_ID
+    assert mock_client.research.import_sources_with_verification.await_args.args[1] == TASK_ID
     assert "task_id" in sc["deprecation"]
 
 
@@ -756,3 +1235,59 @@ async def test_research_alias_and_canonical_conflict_rejected(mcp_call, mock_cli
         )
     assert "VALIDATION" in str(excinfo.value)
     mock_client.research.poll.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# research_import idempotency (#1961)
+# ---------------------------------------------------------------------------
+
+
+async def test_research_import_already_imported_when_all_present(mcp_call, mock_client) -> None:
+    """A repeat import (everything already present) adds nothing and reports it."""
+    from notebooklm._research import _imported_result
+
+    mock_client.research.poll = AsyncMock(
+        return_value=FakeResearchTask(
+            status=FakeResearchStatus.COMPLETED,
+            sources=[FakeSource(url="http://a", title="A")],
+            task_id=TASK_ID,
+        )
+    )
+    mock_client.research.import_sources_with_verification = AsyncMock(
+        return_value=_imported_result([], [{"id": "existing-1", "title": "A", "url": "http://a"}])
+    )
+
+    result = await mcp_call("research_import", {"notebook": NB_ID, "poll_task_id": TASK_ID})
+    sc = result.structured_content
+    assert sc["status"] == "already_imported"
+    assert sc["newly_imported"] == []
+    assert sc["imported"] == []  # historical alias for newly_imported
+    assert sc["newly_imported_count"] == 0
+    assert sc["already_present"] == [{"id": "existing-1", "title": "A", "url": "http://a"}]
+    assert sc["already_present_count"] == 1
+
+
+async def test_research_import_allow_duplicate_threads_through(mcp_call, mock_client) -> None:
+    """allow_duplicate=True re-adds and is forwarded to the import wrapper."""
+    mock_client.research.poll = AsyncMock(
+        return_value=FakeResearchTask(
+            status=FakeResearchStatus.COMPLETED,
+            sources=[FakeSource(url="http://a", title="A")],
+            task_id=TASK_ID,
+        )
+    )
+    mock_client.research.import_sources_with_verification = AsyncMock(
+        return_value=[{"id": "dup-1", "title": "A"}]
+    )
+
+    result = await mcp_call(
+        "research_import",
+        {"notebook": NB_ID, "poll_task_id": TASK_ID, "allow_duplicate": True},
+    )
+    sc = result.structured_content
+    assert sc["status"] == "imported"
+    assert sc["newly_imported"] == [{"id": "dup-1", "title": "A"}]
+    assert sc["already_present"] == []
+    assert sc["already_present_count"] == 0
+    _, kwargs = mock_client.research.import_sources_with_verification.await_args
+    assert kwargs.get("allow_duplicate") is True

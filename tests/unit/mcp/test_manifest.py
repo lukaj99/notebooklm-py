@@ -5,7 +5,7 @@ in-memory FastMCP ``Client``, then pins:
 
 * the EXACT set of tool names — so a tool can't be silently added, removed, or
   renamed without updating this gate;
-* a tool-count ceiling (40): the current surface is 34 tools; the next tool
+* a tool-count ceiling (40): the current surface is 33 tools; the next tool
   stays under the ceiling, but an accidental explosion still trips the gate;
 * the ``destructiveHint`` annotation + a ``confirm`` parameter on every
   destructive (delete) tool; and
@@ -17,13 +17,17 @@ Lives under ``tests/unit/mcp/`` so it is auto-skipped without the ``mcp`` extra
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
+
+from notebooklm._app.download_specs import DOWNLOAD_FORMAT_NAMES, DOWNLOAD_SPECS_BY_NAME
 
 # Skip cleanly when the `mcp` extra (fastmcp) is absent; see conftest.py.
 pytest.importorskip("fastmcp")
 
 
-#: The complete, pinned tool surface. 34 tools across 8 domains. Adding or
+#: The complete, pinned tool surface. 33 tools across 8 domains. Adding or
 #: removing a tool MUST update this set (and the ceiling below if it grows).
 EXPECTED_TOOLS: frozenset[str] = frozenset(
     {
@@ -40,19 +44,18 @@ EXPECTED_TOOLS: frozenset[str] = frozenset(
         "source_delete",
         "source_wait",
         "source_add",
-        "source_add_and_wait",
-        "source_upload_bytes",
+        "source_add_drive_file",
+        "await_upload",
         # Chat (3)
         "chat_ask",
         "chat_configure",
         "suggest_prompts",
         # Notes (1)
         "note_save",
-        # Studio (8)
+        # Studio (7)
         "studio_list",
         "studio_generate",
         "studio_status",
-        "studio_get_prompt",
         "studio_download",
         "studio_rename",
         "studio_retry",
@@ -77,7 +80,11 @@ EXPECTED_TOOLS: frozenset[str] = frozenset(
 #: suggest_prompts to 37; the Tier-1 read-merges (source_describe+source_get_content
 #: → source_read) and the Studio consolidation (note_create+note_update → note_save,
 #: note_list+note_delete folded into studio_list/studio_delete) brought it to 32. The
-#: ceiling has headroom, but an accidental explosion still trips the gate.
+#: source-add composites (source_add_and_wait, source_upload_bytes) later re-grew it,
+#: then #1890 folded them BACK into source_add (wait= / bytes_base64=) for 34, and
+#: #1896 folded studio_get_prompt into studio_list (each artifact's generation_prompt
+#: rides the summary listing / the item= fetch) for 33. The ceiling has headroom, but
+#: an accidental explosion still trips the gate.
 TOOL_CEILING = 40
 
 #: The destructive tools — each carries ``destructiveHint`` AND a ``confirm``
@@ -101,9 +108,9 @@ READ_ONLY_TOOLS: frozenset[str] = frozenset(
         "notebook_describe",
         "source_list",
         "source_read",
+        "await_upload",
         "studio_list",
         "studio_status",
-        "studio_get_prompt",
         "research_status",
         "share_status",
         "suggest_prompts",
@@ -233,6 +240,19 @@ async def test_studio_retry_is_plain_mutating_tool(tools_by_name) -> None:
     assert "confirm" not in tool.inputSchema.get("properties", {})
 
 
+def _schema_enum_values(schema: Any) -> set[str]:
+    """Collect string enum values from a possibly nullable nested schema."""
+    values: set[str] = set()
+    if isinstance(schema, dict):
+        values.update(value for value in schema.get("enum", ()) if isinstance(value, str))
+        for child in schema.values():
+            values.update(_schema_enum_values(child))
+    elif isinstance(schema, list):
+        for child in schema:
+            values.update(_schema_enum_values(child))
+    return values
+
+
 async def test_studio_download_advertises_artifact_id_and_format_enum(tools_by_name) -> None:
     """``studio_download`` advertises the ``artifact_id`` param and an enumerated
     ``output_format`` so an agent's tool schema can target a specific artifact and
@@ -244,13 +264,13 @@ async def test_studio_download_advertises_artifact_id_and_format_enum(tools_by_n
     assert "artifact_id" in properties, "studio_download must expose 'artifact_id'"
     assert "artifact" in properties, "studio_download must expose the 'artifact' name-or-id ref"
     assert "output_format" in properties, "studio_download must expose 'output_format'"
-    # output_format is a Literal union → the schema (possibly under anyOf for the
-    # optional ``| None``) must enumerate every supported format value.
-    fmt_schema = json.dumps(properties["output_format"])
-    for value in ("pdf", "pptx", "json", "markdown", "html"):
-        assert value in fmt_schema, f"output_format schema missing {value!r}: {fmt_schema}"
+    # The registry-derived alias (possibly under anyOf for optional ``| None``)
+    # must enumerate exactly every supported format value.
+    format_schema = properties["output_format"]
+    assert _schema_enum_values(format_schema) == set(DOWNLOAD_FORMAT_NAMES), json.dumps(
+        format_schema
+    )
     # ``artifact_type`` is now optional (target by ``artifact`` ref instead) but must
     # still advertise its full type enum so the by-type path stays schema-guided.
-    type_schema = json.dumps(properties["artifact_type"])
-    for value in ("audio", "video", "slide-deck", "quiz", "flashcards"):
-        assert value in type_schema, f"artifact_type schema missing {value!r}: {type_schema}"
+    type_schema = properties["artifact_type"]
+    assert _schema_enum_values(type_schema) == set(DOWNLOAD_SPECS_BY_NAME), json.dumps(type_schema)

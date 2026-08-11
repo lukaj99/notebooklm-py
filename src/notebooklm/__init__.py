@@ -72,6 +72,9 @@ from .exceptions import (
     ChatError,
     ChatResponseParseError,
     ClientError,
+    # Domain: Collections
+    CollectionError,
+    CollectionNotFoundError,
     # Validation/Config
     ConfigurationError,
     DecodingError,
@@ -80,6 +83,7 @@ from .exceptions import (
     LabelNotFoundError,
     MindMapError,
     MindMapNotFoundError,
+    MissingDependencyError,
     # Network
     NetworkError,
     # Idempotency
@@ -96,6 +100,7 @@ from .exceptions import (
     NotFoundError,
     RateLimitError,
     ResearchError,
+    ResearchStartUnavailableError,
     ResearchTaskMismatchError,
     ResearchTimeoutError,
     RPCError,
@@ -128,6 +133,7 @@ from .types import (
     ChatResponseLength,
     CitedSourceSelection,
     ClientMetricsSnapshot,
+    Collection,
     ConnectionLimits,
     ConversationTurn,
     DriveMimeType,
@@ -154,6 +160,7 @@ from .types import (
     ResearchStart,
     ResearchStatus,
     ResearchTask,
+    ResearchTerminationReason,
     RpcTelemetryEvent,
     ShareAccess,
     SharedUser,
@@ -214,6 +221,7 @@ __all__ = [
     "MindMapResult",
     "Note",
     "Label",
+    "Collection",
     "ConversationTurn",
     "ChatReference",
     "AskResult",
@@ -224,6 +232,7 @@ __all__ = [
     "ResearchSource",
     "ResearchTask",
     "ResearchStart",
+    "ResearchTerminationReason",
     "SharedUser",
     "ShareStatus",
     # Utility helpers
@@ -232,6 +241,7 @@ __all__ = [
     "NotebookLMError",
     "ValidationError",
     "ConfigurationError",
+    "MissingDependencyError",
     # Cross-domain umbrellas
     "NotFoundError",
     # RPC/Network Exceptions
@@ -274,6 +284,7 @@ __all__ = [
     # Domain Exceptions: Research
     "AmbiguousResearchTaskError",
     "ResearchError",
+    "ResearchStartUnavailableError",
     "ResearchTimeoutError",
     "ResearchTaskMismatchError",
     # Domain Exceptions: Notes
@@ -285,6 +296,9 @@ __all__ = [
     # Domain Exceptions: Source labels
     "LabelError",
     "LabelNotFoundError",
+    # Domain Exceptions: Collections
+    "CollectionError",
+    "CollectionNotFoundError",
     # Cross-domain umbrella: wait/poll timeouts
     "WaitTimeoutError",
     # Warnings

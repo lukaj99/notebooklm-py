@@ -43,6 +43,7 @@ from .rendering import (
     json_output_response,
 )
 from .services.source_mutations import (
+    SourceAddDriveFileResult,
     SourceAddDriveResult,
     SourceDeleteByTitleResult,
     SourceDeleteResult,
@@ -570,6 +571,30 @@ def _render_source_add_drive_result(
     cli_print(f"[bold]Title:[/bold] {result.source.title}", ctx=ctx)
 
 
+def _render_source_add_drive_file_result(
+    result: SourceAddDriveFileResult,
+    *,
+    json_output: bool,
+    ctx: click.Context,
+) -> None:
+    if json_output:
+        # Mirrors the add-drive envelope: the ``source_summary_payload`` serializer
+        # is presentation, so the envelope is built here rather than on the neutral
+        # result. ``document_id`` echoes the raw id/URL the caller passed.
+        json_output_response(
+            {
+                "action": "add-drive-file",
+                "source": source_summary_payload(result.source),
+                "document_id": result.document_id,
+                "notebook_id": result.notebook_id,
+            }
+        )
+        return
+
+    cli_print(f"[green]Added Drive file source:[/green] {result.source.id}", ctx=ctx)
+    cli_print(f"[bold]Title:[/bold] {result.source.title}", ctx=ctx)
+
+
 def _emit_add_research_flag_conflict(message: str, *, json_output: bool) -> NoReturn:
     """Surface a ``source add-research`` flag conflict via the active CLI error contract.
 
@@ -648,10 +673,21 @@ def _render_add_research_result(result: SourceAddResearchResult, *, json_output:
 
     if result.outcome in ("failed", "timeout"):
         message = "Research timed out" if result.outcome == "timeout" else "Research failed"
+        # Explain WHY and what to do next when the poll named a termination
+        # reason — an empty Drive search is not a broken run (issue #1964).
+        extra: dict[str, Any] = {}
+        if result.reason_message:
+            extra["reason_message"] = result.reason_message
+        if result.hint:
+            extra["hint"] = result.hint
         if json_output:
-            _exit_with_add_research_status(result.outcome, message)
+            _exit_with_add_research_status(result.outcome, message, **extra)
         else:
             console.print(f"[red]{message}[/red]")
+            if result.reason_message:
+                console.print(result.reason_message)
+            if result.hint:
+                console.print(f"[dim]{result.hint}[/dim]")
             exit_with_code(1)
         return  # pragma: no cover
 

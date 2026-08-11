@@ -7,6 +7,8 @@ import threading
 from enum import IntEnum
 from typing import Any
 
+from .._logging import _truncate_response_preview
+
 # Import exceptions from centralized module
 from ..exceptions import (
     AuthError,
@@ -17,9 +19,9 @@ from ..exceptions import (
     RPCTimeoutError,
     ServerError,
     UnknownRPCMethodError,
-    _truncate_response_preview,
 )
 from ._safe_index import safe_index
+from .types import GrpcStatusCode
 
 # Re-export for backward compatibility (imports from notebooklm.rpc.decoder still work)
 __all__ = [
@@ -99,29 +101,40 @@ class RPCErrorCode(IntEnum):
     SERVER_ERROR = 500  # Internal server error
 
 
-# gRPC canonical status codes (google.rpc.Code) embedded by the batchexecute
-# backend at index 5 of a `wrb.fr` response when the RPC returns null result
-# data. The bare single-element form `[code]` is what issues #114 and #294
-# observed on the wire.
+# Human-readable labels for the gRPC canonical status codes the batchexecute
+# backend embeds at index 5 of a `wrb.fr` response when the RPC returns null
+# result data. The bare single-element form `[code]` is what issues #114 and
+# #294 observed on the wire.
+#
+# The codes themselves live in `GrpcStatusCode` (rpc/types.py) — the single
+# source of truth shared with the neutral error classifier and the notebook
+# not-found translation. This table only supplies the wording, and is keyed by
+# the enum so a member added there without a label fails the guardrail test
+# rather than silently degrading to an unlabelled status.
 _GRPC_STATUS_MESSAGES: dict[int, str] = {
-    0: "OK",
-    1: "Cancelled",
-    2: "Unknown",
-    3: "Invalid argument",
-    4: "Deadline exceeded",
-    5: "Not found",
-    6: "Already exists",
-    7: "Permission denied",
-    8: "Resource exhausted",
-    9: "Failed precondition",
-    10: "Aborted",
-    11: "Out of range",
-    12: "Not implemented",
-    13: "Internal",
-    14: "Unavailable",
-    15: "Data loss",
-    16: "Unauthenticated",
+    GrpcStatusCode.OK: "OK",
+    GrpcStatusCode.CANCELLED: "Cancelled",
+    GrpcStatusCode.UNKNOWN: "Unknown",
+    GrpcStatusCode.INVALID_ARGUMENT: "Invalid argument",
+    GrpcStatusCode.DEADLINE_EXCEEDED: "Deadline exceeded",
+    GrpcStatusCode.NOT_FOUND: "Not found",
+    GrpcStatusCode.ALREADY_EXISTS: "Already exists",
+    GrpcStatusCode.PERMISSION_DENIED: "Permission denied",
+    GrpcStatusCode.RESOURCE_EXHAUSTED: "Resource exhausted",
+    GrpcStatusCode.FAILED_PRECONDITION: "Failed precondition",
+    GrpcStatusCode.ABORTED: "Aborted",
+    GrpcStatusCode.OUT_OF_RANGE: "Out of range",
+    GrpcStatusCode.UNIMPLEMENTED: "Not implemented",
+    GrpcStatusCode.INTERNAL: "Internal",
+    GrpcStatusCode.UNAVAILABLE: "Unavailable",
+    GrpcStatusCode.DATA_LOSS: "Data loss",
+    GrpcStatusCode.UNAUTHENTICATED: "Unauthenticated",
 }
+
+#: Statuses the decoder routes through ``ClientError`` rather than the generic
+#: ``RPCError``, so ``is_auth_error`` cannot misclassify them and fire a
+#: spurious token refresh. Both also carry the account-routing hint below.
+_ACCOUNT_ROUTED_STATUSES = (GrpcStatusCode.NOT_FOUND, GrpcStatusCode.PERMISSION_DENIED)
 
 # Hint appended to NOT_FOUND / PERMISSION_DENIED messages. Deliberately avoids
 # the substrings checked by AUTH_ERROR_PATTERNS in _runtime/helpers.py so these errors
@@ -304,8 +317,11 @@ def parse_chunked_response(response: str) -> list[Any]:
             try:
                 chunk = json.loads(json_str)
                 chunks.append(chunk)
-            except json.JSONDecodeError as e:
-                # Skip malformed chunks but warn
+            except (json.JSONDecodeError, RecursionError) as e:
+                # Skip malformed chunks but warn. RecursionError covers
+                # pathologically deep JSON that overflows the interpreter
+                # stack inside ``json.loads`` — treat it as malformed rather
+                # than letting it escape the decode pipeline raw (#2107).
                 malformed_payload_records += 1
                 logger.warning(
                     "Skipping malformed chunk at line %d: %s. Preview: %s",
@@ -321,8 +337,9 @@ def parse_chunked_response(response: str) -> list[Any]:
             try:
                 chunk = json.loads(line)
                 chunks.append(chunk)
-            except json.JSONDecodeError as e:
-                # Skip non-JSON lines but warn
+            except (json.JSONDecodeError, RecursionError) as e:
+                # Skip non-JSON lines but warn (RecursionError: same
+                # deep-JSON hardening as the byte-count branch above, #2107)
                 malformed_payload_records += 1
                 logger.warning(
                     "Skipping non-JSON line at %d: %s. Preview: %s",
@@ -486,25 +503,40 @@ def _find_wrb_status(chunks: list[Any], rpc_id: str) -> tuple[int, str] | None:
     return None
 
 
-def _contains_user_displayable_error(obj: Any) -> bool:
+def _contains_user_displayable_error(obj: Any, max_depth: int = 20) -> bool:
     """Check if object contains a UserDisplayableError marker.
 
     Google's API embeds error information in index 5 of wrb.fr responses
     when the operation fails due to rate limiting, quota, or other
     user-facing restrictions.
 
+    Recursion is bounded because ``obj`` is server-controlled: a maliciously
+    or accidentally deep payload must not raise ``RecursionError`` (#2107).
+    Real markers live a handful of levels deep, so the cap is generous; at
+    the cap we treat the payload as carrying no marker, which lets
+    :func:`decode_response` fall through to its regular null-result handling
+    (mapped ``RPCError``) instead of a false rate-limit signal.
+
     Args:
         obj: Object to search (typically index 5 of response item)
+        max_depth: Maximum nesting depth to descend before giving up
 
     Returns:
         True if UserDisplayableError pattern is found
     """
+    if max_depth <= 0:
+        return False
     if isinstance(obj, str):
         return "UserDisplayableError" in obj
+    if isinstance(obj, (list, dict)) and max_depth == 1:
+        # Stop at the container itself so a wide list/dict at the boundary
+        # logs a single warning instead of one per child.
+        logger.warning("Max recursion depth reached in UserDisplayableError detection")
+        return False
     if isinstance(obj, list):
-        return any(_contains_user_displayable_error(item) for item in obj)
+        return any(_contains_user_displayable_error(item, max_depth - 1) for item in obj)
     if isinstance(obj, dict):
-        return any(_contains_user_displayable_error(v) for v in obj.values())
+        return any(_contains_user_displayable_error(v, max_depth - 1) for v in obj.values())
     return False
 
 
@@ -525,7 +557,10 @@ def _user_displayable_error_message(error_info: Any) -> str:
     if status is None:
         return message
     code, label = status
-    return f"{message} Upstream status code {code} ({label})."
+    # Keep the stable, human-readable status label but not the raw numeric gRPC
+    # code — it carries no end-user value and is volatile internal detail
+    # (#1921). The numeric code stays available on the exception's ``rpc_code``.
+    return f"{message} (Upstream: {label}.)"
 
 
 _SENTINEL_NO_RESULT = object()
@@ -608,7 +643,11 @@ def extract_rpc_result(chunks: list[Any], rpc_id: str) -> Any:
                 if isinstance(result_data, str):
                     try:
                         parsed: Any = json.loads(result_data)
-                    except json.JSONDecodeError:
+                    except (json.JSONDecodeError, RecursionError):
+                        # RecursionError: pathologically deep JSON inside the
+                        # result_data string — same server-controlled-depth
+                        # hardening as parse_chunked_response (#2107). Fall
+                        # back to the raw string like any unparseable payload.
                         parsed = result_data
                 else:
                     parsed = result_data
@@ -711,37 +750,40 @@ def decode_response(raw_response: str, rpc_id: str, allow_null: bool = False) ->
         # This means wrb.fr had null result_data without UserDisplayableError.
         # Enrich the message if the server attached a bare status code at
         # index 5 (issues #114 / #294 showed GET_NOTEBOOK returning [5]).
+        #
+        # The obfuscated ``rpc_id`` (the #1 breakage class per CLAUDE.md — it
+        # changes whenever Google re-obfuscates a method) and the raw numeric
+        # gRPC ``code`` carry no value for the end user and, when surfaced
+        # through MCP/CLI, leak volatile internal detail (#1921). Keep them on
+        # the exception ATTRIBUTES (``method_id`` / ``rpc_code`` / ``found_ids``)
+        # for logging and debugging, but keep the human-readable message free of
+        # them — only the stable gRPC status label is user-facing.
         status = _find_wrb_status(chunks, rpc_id)
-        # The base ``RPCError.__str__`` does not surface ``found_ids``, so embed
-        # it in the message text too — otherwise the strongest debugging signal
-        # is silently dropped from plain logs and tracebacks for these branches.
-        found_ids_suffix = f" Found IDs: {found_ids}."
         if status is not None:
             code, label = status
-            message = f"RPC {rpc_id} returned null result with status code {code} ({label})."
-            # Route NOT_FOUND (5) / PERMISSION_DENIED (7) through ClientError
-            # so is_auth_error does not misclassify them as auth
-            # failures and trigger a spurious token-refresh retry. The
-            # account-routing hint is only relevant for these two codes —
-            # other codes (e.g. INTERNAL 13) get a plain message.
-            if code in (5, 7):
+            message = f"The server rejected this request ({label.lower()})."
+            # Route NOT_FOUND / PERMISSION_DENIED through ClientError so
+            # is_auth_error does not misclassify them as auth failures and
+            # trigger a spurious token-refresh retry. The account-routing hint
+            # is only relevant for these two codes — other codes (e.g.
+            # INTERNAL 13) get a plain message.
+            if code in _ACCOUNT_ROUTED_STATUSES:
                 raise ClientError(
-                    message + found_ids_suffix + _ACCOUNT_MISMATCH_HINT,
+                    message + _ACCOUNT_MISMATCH_HINT,
                     method_id=rpc_id,
                     rpc_code=code,
                     found_ids=found_ids,
                     raw_response=response_preview,
                 )
             raise RPCError(
-                message + found_ids_suffix,
+                message,
                 method_id=rpc_id,
                 rpc_code=code,
                 found_ids=found_ids,
                 raw_response=response_preview,
             )
         raise RPCError(
-            f"RPC {rpc_id} returned null result data "
-            f"(possible server error or parameter mismatch).{found_ids_suffix}",
+            "The server returned an empty result (possible server error or parameter mismatch).",
             method_id=rpc_id,
             found_ids=found_ids,
             raw_response=response_preview,

@@ -15,8 +15,10 @@ from notebooklm import (
     CitedSourceSelection,
     NotebookLMClient,
     ResearchSource,
+    ResearchStartUnavailableError,
     ResearchStatus,
     ResearchTask,
+    RPCError,
 )
 from notebooklm._research import ResearchAPI
 from notebooklm.research import extract_report_urls, normalize_citation_url, select_cited_sources
@@ -103,6 +105,9 @@ class TestCitedSourceSelection:
         )
 
         assert urls == {"https://example.com/a"}
+
+    def test_extract_report_urls_empty_report_returns_empty_set(self):
+        assert extract_report_urls("") == set()
 
     def test_select_cited_sources_filters_urls_and_preserves_report_entry(self):
         sources = [
@@ -705,6 +710,54 @@ class TestResearch:
         assert result.mode == "deep"
 
     @pytest.mark.asyncio
+    async def test_start_deep_null_result_raises_clean_unavailable_error(
+        self, auth_tokens, httpx_mock, build_rpc_response
+    ):
+        """#1849: a null deep-start body must not leak the RPC method id as a run id."""
+        response_body = build_rpc_response(RPCMethod.START_DEEP_RESEARCH, None)
+        httpx_mock.add_response(content=response_body.encode(), method="POST")
+
+        async with NotebookLMClient(auth_tokens) as client:
+            with pytest.raises(ResearchStartUnavailableError) as exc_info:
+                await client.research.start(notebook_id="nb_123", query="AI research", mode="deep")
+
+        err = exc_info.value
+        message = str(err)
+        assert "Deep research failed to start" in message
+        assert "NotebookLM returned no research run" in message
+        assert RPCMethod.START_DEEP_RESEARCH.value not in message
+        assert "Found IDs" not in message
+        assert err.notebook_id == "nb_123"
+        assert err.mode == "deep"
+        assert err.method_id == RPCMethod.START_DEEP_RESEARCH.value
+        assert err.found_ids == [RPCMethod.START_DEEP_RESEARCH.value]
+        assert isinstance(err.__cause__, RPCError)
+
+    @pytest.mark.asyncio
+    async def test_start_deep_null_result_with_status_raises_clean_unavailable_error(
+        self, auth_tokens, httpx_mock
+    ):
+        """Status-enriched null deep-start frames still have no pollable run."""
+        rpc_id = RPCMethod.START_DEEP_RESEARCH.value
+        chunk = json.dumps(["wrb.fr", rpc_id, None, None, None, [13], "generic"])
+        response_body = f")]}}'\n{len(chunk)}\n{chunk}\n"
+        httpx_mock.add_response(content=response_body.encode(), method="POST")
+
+        async with NotebookLMClient(auth_tokens) as client:
+            with pytest.raises(ResearchStartUnavailableError) as exc_info:
+                await client.research.start(notebook_id="nb_123", query="AI research", mode="deep")
+
+        err = exc_info.value
+        message = str(err)
+        assert "NotebookLM returned no research run" in message
+        assert RPCMethod.START_DEEP_RESEARCH.value not in message
+        assert "Found IDs" not in message
+        assert err.method_id == rpc_id
+        assert err.rpc_code == 13
+        assert err.found_ids == [rpc_id]
+        assert isinstance(err.__cause__, RPCError)
+
+    @pytest.mark.asyncio
     async def test_start_research_invalid_source(self, auth_tokens):
         """Test that invalid source raises ValidationError."""
         from notebooklm.exceptions import ValidationError
@@ -780,7 +833,17 @@ class TestResearch:
     @pytest.mark.asyncio
     async def test_poll_deep_research_sources(self, auth_tokens, httpx_mock, build_rpc_response):
         """Test poll parses deep research sources (title only, no URL)."""
-        sources = [[None, "Deep Research Finding", None, 5, None, None, ["# Report markdown"]]]
+        sources = [
+            [
+                None,
+                "Deep Research Finding",
+                None,
+                5,
+                None,
+                None,
+                ["# Report markdown", 3, None, None, None, ["structured doc"]],
+            ]
+        ]
         task_info = [None, ["deep query", 1], 1, [sources, "Deep summary"], 2]
         response_body = build_rpc_response(RPCMethod.POLL_RESEARCH, [[["task_123", task_info]]])
         httpx_mock.add_response(content=response_body.encode(), method="POST")
@@ -828,11 +891,14 @@ class TestResearch:
         assert "task_id" in str(err)
 
     @pytest.mark.asyncio
-    async def test_poll_joins_legacy_report_chunks(
+    async def test_poll_ignores_web_snippet_before_report(
         self, auth_tokens, httpx_mock, build_rpc_response
     ):
-        """Test poll joins multiple legacy report chunks instead of truncating to the first one."""
-        sources = [[None, "Deep Research Finding", None, 5, None, None, ["chunk one", "chunk two"]]]
+        """A web content block cannot win report extraction by arriving first."""
+        sources = [
+            ["https://example.com", "Web result", "desc", 1, None, None, [None, 1, "snippet"]],
+            [None, "Deep Research Finding", None, 5, None, None, ["# Report", 3]],
+        ]
         task_info = [None, ["deep query", 1], 1, [sources, "Deep summary"], 2]
         response_body = build_rpc_response(RPCMethod.POLL_RESEARCH, [[["task_123", task_info]]])
         httpx_mock.add_response(content=response_body.encode(), method="POST")
@@ -840,8 +906,10 @@ class TestResearch:
         async with NotebookLMClient(auth_tokens) as client:
             result = await client.research.poll("nb_123")
 
-        assert result.report == "chunk one\n\nchunk two"
-        assert result.tasks[0].report == "chunk one\n\nchunk two"
+        assert result.report == "# Report"
+        assert result.sources[0].report_markdown == ""
+        assert result.sources[1].report_markdown == "# Report"
+        assert result.tasks[0].report == "# Report"
 
     @pytest.mark.asyncio
     async def test_poll_deep_research_current_report_shape(
@@ -1506,21 +1574,6 @@ class TestResearch:
             result = await client.research.poll("nb_123")
 
         assert result.sources[0].result_type == "video"
-
-    @pytest.mark.asyncio
-    async def test_poll_legacy_report_mixed_chunks(
-        self, auth_tokens, httpx_mock, build_rpc_response
-    ):
-        """Legacy report chunks filter out non-string and empty values."""
-        sources = [[None, "Report Title", None, 5, None, None, ["chunk1", None, "", "chunk2"]]]
-        task_info = [None, ["query", 1], 1, [sources, ""], 2]
-        response_body = build_rpc_response(RPCMethod.POLL_RESEARCH, [[["task_123", task_info]]])
-        httpx_mock.add_response(content=response_body.encode(), method="POST")
-
-        async with NotebookLMClient(auth_tokens) as client:
-            result = await client.research.poll("nb_123")
-
-        assert result.report == "chunk1\n\nchunk2"
 
     @pytest.mark.asyncio
     async def test_poll_source_single_element_list_title_dropped(

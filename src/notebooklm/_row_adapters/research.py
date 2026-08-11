@@ -48,9 +48,10 @@ Position contracts (pinned by ``tests/unit/test_research_row_adapter.py``):
   Index  Meaning
   =====  ============================================================
   0      URL (str) for fast research; ``None`` sentinel for deep research
-  1      title (str) — or, for current deep research, ``[title, report]``
+  1      title (str) — or, for the compat shape, ``[title, report]``
   3      authoritative result-type tag
-  6      legacy deep-research report chunks (list of str)
+  6      typed content block; kind 3 carries report markdown at position 0
+  8      deep-research per-task source ordinal (int)
   =====  ============================================================
 """
 
@@ -149,11 +150,14 @@ class ResearchTaskInfoRow:
     code are themselves read through ``safe_index`` by the parser's
     ``_extract_*`` helpers (an absent slot is drift). This adapter centralises
     the *inner* single-level reads those helpers then perform on the bound
-    blocks — ``query_info[0]``, ``bundle[0]``, ``bundle[1]`` — which are
-    routinely-optional and short-circuit to a default rather than raising.
+    blocks — ``query_info[0]``, ``query_info[1]``, ``bundle[0]``, ``bundle[1]``
+    — which are routinely-optional and short-circuit to a default rather than
+    raising.
     """
 
     _QUERY_TEXT_POS: ClassVar[int] = 0
+    _QUERY_SOURCE_TYPE_POS: ClassVar[int] = 1
+    _QUERY_SOURCE_TYPE_MIN_LEN: ClassVar[int] = 2
     _SOURCES_POS: ClassVar[int] = 0
     _SUMMARY_POS: ClassVar[int] = 1
     _SUMMARY_MIN_LEN: ClassVar[int] = 2
@@ -167,6 +171,24 @@ class ResearchTaskInfoRow:
         short-circuits to ``None`` rather than raising.
         """
         return query_info[ResearchTaskInfoRow._QUERY_TEXT_POS] if query_info else None
+
+    @staticmethod
+    def query_source_type(query_info: Any) -> Any:
+        """Search-source tag at ``task_info[1][1]`` — ``None`` when absent.
+
+        The query block echoes the ``[query, source_type]`` pair that started
+        the run (``1`` = web, ``2`` = drive — the same tags
+        :meth:`ResearchAPI.start` sends). Live-captured against POLL_RESEARCH
+        (issue #1964): a drive run echoes ``['notes', 2]``, a web run
+        ``['python asyncio event loop', 1]``.
+
+        Length-guarded soft read: a query block that carries only the text
+        legitimately omits the tag, so this degrades to ``None`` instead of
+        raising ``IndexError``.
+        """
+        if not query_info or len(query_info) < ResearchTaskInfoRow._QUERY_SOURCE_TYPE_MIN_LEN:
+            return None
+        return query_info[ResearchTaskInfoRow._QUERY_SOURCE_TYPE_POS]
 
     @staticmethod
     def bundle_sources(bundle: Any) -> Any:
@@ -202,8 +224,9 @@ class ResearchResultRow:
     The source row carries three shapes the historical parser handled inline:
 
     * fast research — ``[url, title, desc, type, ...]``
-    * deep research (legacy) — ``[None, title, None, type, ..., [report_md]]``
-    * deep research (current) — ``[None, [title, report_md], None, type, ...]``
+    * deep research (captured) — ``[None, title, None, type, ..., content_block]``
+    * deep research (compat, never observed in a capture) —
+      ``[None, [title, report_md], None, type, ...]``
 
     Every field is routinely-optional (a deep-research row omits its URL; a
     fast-research row omits the report), so the adapter length-guards each read
@@ -218,16 +241,24 @@ class ResearchResultRow:
     _URL_POS: ClassVar[int] = 0
     _TITLE_POS: ClassVar[int] = 1
     _RESULT_TYPE_POS: ClassVar[int] = 3
-    _LEGACY_CHUNKS_POS: ClassVar[int] = 6
+    _CONTENT_BLOCK_POS: ClassVar[int] = 6
+    _SOURCE_ORDINAL_POS: ClassVar[int] = 8
     # A source row must carry at least ``[url/sentinel, title]`` to be usable —
     # mirrors the historical ``len(src) < 2`` early return.
     _MIN_LEN: ClassVar[int] = 2
 
-    # Layout of the current-deep-research ``[title, report_markdown]`` payload
-    # packed at ``src[1]``.
+    # Layout of the compat ``[title, report_markdown]`` payload packed at
+    # ``src[1]`` — accepted but never observed in a capture (#2140).
     _PAYLOAD_TITLE_POS: ClassVar[int] = 0
     _PAYLOAD_REPORT_POS: ClassVar[int] = 1
     _PAYLOAD_MIN_LEN: ClassVar[int] = 2
+
+    # Captured ``src[6]`` content block:
+    # [text | None, kind, snippet | None, ..., structured_document | None]
+    _CONTENT_TEXT_POS: ClassVar[int] = 0
+    _CONTENT_KIND_POS: ClassVar[int] = 1
+    _CONTENT_MIN_LEN: ClassVar[int] = 2
+    _REPORT_CONTENT_KIND: ClassVar[int] = 3
 
     @property
     def is_well_formed(self) -> bool:
@@ -253,8 +284,8 @@ class ResearchResultRow:
 
     @property
     def title_slot(self) -> Any:
-        """Raw value at ``src[1]`` — a title ``str`` or, for current deep
-        research, the ``[title, report_markdown]`` payload. ``None`` when absent."""
+        """Raw value at ``src[1]`` — a title ``str`` or, for the compat shape,
+        the ``[title, report_markdown]`` payload. ``None`` when absent."""
         if self.length <= self._TITLE_POS:
             return None
         return self._raw[self._TITLE_POS]
@@ -277,21 +308,61 @@ class ResearchResultRow:
         return self.length > self._RESULT_TYPE_POS
 
     @property
-    def legacy_report_chunks(self) -> list[Any]:
-        """Legacy deep-research report chunks at ``src[6]`` — ``[]`` when absent/non-list."""
-        if self.length <= self._LEGACY_CHUNKS_POS:
+    def content_block(self) -> list[Any]:
+        """Typed content block at ``src[6]`` — ``[]`` when absent or malformed."""
+        if self.length <= self._CONTENT_BLOCK_POS:
             return []
-        value = self._raw[self._LEGACY_CHUNKS_POS]
+        value = self._raw[self._CONTENT_BLOCK_POS]
         return value if isinstance(value, list) else []
+
+    @property
+    def report_markdown(self) -> str:
+        """Report markdown from a kind-3 content block, otherwise ``""``."""
+        block = self.content_block
+        if len(block) < self._CONTENT_MIN_LEN:
+            return ""
+        kind = block[self._CONTENT_KIND_POS]
+        if type(kind) is not int or kind != self._REPORT_CONTENT_KIND:
+            return ""
+        text = block[self._CONTENT_TEXT_POS]
+        return text if isinstance(text, str) and text else ""
+
+    @property
+    def source_ordinal(self) -> int | None:
+        """The backend's per-task ordinal at ``src[8]`` — ``None`` when absent.
+
+        In the captures this is a 1-based bijection onto ``1..N`` over the
+        discovered (kind-1) rows of one research task. It is **not** established
+        to be the report's own citation numbering: #2141's evidence is a
+        range/count coincidence, and ``tests/cassettes/research_deep_poll_long.yaml``
+        carries 24 such ordinals against a report with no ``[cite: N]`` markers at
+        all. Do not resolve report markers through this without new evidence.
+
+        ``type(value) is int`` rather than ``isinstance``: ``bool`` is an ``int``
+        subclass, so a wire ``true`` would otherwise read as ordinal ``1``.
+        """
+        if self.length <= self._SOURCE_ORDINAL_POS:
+            return None
+        value = self._raw[self._SOURCE_ORDINAL_POS]
+        return value if type(value) is int else None
 
     @staticmethod
     def deep_payload(payload: Any) -> tuple[str, str] | None:
-        """Unpack a current-deep-research ``[title, report_markdown]`` payload.
+        """Unpack the compat ``[title, report_markdown]`` payload.
 
         Returns ``(title, report_markdown)`` only when ``payload`` is a list of
         at least two strings (the exact shape the historical parser required at
         ``src[1]``); otherwise ``None`` so the caller falls through to the
         bare-string-title / fast-research branches.
+
+        This shape has **never appeared in a captured payload** — both real deep
+        captures put a bare title here and carry the report in the ``src[6]``
+        content block instead. #2140 asked for a deliberate decision, and it is
+        kept rather than deleted: it costs one guarded branch, cannot mis-fire on
+        the captured shapes (the guard above rejects them), and removing a
+        never-observed *reader* would be a bet against payloads we have not
+        captured — the wrong side of the bet for a wire whose drift is this
+        project's #1 breakage class.
         """
         if (
             isinstance(payload, list)

@@ -16,25 +16,25 @@ than failing the whole call).
 The absolute on-disk storage path is deliberately **not** returned — it leaks the
 server-host OS username / filesystem layout to the caller while telling it nothing
 actionable (the MCP surface scrubs it identically). This is a single-tenant
-server, so the info reflects the one lifespan-bound client.
+server, so the info reflects the one lifespan client/startup state.
 
 This module imports NO ``click`` / ``rich`` / ``cli``.
 """
 
 from __future__ import annotations
 
-import asyncio
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Query, Request
 
 from ..._app.auth_check import AuthCheckPlan, run_auth_check
 from ..._redact import redact
 from ..._version_info import version_string
 from ...client import NotebookLMClient
-from ...exceptions import NotebookLMError
+from ...exceptions import AuthError, NotebookLMError
 from ...paths import get_storage_path, resolve_profile
-from .._context import get_client
+from .._context import get_client, get_client_error
+from .._errors import error_item
 
 __all__ = ["router"]
 
@@ -44,8 +44,6 @@ __all__ = ["router"]
 SERVER_NAME = "notebooklm-server"
 
 router = APIRouter(prefix="/server", tags=["server"])
-
-ClientDep = Annotated[NotebookLMClient, Depends(get_client)]
 
 
 def _no_env_auth_json() -> str:
@@ -72,10 +70,10 @@ async def _account_block(client: NotebookLMClient, *, authenticated: bool) -> di
     if not authenticated:
         return {**identity, "available": False, "reason": "not authenticated"}
     try:
-        limits, output_language = await asyncio.gather(
-            client.settings.get_account_limits(),
-            client.settings.get_output_language(),
-        )
+        # Both limits + language ride one GET_USER_SETTINGS response (#1724):
+        # a single fetch instead of two identical POSTs (mirrors the MCP tool).
+        settings = await client.settings.get_user_settings()
+        limits, output_language = settings.limits, settings.output_language
     except NotebookLMError as exc:  # degrade, don't sink the whole response
         return {**identity, "available": False, "reason": redact(str(exc))}
     return {
@@ -83,13 +81,36 @@ async def _account_block(client: NotebookLMClient, *, authenticated: bool) -> di
         "available": True,
         "notebook_limit": limits.notebook_limit,
         "source_limit": limits.source_limit,
+        # Subscription tier enum (GET_USER_SETTINGS limits[4]); mirrors the MCP block.
+        "tier": limits.tier,
+        # Global account output language, ``None`` when the account has never set
+        # one; ``output_language_is_default`` disambiguates that ``None`` (``True``
+        # = the account uses NotebookLM's default language, not a missing value).
+        # Mirrors the MCP block — envelope-level drift degrades to ``available:
+        # False`` rather than reaching here; per ADR-0011 drift at the optional
+        # language slot is treated as unset (i.e. the default) too.
         "output_language": output_language,
+        "output_language_is_default": output_language is None,
     }
+
+
+def _persisted_account_identity(account: object) -> dict[str, Any]:
+    """Return persisted ``email`` / ``authuser`` from auth-check details when present."""
+    if not isinstance(account, dict):
+        return {}
+    identity: dict[str, Any] = {}
+    email = account.get("email")
+    if email is not None:
+        identity["email"] = email
+    authuser = account.get("authuser")
+    if authuser is not None:
+        identity["authuser"] = authuser
+    return identity
 
 
 @router.get("/info")
 async def server_info(
-    client: ClientDep,
+    request: Request,
     include_account: Annotated[bool, Query()] = False,
 ) -> dict[str, Any]:
     """Report the server version and local authentication health.
@@ -116,19 +137,57 @@ async def server_info(
         test_fetch=False,
         json_output=True,
     )
+    account_client: NotebookLMClient | None = None
+    if include_account:
+        try:
+            account_client = await get_client(request)
+        except AuthError:
+            # A concurrent request can bind successfully immediately after
+            # this request loses an auth generation; re-check state below.
+            pass
+        except Exception:
+            # Degrade only failures that the loader recorded for diagnostics.
+            # Unrecorded exceptions still identify a route/programming error
+            # and must retain the normal server error path.
+            if get_client_error(request) is None:
+                raise
+    startup_error = get_client_error(request)
+    if include_account and account_client is None and startup_error is None:
+        # The first lookup can fail just before a concurrent request finishes
+        # binding the singleton client and clears ``client_error``. Re-read the
+        # now-bound client instead of treating that narrow race as an invariant
+        # violation below.
+        account_client = await get_client(request)
+    # Probe after any lazy bind: that bind can succeed because storage was
+    # repaired after this request started, and the response must describe the
+    # newly bound session rather than an earlier stale disk snapshot.
     result = await run_auth_check(plan, read_env_auth_json=_no_env_auth_json)
+    startup_error_item = error_item(startup_error) if startup_error is not None else None
+    authenticated = result.all_passed and startup_error is None
+    auth: dict[str, Any] = {
+        "authenticated": authenticated,
+        "storage_exists": bool(result.checks.get("storage_exists")),
+        "json_valid": bool(result.checks.get("json_valid")),
+        "cookies_present": bool(result.checks.get("cookies_present")),
+        "sid_cookie": bool(result.checks.get("sid_cookie")),
+        "profile": profile,
+    }
+    if startup_error_item is not None:
+        auth["startup_error"] = startup_error_item
     info: dict[str, Any] = {
         "server": SERVER_NAME,
         "version": version_string(),
-        "auth": {
-            "authenticated": result.all_passed,
-            "storage_exists": bool(result.checks.get("storage_exists")),
-            "json_valid": bool(result.checks.get("json_valid")),
-            "cookies_present": bool(result.checks.get("cookies_present")),
-            "sid_cookie": bool(result.checks.get("sid_cookie")),
-            "profile": profile,
-        },
+        "auth": auth,
     }
     if include_account:
-        info["account"] = await _account_block(client, authenticated=result.all_passed)
+        if startup_error_item is not None:
+            info["account"] = {
+                **_persisted_account_identity(result.details.get("account")),
+                "available": False,
+                "reason": startup_error_item["message"],
+            }
+        else:
+            if account_client is None:  # pragma: no cover - guarded above
+                raise RuntimeError("account diagnostics require a bound client")
+            info["account"] = await _account_block(account_client, authenticated=authenticated)
     return info

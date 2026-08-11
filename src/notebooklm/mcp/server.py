@@ -4,9 +4,9 @@ Design highlights:
 
 - **One client per process, bound at lifespan.** The FastMCP lifespan opens a
   single :class:`~notebooklm.client.NotebookLMClient` via
-  ``from_storage(profile=...)`` inside the server loop (satisfies the ADR-0004
-  loop-affinity contract) and keeps it for the process lifetime. Its keepalive
-  task gives long sessions cookie rotation for free.
+  ``from_storage(profile=..., keepalive=600.0)`` inside the server loop
+  (satisfies the ADR-0004 loop-affinity contract) and keeps it for the process
+  lifetime. Its keepalive task gives long sessions cookie rotation for free.
 - **Transport-neutral.** Tools are thin adapters over the ``_app/`` cores; this
   package imports NO ``click`` / ``rich`` / ``cli`` (enforced by
   ``tests/_guardrails/test_mcp_boundary.py``).
@@ -24,6 +24,7 @@ from typing import cast
 from fastmcp import FastMCP
 from fastmcp.server.auth import AuthProvider
 
+from .._runtime.config import DEFAULT_SERVER_KEEPALIVE_INTERVAL
 from ..client import NotebookLMClient
 from ..paths import get_active_profile, resolve_profile, set_active_profile
 from ._context import AppState
@@ -49,8 +50,8 @@ SERVER_INSTRUCTIONS = (
 )
 
 #: A factory returns an async-context-manager that yields the client. The default
-#: factory binds ``NotebookLMClient.from_storage(profile=...)``; tests inject a
-#: factory yielding a mock so no real auth/network is needed.
+#: factory binds ``NotebookLMClient.from_storage(profile=..., keepalive=600.0)``;
+#: tests inject a factory yielding a mock so no real auth/network is needed.
 ClientFactory = Callable[[], AbstractAsyncContextManager[NotebookLMClient]]
 
 
@@ -62,10 +63,37 @@ def register_all(mcp: FastMCP) -> None:
     domains; Phase 2b added the artifacts/research/meta domains; the sharing
     domain followed.
     """
-    from .tools import chat, meta, notebooks, notes, research, sharing, sources, studio
+    from .tools import (
+        chat,
+        meta,
+        notebooks,
+        notes,
+        research,
+        sharing,
+        sources,
+        sources_drive,
+        studio,
+    )
 
-    for module in (notebooks, sources, chat, notes, studio, research, sharing, meta):
+    for module in (
+        notebooks,
+        sources,
+        sources_drive,
+        chat,
+        notes,
+        studio,
+        research,
+        sharing,
+        meta,
+    ):
         module.register(mcp)
+
+    # ``await_upload`` (Phase 1 upload-completion signal) lives in the ``_fileupload``
+    # sibling of the sources domain — registered here rather than from ``sources.register``
+    # so that fat module (at its ADR-0008 size cap) does not absorb the wiring.
+    from .tools._fileupload import register_file_tools
+
+    register_file_tools(mcp)
 
 
 def create_server(
@@ -83,7 +111,7 @@ def create_server(
             for diagnostics such as the ``server_info`` tool.
         client_factory: Test seam — a zero-arg callable returning an async context
             manager that yields a client. Defaults to
-            ``NotebookLMClient.from_storage(profile=...)``.
+            ``NotebookLMClient.from_storage(profile=..., keepalive=600.0)``.
         auth: Optional FastMCP auth provider gating the HTTP transport. Passed
             **explicitly** by the caller — this function never reads
             ``NOTEBOOKLM_MCP_TOKEN`` itself, so stdio runs and the unit suite
@@ -106,7 +134,10 @@ def create_server(
         # the async-context-manager protocol.
         return cast(
             "AbstractAsyncContextManager[NotebookLMClient]",
-            NotebookLMClient.from_storage(profile=profile),
+            NotebookLMClient.from_storage(
+                profile=profile,
+                keepalive=DEFAULT_SERVER_KEEPALIVE_INTERVAL,
+            ),
         )
 
     factory = client_factory or _default_factory
@@ -129,4 +160,10 @@ def create_server(
         from ._fileroutes import register_file_routes
 
         register_file_routes(mcp, file_transfer)
+    # Dev-only in-app upload widget (Phase 3 experiment). No-op unless NOTEBOOKLM_MCP_UPLOAD_WIDGET=1,
+    # so it never enters the prod manifest. Lazy import keeps the fastmcp.apps dependency off the
+    # default path.
+    from ._uploadwidget import register_upload_widget
+
+    register_upload_widget(mcp, file_transfer)
     return mcp

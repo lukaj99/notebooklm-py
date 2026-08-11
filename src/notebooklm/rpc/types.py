@@ -75,7 +75,7 @@ class RPCMethod(str, Enum):
     CREATE_NOTEBOOK = "CCqFvf"  # -> CreateProject
     GET_NOTEBOOK = "rLM1Ne"  # -> GetProject
     RENAME_NOTEBOOK = "s0tc2d"  # -> MutateProject (generic notebook mutator; see note below)
-    DELETE_NOTEBOOK = "WWINqb"  # -> DeleteProjects (batch-capable; we send a single id)
+    DELETE_NOTEBOOK = "WWINqb"  # -> DeleteProjects (single id; batch shapes probed & rejected, see _notebooks.delete)
 
     # Source operations
     ADD_SOURCE = "izAoDd"  # -> AddSources (batch-capable; we send a single source)
@@ -91,7 +91,10 @@ class RPCMethod(str, Enum):
     CHECK_SOURCE_FRESHNESS = "yR9Yof"  # -> CheckSourceFreshness
     UPDATE_SOURCE = "b7Wfje"  # -> MutateSource
 
-    # Source label operations (AI topic grouping)
+    # Source label operations (AI topic grouping).
+    # NOTE: account-level *collections* (notebook grouping) reuse these four
+    # methods verbatim — a collection is a type-3 label with a null notebook
+    # parent. See notebooklm._collection.params for the collection wire shapes.
     # -> CreateLabel. Multi-mode: AI auto-group (generate) AND manual create
     CREATE_LABEL = "agX4Bc"
     LIST_LABELS = "I3xc3c"  # -> GetLabels
@@ -107,7 +110,7 @@ class RPCMethod(str, Enum):
     # -> CreateArtifact. Generate any artifact (audio, video, report, quiz, etc.)
     CREATE_ARTIFACT = "R7cb6c"
     LIST_ARTIFACTS = "gArtLc"  # -> ListArtifacts. List all artifacts in a notebook
-    DELETE_ARTIFACT = "V5N4be"  # -> DeleteArtifact
+    DELETE_ARTIFACT = "V5N4be"  # -> DeleteArtifact (single id; batch shapes probed & rejected)
     # -> UpdateArtifact (generic artifact updater; we only set the title)
     RENAME_ARTIFACT = "rc3d8d"
     # -> ExportToDrive (Google Drive only; Docs/Sheets are Drive destinations)
@@ -161,6 +164,95 @@ class RPCMethod(str, Enum):
     GET_USER_SETTINGS = "ZwVcOc"
     # -> MutateAccount (generic account mutator; we only set the output language)
     SET_USER_SETTINGS = "hT54vc"
+
+
+class GrpcStatusCode(int, Enum):
+    """Canonical gRPC status codes (``google.rpc.Code``) seen on the wire.
+
+    The batchexecute backend embeds one of these at index 5 of a ``wrb.fr``
+    entry when an RPC returns null result data — the bare single-element form
+    ``[code]`` observed in issues #114 and #294.
+
+    Deliberately distinct from :class:`notebooklm.rpc.decoder.RPCErrorCode`,
+    which is an HTTP-style namespace (``NOT_FOUND = 404``). The two share
+    member names but not values, so code that compares a wire status must say
+    which namespace it means: ``GrpcStatusCode.NOT_FOUND`` is ``5``.
+
+    This is the single source of truth for those numbers. Before it existed the
+    literals were spelled inline at three layers — the decoder's ``(5, 7)``
+    routing, the neutral error classifier's ``== 5``, and the notebook
+    not-found translation — so a reader had to know from context whether a bare
+    ``5`` meant gRPC NOT_FOUND or something else.
+    """
+
+    OK = 0
+    CANCELLED = 1
+    UNKNOWN = 2
+    INVALID_ARGUMENT = 3
+    DEADLINE_EXCEEDED = 4
+    NOT_FOUND = 5
+    ALREADY_EXISTS = 6
+    PERMISSION_DENIED = 7
+    RESOURCE_EXHAUSTED = 8
+    FAILED_PRECONDITION = 9
+    ABORTED = 10
+    OUT_OF_RANGE = 11
+    UNIMPLEMENTED = 12
+    INTERNAL = 13
+    UNAVAILABLE = 14
+    DATA_LOSS = 15
+    UNAUTHENTICATED = 16
+
+
+def normalize_rpc_code(code: str | int | None) -> int | None:
+    """Coerce an ``RPCError.rpc_code`` to an ``int``, or ``None``.
+
+    ``rpc_code`` is typed ``str | int | None`` and carries three different
+    kinds of value: a numeric status (gRPC on the decoder's wire path, or an
+    HTTP status on the transport path), a non-numeric label such as
+    ``"USER_DISPLAYABLE_ERROR"``, or ``None`` when the error came from a layer
+    that never saw a status. A string ``"5"`` has to compare equal to the
+    integer status, and a non-numeric label has to answer ``None`` rather than
+    raise.
+
+    Deliberately *not* restricted to :class:`GrpcStatusCode`: callers that
+    range-check HTTP statuses (``500 <= code < 600``) need the raw integer
+    through. Use :func:`normalize_grpc_status` when the question is
+    specifically "which gRPC status is this?".
+
+    ``bool`` is rejected explicitly: it is a subclass of ``int``, so ``True``
+    would otherwise coerce to ``1``.
+    """
+    if code is None or isinstance(code, bool):
+        return None
+    try:
+        return int(code)
+    except (TypeError, ValueError):
+        return None
+
+
+def normalize_grpc_status(code: str | int | None) -> GrpcStatusCode | None:
+    """Normalize an ``RPCError.rpc_code`` to a :class:`GrpcStatusCode`.
+
+    The narrower companion to :func:`normalize_rpc_code`: it answers "is this
+    gRPC status X?" for callers that want the semantic comparison, and returns
+    ``None`` for anything outside the canonical table — including HTTP statuses
+    such as ``500``, which are numeric but are not gRPC codes.
+
+    Args:
+        code: The raw ``rpc_code`` off an :class:`~notebooklm.exceptions.RPCError`.
+
+    Returns:
+        The matching :class:`GrpcStatusCode`, or ``None`` when the value is
+        absent, non-numeric, or not a code this table knows.
+    """
+    as_int = normalize_rpc_code(code)
+    if as_int is None:
+        return None
+    try:
+        return GrpcStatusCode(as_int)
+    except ValueError:
+        return None
 
 
 class ArtifactTypeCode(int, Enum):
@@ -431,6 +523,7 @@ class SourceStatus(int, Enum):
     Values discovered from GET_NOTEBOOK API response at source[3][1].
     """
 
+    UNKNOWN = -1  # Status is absent, malformed, or not yet mapped
     PROCESSING = 1  # Source is being processed (indexing content)
     READY = 2  # Source is ready for use
     ERROR = 3  # Source processing failed
@@ -439,6 +532,7 @@ class SourceStatus(int, Enum):
 
 # Source status code to string mapping (uses int keys for mypy compatibility)
 _SOURCE_STATUS_MAP: dict[int, str] = {
+    SourceStatus.UNKNOWN: "unknown",
     SourceStatus.PROCESSING: "processing",
     SourceStatus.READY: "ready",
     SourceStatus.ERROR: "error",
@@ -456,7 +550,7 @@ def source_status_to_str(status_code: int | SourceStatus) -> str:
         status_code: Status code as int or SourceStatus enum.
 
     Returns:
-        String status: "processing", "ready", "error", "preparing", or "unknown".
+        String status: "unknown", "processing", "ready", "error", or "preparing".
         Returns "unknown" for unrecognized codes (future-proofing).
     """
     return _SOURCE_STATUS_MAP.get(status_code, "unknown")

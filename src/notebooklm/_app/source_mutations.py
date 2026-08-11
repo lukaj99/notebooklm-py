@@ -45,7 +45,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, cast
 
 from ..exceptions import NotebookLMError, ValidationError
-from ..types import DriveMimeType, Source
+from ..types import DriveMimeType, Source, SourceType
 from .resolve import FULL_ID_PATTERN
 from .resolve import validate_id as _neutral_validate_id
 
@@ -546,6 +546,39 @@ _DRIVE_MIME_MAP: dict[DriveMimeChoice, str] = {
     "pdf": DriveMimeType.PDF.value,
 }
 
+#: The declared Drive MIME choice → the :class:`~notebooklm.types.SourceType` that
+#: labels the imported file.
+#:
+#: The NotebookLM backend returns an ambiguous type code for Drive imports: a
+#: Drive-hosted PDF comes back as code ``14``, which the client otherwise maps to
+#: :attr:`~notebooklm.types.SourceType.GOOGLE_SPREADSHEET`, mislabeling PDFs as
+#: spreadsheets (#1828). On the Drive add path the caller's declared ``mime_type``
+#: is authoritative for the imported file, so we stamp the corresponding type code
+#: onto the returned source rather than exposing the raw (ambiguous) backend code.
+_DRIVE_MIME_SOURCE_TYPE: dict[DriveMimeChoice, SourceType] = {
+    "google-doc": SourceType.GOOGLE_DOCS,
+    "google-slides": SourceType.GOOGLE_SLIDES,
+    "google-sheets": SourceType.GOOGLE_SPREADSHEET,
+    "pdf": SourceType.PDF,
+}
+
+#: :class:`SourceType` → the numeric ``_type_code`` the wire decoder assigns it.
+#: These four mirror ``notebooklm._types.sources._SOURCE_TYPE_CODE_MAP``; the
+#: ``_app`` boundary forbids importing that private map to invert it at runtime, so
+#: they are pinned via the public enum here (no bare "magic" integer keys) and a
+#: parity test asserts they never drift from the decoder map.
+_SOURCE_TYPE_TO_CODE: dict[SourceType, int] = {
+    SourceType.GOOGLE_DOCS: 1,
+    SourceType.GOOGLE_SLIDES: 2,
+    SourceType.PDF: 3,
+    SourceType.GOOGLE_SPREADSHEET: 14,
+}
+
+
+def drive_mime_type_code(mime: DriveMimeChoice) -> int:
+    """The ``Source._type_code`` a declared Drive ``mime`` should carry (#1828)."""
+    return _SOURCE_TYPE_TO_CODE[_DRIVE_MIME_SOURCE_TYPE[mime]]
+
 
 @dataclass(frozen=True)
 class SourceAddDrivePlan:
@@ -572,11 +605,21 @@ async def execute_source_add_drive(
     """
     if plan.mime_type not in _DRIVE_MIME_MAP:
         raise ValidationError(
-            f"Invalid mime_type {plan.mime_type!r}; expected one of {sorted(_DRIVE_MIME_MAP)}"
+            f"Invalid mime_type {plan.mime_type!r}; expected one of {sorted(_DRIVE_MIME_MAP)}. "
+            "NotebookLM's Drive import only ingests Google-native Docs/Slides/Sheets + PDF; "
+            "an upload-only Drive file (e.g. epub/docx/txt/md/rtf/odt/csv) must be "
+            "downloaded and added as a `file` source instead."
         )
     mime = _DRIVE_MIME_MAP[plan.mime_type]
 
     src = await client.sources.add_drive(plan.notebook_id, plan.file_id, plan.title, mime)
+    # Stamp the declared type onto the returned source. The backend returns an
+    # ambiguous type code for Drive imports (a Drive-hosted PDF comes back as
+    # ``14`` → GOOGLE_SPREADSHEET), so the caller's declared ``mime_type`` — not the
+    # raw backend code — is authoritative for how the source is labeled (#1828). The
+    # freshly returned ``Source`` is ours to finalize; ``kind`` derives from
+    # ``_type_code``, so overwriting it is the whole fix.
+    src._type_code = drive_mime_type_code(plan.mime_type)
     return SourceAddDriveResult(
         source=src,
         notebook_id=plan.notebook_id,
@@ -585,7 +628,65 @@ async def execute_source_add_drive(
     )
 
 
+# ---------------------------------------------------------------------------
+# source add-drive-file (auto-route: download + upload upload-only Drive types)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class SourceAddDriveFileResult:
+    """Outcome of ``source add-drive-file`` (#1884).
+
+    Typed-fields-only (§11): the ``--json`` envelope is built by the surface
+    adapter (the CLI renderer / MCP tool) from these fields. ``document_id`` is
+    the raw id/URL the caller passed, echoed for provenance.
+    """
+
+    source: Source
+    notebook_id: str
+    document_id: str
+
+
+@dataclass(frozen=True)
+class SourceAddDriveFilePlan:
+    """Prepared inputs for ``execute_source_add_drive_file``."""
+
+    notebook_id: str
+    document_id: str
+    title: str | None = None
+    wait: bool = False
+    wait_timeout: float = 120.0
+
+
+async def execute_source_add_drive_file(
+    client: NotebookLMClient,
+    plan: SourceAddDriveFilePlan,
+) -> SourceAddDriveFileResult:
+    """Auto-route an upload-only Drive file: download it server-side, then upload.
+
+    Thin executor over the public client (boundary-legal): the download +
+    classification + resumable upload live in ``SourcesAPI.add_drive_file``. A
+    native Google Doc/Slides/Sheet (not directly downloadable), an unsupported
+    type, or expired Drive auth surface as :class:`ValidationError` from the
+    client, which the surface adapters render.
+    """
+    src = await client.sources.add_drive_file(
+        plan.notebook_id,
+        plan.document_id,
+        title=plan.title,
+        wait=plan.wait,
+        wait_timeout=plan.wait_timeout,
+    )
+    return SourceAddDriveFileResult(
+        source=src,
+        notebook_id=plan.notebook_id,
+        document_id=plan.document_id,
+    )
+
+
 __all__ = [
+    "SourceAddDriveFilePlan",
+    "SourceAddDriveFileResult",
     "SourceAddDrivePlan",
     "SourceAddDriveResult",
     "SourceDeleteByTitlePlan",
@@ -599,7 +700,9 @@ __all__ = [
     "SourceRenamePlan",
     "SourceRenameResult",
     "build_id_ambiguity_error",
+    "drive_mime_type_code",
     "execute_source_add_drive",
+    "execute_source_add_drive_file",
     "execute_source_delete",
     "execute_source_delete_by_title",
     "execute_source_refresh",

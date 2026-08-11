@@ -16,9 +16,16 @@ from notebooklm._source.upload import (
     _extract_register_file_source_id,
     _redact_upload_url,
     _transient_error_types_for_upload,
+    _upload_url_origin,
     _validate_resumable_upload_url,
 )
-from notebooklm.exceptions import NetworkError, ValidationError
+from notebooklm.exceptions import (
+    AuthError,
+    NetworkError,
+    RateLimitError,
+    ServerError,
+    ValidationError,
+)
 from notebooklm.rpc import RPCError, RPCMethod
 from notebooklm.types import Source, SourceAddError
 
@@ -262,6 +269,94 @@ def test_redact_upload_url_omits_userinfo_and_query_secrets(url: str, expected: 
 def test_validate_resumable_upload_url_rejects_untrusted_shapes(url: str, match: str) -> None:
     with pytest.raises(ValidationError, match=match):
         _validate_resumable_upload_url(url)
+
+
+# --- upload-host trust is host-RELATIVE, never a constant ------------------
+# Google serves the personal app from two interchangeable hosts after the
+# "Gemini Notebook" rebrand, and its Scotty frontend picks which one it names in
+# the ``X-Goog-Upload-URL`` response header — so a personal client must accept
+# either. An enterprise tenant stays pinned to exactly its own host: widening to
+# a constant personal-host set would let a response header redirect ENTERPRISE
+# file bytes to the consumer service.
+_PERSONAL_HOSTS = ("notebooklm.google.com", "notebook.google.com")
+_ENTERPRISE_HOST = "notebooklm.cloud.google.com"
+
+
+@pytest.mark.parametrize("named_host", _PERSONAL_HOSTS)
+@pytest.mark.parametrize("configured_host", _PERSONAL_HOSTS)
+def test_validate_resumable_upload_url_accepts_either_personal_host(
+    monkeypatch: pytest.MonkeyPatch, configured_host: str, named_host: str
+) -> None:
+    monkeypatch.setenv("NOTEBOOKLM_BASE_URL", f"https://{configured_host}")
+    url = f"https://{named_host}/upload/_/?upload_id=session"
+
+    assert _validate_resumable_upload_url(url) == url
+
+
+@pytest.mark.parametrize("named_host", _PERSONAL_HOSTS)
+def test_validate_resumable_upload_url_pins_enterprise_to_its_own_host(
+    monkeypatch: pytest.MonkeyPatch, named_host: str
+) -> None:
+    """An enterprise tenant must reject a consumer-host upload URL (data boundary)."""
+    monkeypatch.setenv("NOTEBOOKLM_BASE_URL", f"https://{_ENTERPRISE_HOST}")
+
+    with pytest.raises(ValidationError, match="host is not trusted"):
+        _validate_resumable_upload_url(f"https://{named_host}/upload/_/?upload_id=session")
+
+    own_host_url = f"https://{_ENTERPRISE_HOST}/upload/_/?upload_id=session"
+    assert _validate_resumable_upload_url(own_host_url) == own_host_url
+
+
+@pytest.mark.parametrize(
+    "named_host",
+    [
+        "evil.example",
+        "notebooklm.google",  # the marketing host — no ``.com``
+        "notebooklm.google.com.evil.example",  # suffix-confusion
+        "upload.notebooklm.google.com",  # subdomain, not an app host
+        "storage.googleapis.com",
+    ],
+)
+@pytest.mark.parametrize("configured_host", (*_PERSONAL_HOSTS, _ENTERPRISE_HOST))
+def test_validate_resumable_upload_url_still_rejects_foreign_hosts(
+    monkeypatch: pytest.MonkeyPatch, configured_host: str, named_host: str
+) -> None:
+    monkeypatch.setenv("NOTEBOOKLM_BASE_URL", f"https://{configured_host}")
+
+    with pytest.raises(ValidationError, match="host is not trusted"):
+        _validate_resumable_upload_url(f"https://{named_host}/upload/_/?upload_id=session")
+
+
+def test_validate_resumable_upload_url_keeps_non_host_guards_on_the_alias_host(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Widening the *host* set must not relax the port/scheme/path/userinfo guards."""
+    monkeypatch.setenv("NOTEBOOKLM_BASE_URL", f"https://{_PERSONAL_HOSTS[0]}")
+    alias = _PERSONAL_HOSTS[1]
+
+    for url, match in (
+        (f"https://{alias}:8443/upload/_/?upload_id=session", "host is not trusted"),
+        (f"http://{alias}/upload/_/?upload_id=session", "must use https"),
+        (f"https://{alias}/other/_/?upload_id=session", "path is not trusted"),
+        (f"https://u:p@{alias}/upload/_/?upload_id=session", "must not contain credentials"),
+        (f"https://{alias}/upload/_/", "exactly one non-empty upload_id"),
+    ):
+        with pytest.raises(ValidationError, match=match):
+            _validate_resumable_upload_url(url)
+
+
+@pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        ("https://notebook.google.com/upload/_/?upload_id=s", "https://notebook.google.com"),
+        (
+            "https://notebooklm.google.com:443/upload/_/?upload_id=s",
+            "https://notebooklm.google.com",
+        ),
+    ],
+)
+def test_upload_url_origin_drops_path_query_and_default_port(url: str, expected: str) -> None:
+    assert _upload_url_origin(url) == expected
 
 
 @pytest.mark.parametrize(
@@ -558,7 +653,7 @@ async def test_register_file_source_status3_includes_source_limit_context(
     service: SourceUploadPipeline,
 ) -> None:
     rpc_error = RPCError(
-        "RPC o4cbdc returned null result with status code 3 (Invalid argument).",
+        "The server rejected this request (invalid argument).",
         method_id="o4cbdc",
         rpc_code=3,
     )
@@ -593,7 +688,7 @@ async def test_register_file_source_uses_configured_source_limit_lookup(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     rpc_error = RPCError(
-        "RPC o4cbdc returned null result with status code 3 (Invalid argument).",
+        "The server rejected this request (invalid argument).",
         method_id="o4cbdc",
         rpc_code=3,
     )
@@ -774,6 +869,51 @@ async def test_start_resumable_upload_rejects_untrusted_upload_header_url() -> N
         )
 
 
+@pytest.mark.parametrize(
+    ("status", "expected_exc"),
+    [
+        (400, ValidationError),  # unsupported file type (.pub) → clean 4xx
+        (415, ValidationError),  # unsupported media type → clean 4xx
+        (401, AuthError),  # session/credentials rejected → auth
+        (403, AuthError),  # forbidden → auth
+        (302, AuthError),  # session bounced to login → auth, NOT "unsupported file"
+        (503, ServerError),  # transient upstream failure stays a (retriable) server error
+        (429, RateLimitError),  # rate limit stays a rate-limit error
+    ],
+)
+@pytest.mark.asyncio
+async def test_start_resumable_upload_maps_upstream_status_to_notebooklm_error(
+    status: int, expected_exc: type[Exception]
+) -> None:
+    # NotebookLM's /upload endpoint answers with a raw HTTP status (not a
+    # batchexecute envelope), so the client layer must classify it — a raw
+    # ``httpx.HTTPStatusError`` must never leak to callers (#1892). A 4xx
+    # request/file rejection surfaces as ``ValidationError`` (the same bad-input
+    # category as the local unsupported-type check) so the MCP/REST adapters
+    # render a clean, redacted 4xx instead of an opaque 500.
+    req = httpx.Request("POST", "https://notebooklm.google.com/upload/_/")
+    response = httpx.Response(status, request=req, text="upstream rejected the upload")
+    client = AsyncMock()
+    client.post = AsyncMock(return_value=response)
+    client_cm = AsyncMock()
+    client_cm.__aenter__.return_value = client
+    client_factory = MagicMock(return_value=client_cm)
+    runtime = HttpRuntime()
+    service = make_pipeline(kernel=runtime, auth=runtime, async_client_factory=client_factory)
+
+    with pytest.raises(expected_exc) as exc_info:
+        await service.start_resumable_upload(
+            "nb_123",
+            "newsletter.pub",
+            12,
+            "src_123",
+            "application/vnd.ms-publisher",
+        )
+    # The filename rides in the classified message; the raw httpx error is chained.
+    assert "newsletter.pub" in str(exc_info.value)
+    assert isinstance(exc_info.value.__cause__, httpx.HTTPStatusError)
+
+
 @pytest.mark.asyncio
 async def test_upload_file_streaming_rejects_untrusted_url_before_post(tmp_path) -> None:
     file_path = tmp_path / "report.pdf"
@@ -819,6 +959,114 @@ async def test_upload_file_streaming_redacts_upload_url_in_debug_logs(tmp_path) 
     )
 
 
+def _mock_post_client() -> tuple[AsyncMock, MagicMock]:
+    """Return ``(client, client_factory)`` whose ``post`` records its headers."""
+    response = MagicMock()
+    response.raise_for_status = MagicMock()
+    response.headers = {}
+    client = AsyncMock()
+    client.post = AsyncMock(return_value=response)
+    client_cm = AsyncMock()
+    client_cm.__aenter__.return_value = client
+    return client, MagicMock(return_value=client_cm)
+
+
+# --- Origin/Referer must track the URL the bytes actually go to ------------
+# Once either personal host may be named in ``X-Goog-Upload-URL``, an
+# ``Origin`` copied from the configured base URL can name the *other* host —
+# and Google's origin-bound auth checks reject such a POST. Every upload
+# request therefore derives its ``Origin``/``Referer`` from the endpoint it is
+# addressed to (for stream/cancel: the *validated* upload URL).
+
+
+@pytest.mark.asyncio
+async def test_start_resumable_upload_origin_tracks_the_upload_endpoint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("NOTEBOOKLM_BASE_URL", "https://notebook.google.com")
+    client, client_factory = _mock_post_client()
+    # Scotty answers naming the *other* personal host: still accepted (A4).
+    client.post.return_value.headers = {
+        "x-goog-upload-url": "https://notebooklm.google.com/upload/_/?upload_id=session"
+    }
+    runtime = HttpRuntime()
+    service = make_pipeline(kernel=runtime, auth=runtime, async_client_factory=client_factory)
+
+    upload_url = await service.start_resumable_upload(
+        "nb_123", "report.pdf", 12, "src_123", "application/pdf"
+    )
+
+    assert upload_url == "https://notebooklm.google.com/upload/_/?upload_id=session"
+    headers = client.post.await_args.kwargs["headers"]
+    assert headers["Origin"] == "https://notebook.google.com"
+    assert headers["Referer"] == "https://notebook.google.com/"
+
+
+@pytest.mark.asyncio
+async def test_upload_file_streaming_origin_tracks_validated_upload_url(
+    monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> None:
+    monkeypatch.setenv("NOTEBOOKLM_BASE_URL", "https://notebooklm.google.com")
+    file_path = tmp_path / "report.pdf"
+    file_path.write_bytes(b"content")
+    client, client_factory = _mock_post_client()
+    runtime = HttpRuntime()
+    service = make_pipeline(kernel=runtime, auth=runtime, async_client_factory=client_factory)
+
+    await service.upload_file_streaming(
+        "https://notebook.google.com/upload/_/?upload_id=session",
+        file_path,
+    )
+
+    headers = client.post.await_args.kwargs["headers"]
+    assert headers["Origin"] == "https://notebook.google.com"
+    assert headers["Referer"] == "https://notebook.google.com/"
+
+
+@pytest.mark.asyncio
+async def test_cancel_upload_session_origin_tracks_validated_upload_url(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("NOTEBOOKLM_BASE_URL", "https://notebooklm.google.com")
+    client, client_factory = _mock_post_client()
+    runtime = HttpRuntime()
+    service = make_pipeline(kernel=runtime, auth=runtime, async_client_factory=client_factory)
+
+    await service.cancel_upload_session(
+        "https://notebook.google.com/upload/_/?upload_id=session",
+        "0",
+        logger=MagicMock(),
+    )
+
+    headers = client.post.await_args.kwargs["headers"]
+    assert headers["Origin"] == "https://notebook.google.com"
+    assert headers["Referer"] == "https://notebook.google.com/"
+    assert headers["x-goog-upload-command"] == "cancel"
+
+
+@pytest.mark.asyncio
+async def test_cancel_upload_session_builds_no_headers_before_validation() -> None:
+    """An untrusted host must never reach an outbound header.
+
+    ``cancel_upload_session`` used to build its header dict *above* the
+    validation call, inside a broad ``except Exception``. Deriving ``Origin``
+    from the upload URL in that order would have put a server-named, untrusted
+    host into an outbound header, so the construction now sits below the guard.
+    """
+    client, client_factory = _mock_post_client()
+    runtime = HttpRuntime()
+    service = make_pipeline(kernel=runtime, auth=runtime, async_client_factory=client_factory)
+
+    await service.cancel_upload_session(
+        "https://evil.example/upload/_/?upload_id=secret",
+        "0",
+        logger=MagicMock(),
+    )
+
+    client_factory.assert_not_called()
+    client.post.assert_not_awaited()
+
+
 @pytest.mark.asyncio
 async def test_cancel_upload_session_redacts_credentials_on_validation_failure() -> None:
     client_factory = MagicMock()
@@ -828,7 +1076,6 @@ async def test_cancel_upload_session_redacts_credentials_on_validation_failure()
 
     await service.cancel_upload_session(
         "https://alice:s3cr3t@notebooklm.google.com/upload/_/?upload_id=SECRET_UPLOAD_ID",
-        "https://notebooklm.google.com",
         "0",
         logger=logger,
     )

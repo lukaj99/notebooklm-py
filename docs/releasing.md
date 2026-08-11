@@ -1,7 +1,7 @@
 # Release Checklist
 
 **Status:** Active
-**Last Updated:** 2026-05-23
+**Last Updated:** 2026-08-05
 
 Checklist for releasing a new version of `notebooklm-py`.
 
@@ -252,7 +252,7 @@ no break against the baseline) is a CI failure, not silent cruft.
 
 ### E2E Tests on Release Branch
 
-- [ ] Go to **Actions** → **Nightly E2E**
+- [ ] Go to **Actions** → **Nightly E2E Tests**
 - [ ] Click **Run workflow**, set **custom_branch** to `release/vX.Y.Z`
 - [ ] Wait for E2E tests to pass
 - [ ] If E2E tests fail:
@@ -333,7 +333,7 @@ python scripts/mcp_live_smoke.py \
 
 The **Verify Package** workflow (`.github/workflows/verify-package.yml`) exercises a published wheel in two phases so packaging bugs cannot silently fall through to a stale PyPI mirror:
 
-1. **Dep tree from `uv.lock`.** `uv sync --frozen --extra browser --extra dev --extra markdown --extra mcp --extra server` installs the locked dependency tree for the full non-cookies extra set into `.venv/`: browser automation, developer tooling, Markdown export, MCP, and REST server dependencies. `cookies` stays excluded because of the Python 3.13+ `rookiepy` issue. This produces a deterministic dep tree without any TestPyPI lookups.
+1. **Dep tree from `uv.lock`.** `uv sync --frozen --extra browser --extra dev --extra markdown --extra mcp --extra server --extra headless` installs the locked dependency tree for the full non-cookies extra set into `.venv/`: browser automation, developer tooling, Markdown export, MCP, REST server, and headless master-token-auth dependencies. `cookies` stays excluded because of the Python 3.13+ `rookiepy` issue. This produces a deterministic dep tree without any TestPyPI lookups.
 2. **Wheel from the chosen index, `--no-deps`.** `uv pip install --python .venv/bin/python --no-deps --reinstall --no-cache --only-binary=:all: --index-url <testpypi|pypi> "notebooklm-py==<version>"` swaps the editable install left behind by `uv sync` for the actual published wheel. `--no-deps` is load-bearing: without it the previous `--extra-index-url https://pypi.org/simple/` fallback would mask a broken/missing TestPyPI upload by resolving an older version from PyPI. `--reinstall --no-cache --only-binary=:all:` guarantee we test the freshly-uploaded wheel and never a cached sdist. The explicit `--python .venv/bin/python` is required because `uv sync` does not seed `pip` into the project venv — a bare `source .venv/bin/activate && pip install …` would silently fall back to the runner's system pip and leave the editable install in place.
 
 The same chain runs for `source: pypi` (post-publish verification) — only the wheel index changes; the locked dep tree is identical.
@@ -381,6 +381,15 @@ The `Publish to PyPI` step in `publish.yml` also opts into **PEP 740 attestation
 
 ### GitHub Release
 
+- [ ] **⏸️ Wait for the Docker image first.** Creating the release triggers `publish-mcpb.yml`, which
+  attaches a `docker-compose.yml` **version-baked** to this tag. That file pulls
+  `tenglin/notebooklm-mcp:<version>`, so the image must exist before the release publishes. The tag
+  push started `publish-docker.yml` in parallel with `publish.yml`; confirm it finished and the tag
+  is live before creating the release:
+  ```bash
+  gh run list --workflow=publish-docker.yml --branch "vX.Y.Z" --json status,conclusion
+  docker manifest inspect tenglin/notebooklm-mcp:X.Y.Z >/dev/null && echo "image present"
+  ```
 - [ ] Create release from tag:
   ```bash
   gh release create vX.Y.Z --title "vX.Y.Z" --notes "$(cat CHANGELOG.md | sed -n '/## \[X.Y.Z\]/,/## \[/p' | sed '$d')"
@@ -392,13 +401,12 @@ The `Publish to PyPI` step in `publish.yml` also opts into **PEP 740 attestation
   - Copy release notes from `CHANGELOG.md`
   - Publish release
 
-- [ ] Publishing a **stable** release fires `publish-mcpb.yml`, which builds
-  `notebooklm-mcp.mcpb` and attaches it to the release as an asset (it re-checks
-  that the manifest, tag, and `pyproject.toml` versions all agree). Confirm the
-  asset appears under the release once the workflow finishes — that is the
-  one-click Claude Desktop bundle users download. Pre-releases skip this step by
-  design (the thin launcher resolves the latest stable server, not the
-  pre-release), so a `vX.Y.ZaN` release carries no `.mcpb`.
+- [ ] Publishing a release (stable **and** pre-release) fires `publish-mcpb.yml`, which attaches
+  four assets: `notebooklm-mcp.mcpb` (the one-click Claude Desktop bundle — the launcher pins this
+  release's version), `notebooklm-skill.zip`, `docker-compose.yml`, and `env.example`. The compose
+  is **version-baked** to this exact release (so a downloaded `docker compose up -d` pulls
+  `tenglin/notebooklm-mcp:<this version>`, not `:latest`). It re-checks manifest/tag/pyproject
+  agreement. Confirm all four assets appear under the release once the workflow finishes.
 
 ### Prune the API-Compat Allowlist
 
@@ -418,26 +426,39 @@ The lifecycle to keep in mind:
 - **allowlist** = the intentional breaks pending the *next* release. It should
   reset to (near) empty at each release boundary.
 
-Concretely, **after the tag is pushed**, prune the entries that just shipped:
+The tag-triggered `publish.yml` workflow now performs this mechanically after
+publishing. It checks out the immutable tag, runs the audit with the explicit
+previous stable tag, and opens a PR from
+`automation/api-compat-prune-vX.Y.Z` when stale entries exist. Its repository
+write permission is used only for that generated branch; the workflow never
+pushes `main`. Review the generated diff and merge the PR before the next
+release.
+Reruns reuse the branch only when its complete generated tree is identical and
+an open matching PR exists. A human-modified branch or a branch without its PR
+fails without force-pushing; review or remove that branch, then rerun the
+workflow.
 
-- [ ] In a follow-up PR (on `main`, after the tag exists), remove from
-  `scripts/api-compat-allowlist.json` every `allowed_breaks` entry that
-  described a `vPREV → vX.Y.Z` change. These are now baked into the `vX.Y.Z`
-  baseline. List the stale entries with:
-  ```bash
-  uv run python scripts/audit_public_api_compat.py --json \
-    | python -c "import json,sys; print('\n'.join(f\"{e['code']}  {e['object']}\" for e in json.load(sys.stdin)['stale_allowances']))"
-  ```
+For local recovery or a dry review of the generated change, use the explicit
+write operation (always pass the baseline you intend to compare):
+
+```bash
+uv run python scripts/audit_public_api_compat.py --baseline-ref vPREV --prune
+```
+
+`--prune` is never implied by a normal audit. It removes only stale
+`allowed_breaks` entries, preserves `extra_public_names` and other policy
+fields, and performs a deterministic atomic rewrite. It is idempotent and
+reports each removed entry. Malformed, missing, or unwritable allowlists fail
+with an actionable error; fix the file or permissions and rerun the command.
+
 - [ ] Re-run the gate in strict mode — it must report **no stale entries**:
   ```bash
-  uv run python scripts/audit_public_api_compat.py --check-stale
+  uv run python scripts/audit_public_api_compat.py --baseline-ref vPREV --check-stale
   ```
 
 > **Forcing function:** the Code Quality job runs the audit with `--check-stale`,
 > which **fails** on any allowlist entry that matches no break against the
-> baseline. So the moment `vX.Y.Z` is tagged, the just-shipped entries become
-> stale and CI goes red until this prune PR lands — the prune is mandatory, not
-> a checklist nicety. The pair-aware rule keeps the two path-views of a callable
+> baseline. The pair-aware rule keeps the two path-views of a callable
 > (`notebooklm.X` and `notebooklm.client.X`) together: a unit is pruned only when
 > *neither* view still matches a break.
 

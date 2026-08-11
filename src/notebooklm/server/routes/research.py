@@ -37,7 +37,7 @@ from ..._app import research as research_core
 from ..._app.serialize import to_jsonable
 from ...client import NotebookLMClient
 from ...exceptions import DecodingError, ValidationError
-from .._context import get_client, get_pending
+from .._context import get_client, get_pending, limit_research
 from .._pending import PendingRegistry
 
 __all__ = ["router"]
@@ -56,7 +56,7 @@ class ResearchStartBody(BaseModel):
     mode: Literal["fast", "deep"] = "fast"
 
 
-@router.post("", status_code=202)
+@router.post("", status_code=202, dependencies=[Depends(limit_research)])
 async def start_research(
     notebook_id: str, body: ResearchStartBody, client: ClientDep
 ) -> dict[str, Any]:
@@ -114,6 +114,12 @@ async def research_status(notebook_id: str, run_id: str, client: ClientDep) -> d
     (``no_research`` | ``in_progress`` | ``completed`` | ``failed`` |
     ``not_found``), the found ``sources``, and any ``report`` once complete. Poll
     until ``completed``, then ``POST .../{run_id}/import``.
+
+    ``status: failed`` covers several outcomes, so ``termination_reason``
+    (``no_results`` | ``cancelled`` | ``unknown``, else ``completed`` |
+    ``in_progress``) names which, with ``reason_message`` / ``hint`` populated
+    when the run did not succeed (#1964). Without these a REST caller saw a bare
+    ``failed`` here while the import route below already explained itself.
     """
     result = await research_core.poll_and_classify(client, notebook_id, run_id)
     return {
@@ -122,6 +128,10 @@ async def research_status(notebook_id: str, run_id: str, client: ClientDep) -> d
         "task_id": result.task_id,
         "kind": result.kind,
         "status": result.status,
+        "status_code": result.status_code,
+        "termination_reason": result.termination_reason,
+        "reason_message": result.reason_message,
+        "hint": result.hint,
         "query": result.query,
         "sources": to_jsonable(result.sources),
         "summary": result.summary,
@@ -129,7 +139,7 @@ async def research_status(notebook_id: str, run_id: str, client: ClientDep) -> d
     }
 
 
-@router.delete("/{run_id}")
+@router.delete("/{run_id}", dependencies=[Depends(limit_research)])
 async def cancel_research(notebook_id: str, run_id: str, client: ClientDep) -> dict[str, Any]:
     """Cancel an in-flight research run (fire-and-forget).
 
@@ -142,7 +152,7 @@ async def cancel_research(notebook_id: str, run_id: str, client: ClientDep) -> d
     return {"status": "cancelled", "notebook_id": notebook_id, "run_id": run_id, "cancelled": True}
 
 
-@router.post("/{run_id}/import", status_code=201)
+@router.post("/{run_id}/import", status_code=201, dependencies=[Depends(limit_research)])
 async def import_research(
     notebook_id: str, run_id: str, client: ClientDep, pending: PendingDep
 ) -> dict[str, Any]:
@@ -163,9 +173,11 @@ async def import_research(
     # touching ``import_sources``. The same shared helper backs the MCP
     # ``research_import`` tool so the importable-state ladder cannot drift.
     sources = await research_core.poll_sources_for_import(client, notebook_id, run_id)
-    # Match the MCP ``research_import`` tool exactly — it imports via the plain
-    # ``import_sources`` (NOT ``import_sources_with_verification``), so the REST
-    # route does the same to keep the two surfaces in lock-step.
+    # The MCP ``research_import`` tool imports via the timeout-tolerant
+    # ``import_sources_with_verification`` (#1920), but this synchronous REST route
+    # deliberately stays on the one-shot ``import_sources``: a web request must not
+    # block on a multi-minute reconcile-and-retry loop. A REST caller that hits a
+    # timeout reconciles by polling ``GET .../sources`` for what actually committed.
     imported = await client.research.import_sources(notebook_id, run_id, sources)
     # Record each new source id in the pending registry so the source poll route
     # can answer 200-pending (not 404) for the not-yet-listable window.

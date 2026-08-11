@@ -101,11 +101,13 @@ Internal integer codes returned by `GET_NOTEBOOK` / `LIST_SOURCES` and consumed 
 | 10 | `MEDIA` | Audio / video upload |
 | 11 | `DOCX` | Word document |
 | 13 | `IMAGE` | Image upload |
-| 14 | `GOOGLE_SPREADSHEET` | Google Sheets source |
+| 14 | `GOOGLE_SPREADSHEET` | Google Sheets source **and** Drive-hosted binaries (see overload note) |
 | 16 | `CSV` | CSV upload |
 | 17 | `EPUB` | EPUB upload (added in v0.4.0) |
 
 > Codes outside this map are surfaced as `SourceType.UNKNOWN` and emit `UnknownTypeWarning` on first occurrence so unmapped types don't crash callers.
+
+> **Code `14` is overloaded** (live-captured #1828/#1832): the backend returns `14` for a native Google Sheet *and* for a Drive-hosted PDF. Drive sources carry no URL (`metadata[0]/[5]/[7]` are all null), so the two are disambiguated by the MIME at `metadata[19]` (fallback `metadata[9][2]`): `application/vnd.google-apps.spreadsheet` → `GOOGLE_SPREADSHEET`, `application/pdf` → `PDF`. See `_disambiguate_type_code` in `src/notebooklm/_types/sources.py`.
 
 ---
 
@@ -1643,7 +1645,7 @@ params = [
 - The server appears to apply a "smart title" pass for `[2]`-mode notes — the captured response title differed from the captured request title (the request sent `"New Saved Note"`; the response stored `"Le Verger de la Connaissance : Le Cas de la Pomme"`). `ChatAPI.save_answer_as_note()` surfaces the server-stored title in the returned `Note`.
 
 **Known gaps**:
-- The `passage_id` UUID at slot `[3][0][5][0][0]` does NOT appear in the streaming chat response shape we currently parse. `_build_source_passage_descriptor` falls back to `chunk_id` as a placeholder when `ChatReference.passage_id` is unset (which is always, in production today). Empirically the server accepts this and the web UI still renders hover anchors. If a future capture reveals where this UUID comes from, populate `ChatReference.passage_id` in `_chat_wire.py::parse_single_citation()` and the encoder will use it automatically.
+- The `passage_id` UUID at slot `[3][0][5][0][0]` does NOT appear in the streaming chat response shape we currently parse. `_build_source_passage_descriptor` falls back to `chunk_id` as a placeholder when `ChatReference.passage_id` is unset (which is always, in production today). Empirically the server accepts this and the web UI still renders hover anchors. If a future capture reveals where this UUID comes from, populate `ChatReference.passage_id` in `_chat/wire.py::parse_single_citation()` and the encoder will use it automatically.
 - Multi-citation segmentation uses a *cumulative-span* heuristic (each `[N]` anchors `clean_text[0..position]` rather than a per-segment span). This matches the captured single-citation payload exactly but is unverified against multi-citation captures. See issue #660 PR description.
 
 ### RPC: UPDATE_NOTE (cYAfTb)
@@ -1994,8 +1996,8 @@ await client.sharing.add_user(notebook_id, "user@example.com", SharePermission.V
 ```
 
 **Share URLs:**
-- Notebook: `https://notebooklm.google.com/notebook/{notebook_id}`
-- Artifact deep-link: `https://notebooklm.google.com/notebook/{notebook_id}?artifactId={artifact_id}`
+- Notebook: `https://notebook.google.com/notebook/{notebook_id}`
+- Artifact deep-link: `https://notebook.google.com/notebook/{notebook_id}?artifactId={artifact_id}`
 
 The `?artifactId=xxx` parameter creates a deep link that opens the notebook and
 navigates to that specific artifact. It does not make the artifact an
@@ -2150,10 +2152,10 @@ await rpc_call(
 # [
 #     [task_id, [
 #         ...,
-#         query_info,           # [1]: [query_text, ...]
+#         query_info,           # [1]: [query_text, source_type]  (1=web, 2=drive)
 #         ...,
 #         sources_and_summary,  # [3]: [[sources], summary_text]
-#         status_code,          # [4]: 2=completed, 6=completed (deep), other=in_progress
+#         status_code,          # [4]: see the status-code table below
 #     ]],
 #     ...
 # ]
@@ -2163,11 +2165,19 @@ await rpc_call(
 # Fast research web source:
 # [url, title, desc, type, ...]
 #
-# Deep research report source (current shape):
-# [None, [title, report_markdown], None, type, ...]
+# Deep research report source (captured shape):
+# [None, title, None, type, None, None,
+#  [report_markdown, 3, None, None, None, structured_document]]
 #
-# Deep research report source (legacy shape):
-# [None, title, None, type, None, None, [chunk1, chunk2, ...]]
+# Deep research web source content blocks use kind 1 or 2 and carry their
+# snippet at position 2; they are not report rows. In the observed deep payload,
+# kind-1 web-source rows carry an integer ordinal at source position 8, a 1-based
+# bijection over the task's discovered sources. Whether that ordinal equals the
+# report's own citation numbering is NOT established: research_deep_poll_long.yaml
+# carries 24 such ordinals against a report containing no [cite: N] markers at all.
+#
+# Compatibility shape accepted by the parser (not seen in captures):
+# [None, [title, report_markdown], None, type, ...]
 #
 # Notes:
 # - The RPC returns all research tasks for the notebook, not just the latest one.
@@ -2176,6 +2186,40 @@ await rpc_call(
 # - For deep research, sources parsed from poll() carry `research_task_id`, which is
 #   later used by IMPORT_RESEARCH.
 ```
+
+#### Task status codes (`task_info[4]`)
+
+Captured live against the serving backend for issue #1964 — except code `6`,
+which was already known. `ResearchStatus` coarsens these into `in_progress` /
+`completed` / `failed`; `ResearchTask.termination_reason` keeps the distinction
+the coarse status loses, and is derived from the same table so the two can never
+disagree.
+
+| Code | Meaning | Termination reason | Observed in |
+| --- | --- | --- | --- |
+| `1` | Run in flight | `in_progress` | Every run, before it settles |
+| `2` | Completed with results | `completed` | Fast web and fast Drive runs |
+| `3` | **No matches** — terminal, zero sources | `no_results` | Drive runs (only place observed) |
+| `4` | Cancelled via `CANCEL_RESEARCH` | `cancelled` | A deep run cancelled mid-flight |
+| `6` | Completed (deep research) | `completed` | Deep research |
+
+Notes:
+
+- **Code `3` reads as Drive's "found nothing" signal, not an error.** It arrives
+  with a sources bundle carrying no sources (`[None, None, None, None, 1]`) and
+  zero parsed sources. Reproduced with three distinct non-matching Drive queries;
+  not seen on a web run in these probes, where the same gibberish query still
+  returned code `2` with loosely-related results. Three captures are strong
+  evidence, not proof — the decode only asserts `no_results` inside the envelope
+  it was observed in, and falls back to `unknown` for a code-3 row that
+  nonetheless carries sources. Treating it as an undifferentiated failure is
+  what issue #1964 fixed.
+- **A cancelled run is code `4`, distinct from `3`.** Confirmed by cancelling a
+  deep run mid-flight. Fast runs finish server-side before a cancel can land, so
+  a fast run cancelled immediately after start still completes with code `2`.
+- Any other terminal code maps to the `unknown` reason rather than being guessed
+  at — these codes are undocumented Google internals in the same volatility class
+  as the RPC method ids.
 
 ### RPC: IMPORT_RESEARCH (LBwxtb)
 
@@ -2186,9 +2230,14 @@ Import selected research sources into the notebook.
 ```python
 # Build source array from selected sources
 # Deep research imports prepend a special report entry before regular web sources.
+#
+# NOTE: this is the REQUEST the client sends. It is a different shape from the
+# POLL_RESEARCH *response* row documented above — the report body rides at index 1
+# here, whereas a response row carries it in the src[6] kind-3 content block. Built
+# by `_research.py::_build_report_import_entry` / `_build_web_import_entry`.
 source_array = []
 
-# Deep research report entry:
+# Deep research report entry (outgoing import request):
 source_array.append([
     None,                 # 0
     [title, markdown],    # 1: Report title and full markdown body
@@ -2314,16 +2363,29 @@ await rpc_call(
 # Response structure:
 # [[
 #     null,
-#     [6, 500, 300, 500000],        # [0][1]: Limits/quotas
+#     [6, 500, 300, 500000, 2],     # [0][1]: Limits/quotas (captured 2026-07-11)
 #     [true, null, null, true, ["ja"]],  # [0][2]: Settings (language at [4][0])
 #     [[1]],                         # [0][3]: Unknown
 #     [true, 1, 3, 2]               # [0][4]: Feature flags
 # ]]
 #
+# Historical: the limits block was captured 4-element as [6, 500, 300, 500000] on
+# 2026-06-15 (pre-tier). Google appended index 4 (tier) after that; confirmed live
+# 2026-07-11 across a Free profile (…, 1) and two Pro profiles (…, 2).
+#
 # Language code at: result[0][2][4][0]
 # Notebook limit at: result[0][1][1]
 # Source limit at: result[0][1][2]
+# Max characters per source at: result[0][1][3]  (e.g. 500000)
+# Tier enum at: result[0][1][4]  — OPAQUE key, not an ordinal rank.
+#   1=Standard/Free, 2=Pro, 4=Plus, 3=Ultra(20TB), 6=Ultra(30TB); 5=Expanded (aligns
+#   with the Workspace "Expanded" access level, not a consumer plan). Live-confirmed
+#   1 & 2 (source limits match Google's published 50 / 300). Full per-tier limits:
+#   docs/quota-limits.md
 ```
+
+The full per-tier notebook/source/studio limits these enum values map to are documented in
+[quota-limits.md](quota-limits.md).
 
 ### RPC: SET_USER_SETTINGS (hT54vc)
 
@@ -2362,7 +2424,7 @@ await rpc_call(
 Common language codes include:
 - `en` (English), `ja` (日本語), `zh_Hans` (中文简体), `zh_Hant` (中文繁體)
 - `ko` (한국어), `es` (Español), `fr` (Français), `de` (Deutsch), `pt_BR` (Português)
-- See `cli/language_cmd.py::SUPPORTED_LANGUAGES` for the full list of 80+ languages
+- See `_app/language.py::SUPPORTED_LANGUAGES` for the full list of 80+ languages
 
 ---
 
@@ -2527,8 +2589,8 @@ await rpc_call(
 )
 
 # Share URL format:
-# - Notebook: https://notebooklm.google.com/notebook/{notebook_id}
-# - Artifact deep-link: https://notebooklm.google.com/notebook/{notebook_id}?artifactId={artifact_id}
+# - Notebook: https://notebook.google.com/notebook/{notebook_id}
+# - Artifact deep-link: https://notebook.google.com/notebook/{notebook_id}?artifactId={artifact_id}
 ```
 
 **Important:** The `?artifactId=xxx` URL is a **deep link** - it opens the shared notebook and navigates to that artifact. The artifact itself isn't independently shared.

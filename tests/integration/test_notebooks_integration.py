@@ -513,7 +513,7 @@ class TestGetNotebookFailures:
         httpx_mock.add_response(content=raw)
 
         async with NotebookLMClient(auth_tokens) as client:
-            with pytest.raises(RPCError, match="returned null result data"):
+            with pytest.raises(RPCError, match="empty result"):
                 await client.notebooks.get("nb_123")
 
     @pytest.mark.asyncio
@@ -529,7 +529,7 @@ class TestGetNotebookFailures:
         httpx_mock.add_response(content=raw)
 
         async with NotebookLMClient(auth_tokens) as client:
-            with pytest.raises(RPCError, match="returned null result data"):
+            with pytest.raises(RPCError, match="empty result"):
                 await client.notebooks.get("nb_123")
 
 
@@ -764,7 +764,7 @@ class TestShareEdgeCases:
         async with NotebookLMClient(auth_tokens) as client:
             url = client.notebooks.get_share_url("nb_123")
 
-        assert url == "https://notebooklm.google.com/notebook/nb_123"
+        assert url == "https://notebook.google.com/notebook/nb_123"
 
     @pytest.mark.asyncio
     async def test_get_share_url_with_artifact(
@@ -776,4 +776,4 @@ class TestShareEdgeCases:
         async with NotebookLMClient(auth_tokens) as client:
             url = client.notebooks.get_share_url("nb_123", artifact_id="art_789")
 
-        assert url == "https://notebooklm.google.com/notebook/nb_123?artifactId=art_789"
+        assert url == "https://notebook.google.com/notebook/nb_123?artifactId=art_789"

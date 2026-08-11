@@ -10,6 +10,7 @@ from . import auth, config, contracts, helpers, init, lifecycle, transport
 from .auth import AuthRefreshCoordinator
 from .config import (
     CORE_LOGGER_NAME,
+    DEFAULT_CHAT_RESPONSE_MAX_BYTES,
     DEFAULT_CHAT_TIMEOUT,
     DEFAULT_CONNECT_TIMEOUT,
     DEFAULT_KEEPALIVE_MIN_INTERVAL,
@@ -41,7 +42,6 @@ from .lifecycle import (
     CookieRotator,
     CookieSaver,
     _default_cookie_rotator,
-    _default_cookie_saver,
 )
 from .transport import RuntimeTransport
 
@@ -55,6 +55,7 @@ __all__ = [
     "transport",
     "AuthRefreshCoordinator",
     "CORE_LOGGER_NAME",
+    "DEFAULT_CHAT_RESPONSE_MAX_BYTES",
     "DEFAULT_CHAT_TIMEOUT",
     "DEFAULT_CONNECT_TIMEOUT",
     "DEFAULT_KEEPALIVE_MIN_INTERVAL",
@@ -82,6 +83,5 @@ __all__ = [
     "CookieRotator",
     "CookieSaver",
     "_default_cookie_rotator",
-    "_default_cookie_saver",
     "RuntimeTransport",
 ]
