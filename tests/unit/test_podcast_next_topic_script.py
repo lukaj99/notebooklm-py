@@ -91,6 +91,34 @@ def test_rotation_spans_all_domains(tmp_path):
     assert picked["domain"] == "motorcycling"
 
 
+def test_alternates_domains_when_several_topics_are_equally_stale(tmp_path):
+    # All four never covered: without domain interleaving the two medicine
+    # topics would run back to back purely because they come first in the
+    # file, which makes for a monotonous run of episodes.
+    topics = [
+        _topic("med1"),
+        _topic("med2"),
+        _topic("moto1", domain="motorcycling"),
+        _topic("photo1", domain="photography"),
+    ]
+    _write_queue(tmp_path, "med1", "2026-08-13", [])
+
+    picked = select_topic(topics, tmp_path, today="2026-08-14", cooldown_days=0)
+
+    assert picked["domain"] != "medicine"
+
+
+def test_domain_interleaving_does_not_override_staleness(tmp_path):
+    # A long-neglected topic still wins over domain variety.
+    topics = [_topic("med1"), _topic("moto1", domain="motorcycling")]
+    _write_queue(tmp_path, "moto1", "2026-08-13", [])
+    _write_queue(tmp_path, "med1", "2026-01-01", [])
+
+    picked = select_topic(topics, tmp_path, today="2026-08-14", cooldown_days=0)
+
+    assert picked["id"] == "med1"
+
+
 def test_collect_avoid_urls_gathers_prior_sources_for_that_topic_only(tmp_path):
     _write_queue(tmp_path, "a", "2026-01-01", ["https://x/1", "https://x/2"])
     _write_queue(tmp_path, "a", "2026-02-01", ["https://x/3"])
