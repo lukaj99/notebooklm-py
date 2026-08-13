@@ -8,6 +8,7 @@ exercised manually end-to-end (see the module docstring in
 
 from __future__ import annotations
 
+import json
 import sys
 import time
 from pathlib import Path
@@ -18,7 +19,13 @@ SCRIPTS_DIR = Path(__file__).resolve().parents[2] / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from podcast_researcher import Topic, pick_topic  # noqa: E402
+from podcast_pipeline import EM_CASES_STYLE  # noqa: E402
+from podcast_researcher import (  # noqa: E402
+    Topic,
+    build_queue_instructions,
+    load_topics,
+    pick_topic,
+)
 
 
 def _topics(n: int) -> list[Topic]:
@@ -88,3 +95,74 @@ def test_pick_topic_never_raises_on_empty_topic_history(cooldown_days):
     picked = pick_topic(topics, state, cooldown_days=cooldown_days)
 
     assert picked is not None
+
+
+def test_build_queue_instructions_bare_payload_is_base_style():
+    assert build_queue_instructions({}) == EM_CASES_STYLE
+
+
+def test_build_queue_instructions_appends_rationale():
+    result = build_queue_instructions({"rationale": "big new trial dropped"})
+
+    assert result.startswith(EM_CASES_STYLE)
+    assert "Editorial context for this episode: big new trial dropped" in result
+
+
+def test_build_queue_instructions_appends_case_vignette():
+    result = build_queue_instructions(
+        {"case_vignette": "54M, bradycardic, amlodipine bottle empty"}
+    )
+
+    assert result.startswith(EM_CASES_STYLE)
+    assert "54M, bradycardic, amlodipine bottle empty" in result
+    assert "case vignette" in result
+
+
+def test_build_queue_instructions_rationale_precedes_vignette():
+    result = build_queue_instructions({"rationale": "why now", "case_vignette": "the case"})
+
+    assert result.index("why now") < result.index("the case")
+
+
+def test_build_queue_instructions_style_overrides_base():
+    result = build_queue_instructions(
+        {"style": "Two riders talking wrenching.", "rationale": "new tire data"}
+    )
+
+    assert result.startswith("Two riders talking wrenching.")
+    assert EM_CASES_STYLE not in result
+    assert "new tire data" in result
+
+
+def test_load_topics_skips_non_medicine_domains(tmp_path, monkeypatch):
+    import podcast_researcher
+
+    topics_file = tmp_path / "topics.json"
+    topics_file.write_text(
+        json.dumps(
+            {
+                "topics": [
+                    {"id": "med", "title": "Med", "pubmed_query": "q", "debate": False},
+                    {
+                        "id": "moto",
+                        "title": "Moto",
+                        "domain": "motorcycling",
+                        "query": "tires",
+                        "debate": True,
+                    },
+                    {
+                        "id": "med2",
+                        "title": "Med 2",
+                        "domain": "medicine",
+                        "pubmed_query": "q2",
+                        "debate": True,
+                    },
+                ]
+            }
+        )
+    )
+    monkeypatch.setattr(podcast_researcher, "TOPICS_PATH", topics_file)
+
+    topics = load_topics()
+
+    assert [t.id for t in topics] == ["med", "med2"]

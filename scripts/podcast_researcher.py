@@ -144,8 +144,21 @@ class Topic:
 
 
 def load_topics() -> list[Topic]:
+    """Load topics eligible for the local PubMed fallback.
+
+    Non-medicine domains (motorcycling, photography, ...) exist in the topics
+    file for the deep-research workflow (`.claude/workflows/podcast-deep-research.js`),
+    which researches them with domain-appropriate lenses and hands results
+    over via the queue. The PubMed fallback can only research medicine, so it
+    only ever rotates through medicine topics.
+    """
+
     data = json.loads(TOPICS_PATH.read_text())
-    return [Topic(t["id"], t["title"], t["pubmed_query"], t["debate"]) for t in data["topics"]]
+    return [
+        Topic(t["id"], t["title"], t["pubmed_query"], t["debate"])
+        for t in data["topics"]
+        if t.get("domain", "medicine") == "medicine"
+    ]
 
 
 def load_state() -> dict:
@@ -273,6 +286,29 @@ def deliver_failure(topic: Topic, error: str) -> None:
         logger.exception("ntfy failure notification failed")
 
 
+def build_queue_instructions(payload: dict) -> str:
+    """Build audio-overview instructions from a queue payload.
+
+    Starts from the payload's own ``style`` when present (non-medical domains
+    supply their own host framing), else the base EM-Cases style; appends the
+    curator's ``rationale`` as editorial context and, when present, an
+    optional ``case_vignette`` for the hosts to open the episode with (both
+    produced by the deep-research workflow's curator stage).
+    """
+
+    instructions = payload.get("style") or EM_CASES_STYLE
+    rationale = payload.get("rationale")
+    if rationale:
+        instructions += f"\n\nEditorial context for this episode: {rationale}"
+    vignette = payload.get("case_vignette")
+    if vignette:
+        instructions += (
+            "\n\nOpen the episode with this case vignette and keep returning to it "
+            f"as the discussion develops: {vignette}"
+        )
+    return instructions
+
+
 async def _run_from_queue(payload: dict, filename: str, state: dict) -> int:
     """Process one cloud-curated queue item. Returns the process exit code."""
 
@@ -289,13 +325,15 @@ async def _run_from_queue(payload: dict, filename: str, state: dict) -> int:
         save_state(state)
         return 0
 
-    articles = [{"pmid": None, "title": s.get("title", s["url"]), "pubdate": "", "url": s["url"]} for s in sources]
-    instructions = EM_CASES_STYLE
-    rationale = payload.get("rationale")
-    if rationale:
-        instructions += f"\n\nEditorial context for this episode: {rationale}"
+    articles = [
+        {"pmid": None, "title": s.get("title", s["url"]), "pubdate": "", "url": s["url"]}
+        for s in sources
+    ]
+    instructions = build_queue_instructions(payload)
 
-    logger.info("processing queue item %s: %d source(s) for %s", filename, len(sources), topic.title)
+    logger.info(
+        "processing queue item %s: %d source(s) for %s", filename, len(sources), topic.title
+    )
 
     async with NotebookLMClient.from_storage() as client:
         try:

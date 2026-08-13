@@ -75,12 +75,18 @@ async def build_podcast(
     source_wait_timeout: float = 180.0,
     poll_interval: float = 5.0,
     poll_timeout: float = 1800.0,
+    min_sources: int = 3,
 ) -> Path:
     """Create a notebook, ingest sources, generate audio, and download it.
 
+    Individual source failures are tolerated: publishers behind bot
+    protection intermittently reject NotebookLM's fetcher, and this runs
+    unattended, so an episode built from most of its sources beats no episode
+    at all. Aborts only if fewer than ``min_sources`` ingest successfully.
+
     Returns the path to the downloaded audio file. Raises
-    ``PodcastPipelineError`` if any source fails to ingest or generation fails
-    or times out.
+    ``PodcastPipelineError`` if too few sources survive, or if generation
+    fails or times out.
     """
 
     if not source_urls:
@@ -89,16 +95,30 @@ async def build_podcast(
     notebook = await client.notebooks.create(title)
     notebook_id = notebook.id
 
+    ingested: list[str] = []
     failed_sources: list[tuple[str, str]] = []
     for url in source_urls:
         try:
-            await client.sources.add_url(notebook_id, url, wait=True, wait_timeout=source_wait_timeout)
+            await client.sources.add_url(
+                notebook_id, url, wait=True, wait_timeout=source_wait_timeout
+            )
         except Exception as exc:  # noqa: BLE001 - collected and reported together below
             failed_sources.append((url, str(exc)))
+        else:
+            ingested.append(url)
 
     if failed_sources:
         detail = "; ".join(f"{url}: {err}" for url, err in failed_sources)
-        raise PodcastPipelineError(f"{len(failed_sources)} source(s) failed to ingest: {detail}")
+        if len(ingested) < min_sources:
+            raise PodcastPipelineError(
+                f"only {len(ingested)} of {len(source_urls)} source(s) ingested "
+                f"(need {min_sources}); failures: {detail}"
+            )
+        print(
+            f"warning: {len(failed_sources)} source(s) failed to ingest, "
+            f"continuing with {len(ingested)}: {detail}",
+            file=sys.stderr,
+        )
 
     status = await client.artifacts.generate_audio(
         notebook_id,
@@ -110,7 +130,9 @@ async def build_podcast(
     elapsed = 0.0
     while not status.is_complete:
         if status.is_failed:
-            raise PodcastPipelineError(f"audio generation failed: {status.error or 'unknown error'}")
+            raise PodcastPipelineError(
+                f"audio generation failed: {status.error or 'unknown error'}"
+            )
         if elapsed >= poll_timeout:
             raise PodcastPipelineError(f"audio generation timed out after {poll_timeout:.0f}s")
         await asyncio.sleep(poll_interval)
@@ -118,7 +140,9 @@ async def build_podcast(
         status = await client.artifacts.poll_status(notebook_id, status.task_id)
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    safe_title = "".join(c if c.isalnum() or c in " -_" else "_" for c in title).strip() or notebook_id
+    safe_title = (
+        "".join(c if c.isalnum() or c in " -_" else "_" for c in title).strip() or notebook_id
+    )
     output_path = out_dir / f"{safe_title}.mp3"
     downloaded = await client.artifacts.download_audio(
         notebook_id, str(output_path), artifact_id=status.task_id
@@ -127,7 +151,9 @@ async def build_podcast(
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--title", required=True, help="Notebook / podcast title")
     parser.add_argument(
         "--source", dest="sources", action="append", required=True, help="Source URL (repeatable)"
@@ -138,7 +164,9 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="em-cases",
         help="Named instructions preset (default: em-cases). Use --instructions to override freely.",
     )
-    parser.add_argument("--instructions", default=None, help="Raw instructions text, overrides --style")
+    parser.add_argument(
+        "--instructions", default=None, help="Raw instructions text, overrides --style"
+    )
     parser.add_argument("--format", choices=sorted(AUDIO_FORMAT_CHOICES), default="deep-dive")
     parser.add_argument("--length", choices=sorted(AUDIO_LENGTH_CHOICES), default="long")
     parser.add_argument("--out-dir", type=Path, default=Path.home() / "podcasts")
