@@ -332,11 +332,20 @@ ToolSearch("select:WebFetch") if needed) and decide:
   a site, find the ORIGINAL and put that in alternative_url instead.
 
 STEP 3 — rescue. If accessible=false but the work itself is real and
-genuinely useful, find a public equivalent of the SAME work — its PubMed
-abstract page (search
-https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=<url-encoded+title>[Title]
-then use https://pubmed.ncbi.nlm.nih.gov/<pmid>/), a preprint, or an
-open-access mirror. Curl that candidate the same way; only put it in
+genuinely useful, find a public equivalent of the SAME work. In rough order
+of preference:
+  a. Its PubMed abstract page, for anything indexed there — search
+     https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=<url-encoded+title>[Title]
+     then use https://pubmed.ncbi.nlm.nih.gov/<pmid>/
+  b. A preprint or open-access mirror.
+  c. **A Wayback Machine snapshot** — try
+     https://archive.org/wayback/available?url=<url-encoded-original>
+     and use the returned snapshot URL. This is the reliable escape hatch for
+     the many institutional sites that serve real public content to browsers
+     but 403 every automated fetcher — parliament.uk, some think-tank and
+     FOAMed sites, several publishers. Do not skip it just because the
+     original "should" be public; what matters is what a fetcher can read.
+Curl whichever candidate you pick the same way; only put it in
 alternative_url if IT returns 200 with real content.
 
 Default to FALSE when uncertain. Put the final resolved URL in final_url.`
