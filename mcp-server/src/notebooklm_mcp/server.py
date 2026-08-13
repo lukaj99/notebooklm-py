@@ -15,10 +15,33 @@ from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
 from notebooklm import NotebookLMClient
+from notebooklm.rpc import AudioFormat, AudioLength
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from .oauth import FileBackedOAuthProvider, PendingAuthorization
+
+# Mirrors the CLI's kebab-case choices (src/notebooklm/cli/generate_cmd.py) so
+# tool callers and CLI users describe audio style the same way.
+_AUDIO_FORMAT_CHOICES: dict[str, AudioFormat] = {
+    "deep-dive": AudioFormat.DEEP_DIVE,
+    "brief": AudioFormat.BRIEF,
+    "critique": AudioFormat.CRITIQUE,
+    "debate": AudioFormat.DEBATE,
+}
+_AUDIO_LENGTH_CHOICES: dict[str, AudioLength] = {
+    "short": AudioLength.SHORT,
+    "default": AudioLength.DEFAULT,
+    "long": AudioLength.LONG,
+}
+
+
+def _require_audio_choice(choices: dict[str, Any], value: str, *, flag: str) -> Any:
+    try:
+        return choices[value]
+    except KeyError:
+        allowed = ", ".join(choices)
+        raise ValueError(f"{flag} must be one of: {allowed}") from None
 
 # Patch FastMCP default token expiry to 365 days for self-hosted use.
 # The in-memory provider defaults to 1 hour, which causes "Connection expired" errors.
@@ -281,6 +304,23 @@ def create_mcp_server(
         lifespan=lifespan,
         transport_security=TransportSecuritySettings(
             allowed_hosts=["127.0.0.1:*", "localhost:*", "[::1]:*", "notebook.jovanovic.org.uk"],
+            # DNS-rebinding protection treats an *unset* allowed_origins as
+            # "reject every request that carries an Origin header" (see
+            # mcp.server.transport_security._validate_origin) rather than
+            # "no restriction" — only requests with no Origin header at all
+            # (same-origin navigations, curl, most non-browser MCP clients)
+            # pass through un-checked. Browser-based MCP clients (the
+            # claude.ai connector UI) always send Origin on cross-origin
+            # POSTs, so without this the OAuth dance can complete and still
+            # have every real /mcp call rejected with 403 "Invalid Origin
+            # header" — a token being valid never matters if this check
+            # fires first.
+            allowed_origins=[
+                "https://claude.ai",
+                "https://notebook.jovanovic.org.uk",
+                "http://localhost:*",
+                "http://127.0.0.1:*",
+            ],
         ),
     )
 
@@ -499,16 +539,43 @@ def create_mcp_server(
         }
 
     @mcp.tool()
-    async def generate_artifact(notebook_id: str, artifact_type: str) -> dict[str, Any]:
-        """Start generating an audio, video, or report artifact."""
+    async def generate_artifact(
+        notebook_id: str,
+        artifact_type: str,
+        instructions: str | None = None,
+        audio_format: str | None = None,
+        audio_length: str | None = None,
+    ) -> dict[str, Any]:
+        """Start generating an audio, video, or report artifact.
+
+        instructions: free-text customization prompt (e.g. "casual, energetic
+        two-host banter debating the differentials, like an EM case review").
+        audio_format (audio only): one of deep-dive, brief, critique, debate.
+        audio_length (audio only): one of short, default, long.
+        """
 
         client = await _client()
         if artifact_type == "audio":
-            status = await client.artifacts.generate_audio(notebook_id)
+            format_value = (
+                _require_audio_choice(_AUDIO_FORMAT_CHOICES, audio_format, flag="audio_format")
+                if audio_format is not None
+                else None
+            )
+            length_value = (
+                _require_audio_choice(_AUDIO_LENGTH_CHOICES, audio_length, flag="audio_length")
+                if audio_length is not None
+                else None
+            )
+            status = await client.artifacts.generate_audio(
+                notebook_id,
+                instructions=instructions,
+                audio_format=format_value,
+                audio_length=length_value,
+            )
         elif artifact_type == "video":
-            status = await client.artifacts.generate_video(notebook_id)
+            status = await client.artifacts.generate_video(notebook_id, instructions=instructions)
         elif artifact_type == "report":
-            status = await client.artifacts.generate_report(notebook_id)
+            status = await client.artifacts.generate_report(notebook_id, custom_prompt=instructions)
         else:
             raise ValueError("artifact_type must be one of: audio, video, report")
 
