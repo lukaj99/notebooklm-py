@@ -20,10 +20,13 @@ Prints a one-line summary on success, exits non-zero with a reason otherwise.
 
 from __future__ import annotations
 
+import ipaddress
 import json
 import os
 import re
+import socket
 import sys
+import urllib.parse
 import urllib.request
 from collections.abc import Callable
 from pathlib import Path
@@ -44,19 +47,63 @@ URL_TIMEOUT = 25.0
 
 
 def extract_json(raw: str) -> dict | None:
-    """Pull the last well-formed JSON object out of noisy model output."""
+    """Pull the outermost well-formed JSON object out of noisy model output.
+
+    Scores candidates by how much text they consume, so a payload's own
+    trailing source object never wins over the payload that contains it;
+    equal-length candidates break toward the later one, which is what a model
+    correcting itself mid-message means.
+    """
 
     text = re.sub(r"```(?:json)?|```", "", raw)
     decoder = json.JSONDecoder()
-    found: dict | None = None
+    best: dict | None = None
+    best_score = (-1, -1)
     for match in re.finditer(r"\{", text):
         try:
-            candidate, _ = decoder.raw_decode(text[match.start() :])
+            candidate, end = decoder.raw_decode(text[match.start() :])
         except json.JSONDecodeError:
             continue
-        if isinstance(candidate, dict):
-            found = candidate
-    return found
+        if not isinstance(candidate, dict):
+            continue
+        score = (end, match.start())
+        if score > best_score:
+            best_score = score
+            best = candidate
+    return best
+
+
+def is_public_url(url: str) -> bool:
+    """True only for http(s) URLs whose host resolves entirely to public IPs.
+
+    These URLs are chosen by agents that read arbitrary web pages, and this
+    check runs on a host that also serves private services (the ntfy endpoint,
+    the MCP server, cloud metadata). Without this, "verify the sources" would
+    be a request-forgery primitive pointed at the VPS's own network.
+    """
+
+    try:
+        parsed = urllib.parse.urlparse(url)
+    except ValueError:
+        return False
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        return False
+
+    try:
+        infos = socket.getaddrinfo(parsed.hostname, None)
+    except (socket.gaierror, UnicodeError):
+        return False
+    if not infos:
+        return False
+
+    for info in infos:
+        try:
+            address = ipaddress.ip_address(info[4][0])
+        except ValueError:
+            return False
+        if not address.is_global or address.is_multicast:
+            return False
+    return True
 
 
 def url_is_reachable(url: str) -> bool:
@@ -102,9 +149,12 @@ def build_payload(
         if not isinstance(source, dict):
             continue
         url = source.get("url")
-        if not isinstance(url, str) or not url.startswith(("http://", "https://")):
-            if isinstance(url, str):
-                dropped.append(url)
+        if not isinstance(url, str):
+            continue
+        # Screen before fetching, so an internal address never becomes a
+        # request from this host.
+        if not is_public_url(url):
+            dropped.append(url)
             continue
         if not url_ok(url):
             dropped.append(url)
