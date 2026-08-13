@@ -214,6 +214,45 @@ def test_mcp_route_answers_cors_preflight(monkeypatch, tmp_path):
         assert "POST" in preflight.headers["access-control-allow-methods"]
 
 
+def test_bare_protected_resource_metadata_available(monkeypatch, tmp_path):
+    """RFC 9728 §3.1 only requires the resource-path-suffixed location
+    (/.well-known/oauth-protected-resource/mcp), which the mcp SDK already
+    serves — a spec-compliant client is meant to reach it via the
+    `resource_metadata` hint in the 401 WWW-Authenticate header on /mcp.
+    In practice the claude.ai connector requests the bare root path
+    directly instead of following that hint (confirmed from live connector
+    logs: every attempt hits the bare path and 404s without ever touching
+    /mcp first). Since this server has exactly one resource, serving
+    identical metadata at both locations is spec-safe and fixes discovery
+    for that client. See BareProtectedResourceMetadataMiddleware."""
+
+    monkeypatch.setenv("NOTEBOOKLM_MCP_PUBLIC_URL", "http://localhost:8006")
+    monkeypatch.setenv("NOTEBOOKLM_MCP_OAUTH_PASSWORD", "secret-pass")
+    monkeypatch.setenv("NOTEBOOKLM_MCP_OAUTH_STORE_PATH", str(tmp_path / "oauth-state.json"))
+
+    config = RemoteServerConfig.from_env()
+    provider = FileBackedOAuthProvider(config)
+    mcp = create_mcp_server(
+        host=config.host,
+        port=config.port,
+        auth_settings=build_auth_settings(config),
+        auth_provider=provider,
+        oauth_password=config.oauth_password,
+    )
+
+    with TestClient(build_asgi_app(mcp, config)) as client:
+        bare = client.get("/.well-known/oauth-protected-resource")
+        assert bare.status_code == 200
+        assert bare.json()["resource"] == "http://localhost:8006/mcp"
+        assert bare.json()["authorization_servers"] == ["http://localhost:8006/"]
+
+        # The resource-path-suffixed location must keep working too — this
+        # is additive, not a replacement.
+        suffixed = client.get("/.well-known/oauth-protected-resource/mcp")
+        assert suffixed.status_code == 200
+        assert suffixed.json() == bare.json()
+
+
 def test_remote_config_requires_https_outside_localhost(monkeypatch):
     monkeypatch.setenv("NOTEBOOKLM_MCP_PUBLIC_URL", "http://example.com")
     monkeypatch.setenv("NOTEBOOKLM_MCP_OAUTH_PASSWORD", "secret-pass")
