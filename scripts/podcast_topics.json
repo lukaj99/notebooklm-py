@@ -1,0 +1,65 @@
+{
+  "_comment": "Rotation list for the proactive podcast researcher (scripts/podcast_researcher.py). Each entry is one candidate episode topic. 'pubmed_query' feeds PubMed E-utilities esearch directly. 'debate' picks --format debate over deep-dive when the topic has genuine, citable clinical controversy.",
+  "topics": [
+    {
+      "id": "ed-sepsis-bundle-controversies",
+      "title": "ED Sepsis Bundle Controversies",
+      "pubmed_query": "sepsis bundle emergency department controversy OR early goal directed therapy",
+      "debate": true
+    },
+    {
+      "id": "high-risk-chest-pain-risk-stratification",
+      "title": "High-Risk Chest Pain Risk Stratification",
+      "pubmed_query": "HEART score OR high sensitivity troponin chest pain emergency department risk stratification",
+      "debate": true
+    },
+    {
+      "id": "post-cardiac-arrest-ttm",
+      "title": "Post-Cardiac Arrest Targeted Temperature Management",
+      "pubmed_query": "targeted temperature management cardiac arrest randomized",
+      "debate": true
+    },
+    {
+      "id": "pocus-undifferentiated-dyspnea",
+      "title": "POCUS in Undifferentiated Dyspnea",
+      "pubmed_query": "point of care ultrasound undifferentiated dyspnea emergency department",
+      "debate": false
+    },
+    {
+      "id": "pediatric-emergency-airway",
+      "title": "Pediatric Emergency Airway Management",
+      "pubmed_query": "pediatric emergency airway management difficult intubation",
+      "debate": false
+    },
+    {
+      "id": "ed-analgesia-opioid-stewardship",
+      "title": "ED Analgesia and Opioid Stewardship",
+      "pubmed_query": "emergency department analgesia opioid stewardship alternatives",
+      "debate": true
+    },
+    {
+      "id": "toxicology-novel-antidotes",
+      "title": "Toxicology: Novel Reversal Agents and Antidotes",
+      "pubmed_query": "novel antidote reversal agent toxicology emergency",
+      "debate": false
+    },
+    {
+      "id": "mesenteric-ischemia-literature-update",
+      "title": "Mesenteric Ischemia — Literature Update",
+      "pubmed_query": "acute mesenteric ischemia diagnosis delay emergency department 2026",
+      "debate": false
+    },
+    {
+      "id": "ccb-beta-blocker-overdose-update",
+      "title": "CCB/Beta-Blocker Overdose — New Reversal Literature",
+      "pubmed_query": "calcium channel blocker beta blocker overdose high dose insulin therapy",
+      "debate": true
+    },
+    {
+      "id": "undifferentiated-shock-resuscitation",
+      "title": "Undifferentiated Shock Resuscitation Pearls",
+      "pubmed_query": "undifferentiated shock resuscitation emergency department fluid vasopressor",
+      "debate": false
+    }
+  ]
+}
