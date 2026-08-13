@@ -71,20 +71,35 @@ def select_topic(
         if topic_id not in last_covered or covered > last_covered[topic_id]:
             last_covered[topic_id] = covered
 
+    domain_of = {t["id"]: t.get("domain", "medicine") for t in topics}
+    domain_last_covered: dict[str, date] = {}
+    for topic_id, covered in last_covered.items():
+        domain = domain_of.get(topic_id)
+        if domain is None:
+            continue
+        if domain not in domain_last_covered or covered > domain_last_covered[domain]:
+            domain_last_covered[domain] = covered
+
+    never = 10**6
     eligible = []
     for index, topic in enumerate(topics):
         covered = last_covered.get(topic["id"])
         if covered is not None and (now - covered).days < cooldown_days:
             continue
-        # Never-covered topics sort first; ties break on the file's own order
-        # so the rotation stays stable run to run.
-        age = (now - covered).days if covered is not None else 10**6
-        eligible.append((-age, index, topic))
+        age = (now - covered).days if covered is not None else never
+        domain_covered = domain_last_covered.get(topic.get("domain", "medicine"))
+        domain_age = (now - domain_covered).days if domain_covered is not None else never
+        # Staleness first, so a long-neglected topic always wins. Among
+        # equally stale topics — which is every never-covered one — prefer the
+        # domain heard least recently, so consecutive episodes vary instead of
+        # marching through medicine and then through motorcycling. Index last
+        # keeps the order stable run to run.
+        eligible.append((-age, -domain_age, index, topic))
 
     if not eligible:
         return None
-    eligible.sort(key=lambda item: (item[0], item[1]))
-    return eligible[0][2]
+    eligible.sort(key=lambda item: item[:3])
+    return eligible[0][3]
 
 
 def collect_avoid_urls(topic_id: str, queue_dir: Path) -> list[str]:
