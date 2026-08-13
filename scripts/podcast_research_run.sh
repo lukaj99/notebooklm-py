@@ -71,7 +71,23 @@ the topic, the number of sources committed, and the audio format.
 EOF
 )
 
-if claude -p "$PROMPT" --permission-mode bypassPermissions >/tmp/podcast-research-last.log 2>&1; then
+# Deliberately NOT --permission-mode bypassPermissions. The research agents
+# ingest arbitrary web pages, and their findings (titles, rationale) flow back
+# into this session's context — untrusted text reaching a session that can run
+# shell commands. The allowlist below is everything the run legitimately
+# needs and nothing else, so a prompt injection buried in a fetched page has
+# no destructive command available to it.
+ALLOWED_TOOLS=(
+  Workflow Read Write Edit Glob Grep ToolSearch WebFetch TodoWrite
+  "Bash(git status:*)" "Bash(git fetch:*)" "Bash(git add:*)" "Bash(git commit:*)"
+  "Bash(git push:*)" "Bash(git rebase:*)" "Bash(git log:*)" "Bash(git diff:*)"
+  "Bash(curl -sL -o /dev/null*)" "Bash(python3:*)" "Bash(uv run:*)"
+  "mcp__claude_ai_Exa__*" "mcp__claude_ai_Semantic_Scholar__*"
+  "mcp__claude_ai_Consensus__*" "mcp__claude_ai_Stealth_Scraper__*"
+)
+
+if claude -p "$PROMPT" --allowedTools "${ALLOWED_TOOLS[@]}" \
+  >/tmp/podcast-research-last.log 2>&1; then
   RESULT=$(tail -5 /tmp/podcast-research-last.log)
 else
   RESULT="research session exited non-zero; see /tmp/podcast-research-last.log"
