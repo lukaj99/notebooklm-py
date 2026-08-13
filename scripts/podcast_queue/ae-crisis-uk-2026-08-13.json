@@ -1,0 +1,40 @@
+{
+  "topic_id": "ae-crisis-uk",
+  "title": "The A&E Crisis — What's Happening to UK Emergency Departments — 2026-08-13",
+  "audio_format": "debate",
+  "rationale": "What's new is the convergence of three recent, official-grade data drops — NHS England's June 2026 statistical commentary (worst-ever 12-hour DTA figures), CQC's October-2025 State of Care report (occupancy and harm linkage), and RCEM's November-2025 corridor-care survey — landing alongside a genuine, unresolved empirical fight over what they mean: RCEM and CQC both point to exit block (bed occupancy, delayed discharge, social-care collapse) as the dominant driver, but Nuffield Trust's own ICS-level analysis finds no correlation between delayed-discharge rates and A&E performance, and King's Fund's decomposition of NHS England's own discharge categories shows social care accounts for only a minority of delayed bed-days — directly complicating the RCEM/Darzi consensus the episode would otherwise take as settled. The NAO supplies the fiscal watchdog's neutral framing of underfunding as a live value-for-money question rather than an assumed fact. This is not a case where the evidence has converged — credible, methodologically serious sources reach opposite conclusions on the central causal question (is exit block real and social-care-driven, or a convenient narrative?) — so debate format is kept, with RCEM's advocacy case for underfunding/social-care-collapse/political accountability set directly against King's Fund's and Nuffield Trust's empirical pushback, while NHS England and CQC anchor the undisputed scale of the numbers.",
+  "case_vignette": "It's 2am in a Type-1 ED in the Midlands: the bed state opened the evening at 94% occupancy before a single ambulance arrived, so the seventh patient of the day waiting for a medical bed is on a trolley in the corridor, past hour ten of his 12-hour decision-to-admit clock, while two ambulances idle outside because there is nowhere to hand their patients over. Nothing went wrong at the front door tonight — the department cleared its resus-to-majors queue by 8pm — what didn't move was upstream, in the ward-to-discharge pipeline. Whether that pipeline failure is a social-care problem, an NHS-process problem, or simply a bed-numbers problem is exactly what the hosts are about to argue over.",
+  "style": "Frame this as an investigative discussion between two hosts who know the NHS from the inside: structural and political, not clinical — no management advice for individual patients. Work through what the data actually shows, then argue about causation and accountability, disagreeing openly and resolving it by citing the sources rather than by splitting the difference. Be willing to say plainly where the evidence points and where it genuinely does not. Distinguish carefully between what is measured, what is inferred, and what is asserted. Land on concrete, named interventions and who would have to act to deliver them — not on vague calls for more funding.",
+  "sources": [
+    {
+      "url": "https://www.england.nhs.uk/statistics/wp-content/uploads/sites/2/2026/07/Statistical-commentary-June-2026-sDl1e.pdf",
+      "title": "NHS England — A&E Attendances and Emergency Admissions, June 2026: Statistical Commentary",
+      "why": "The current, primary numbers before any causal story gets told: 75.0% four-hour performance against a 95% standard not met since July 2015, 49,466 over-12-hour decision-to-admit delays (+27.9% YoY), 126,819 over-4-hour DTA delays, and zero of 121 Type-1 trusts hitting standard."
+    },
+    {
+      "url": "https://www.cqc.org.uk/publications/major-report/state-care/2024-2025/access/secondary",
+      "title": "CQC State of Care 2024/25 — Secondary care",
+      "why": "The regulator's own mechanism data: bed occupancy stuck at 93-94% against RCEM's 85% safe-flow benchmark, 1.8m twelve-hour-plus waits, ~12,660 patients/day medically fit but stuck, and the ONS finding that mortality risk climbs the longer patients wait past two hours — the clearest official link from crowding to harm."
+    },
+    {
+      "url": "https://rcem.ac.uk/press-release/a-national-shame-research-reveals-devastating-reality-of-so-called-corridor-care/",
+      "title": "'A national shame': research reveals devastating reality of so-called corridor care (RCEM/APPG on Emergency Care)",
+      "why": "The strongest advocate case for underfunding and political accountability: a live 81-ED clinical-lead survey (19% of patients in corridors even in a quiet month, 78% of leads reporting harm, 16,600+ associated deaths claimed), commissioned by an APPG chaired by a sitting emergency-medicine MP — puts a name and a political frame on the crisis."
+    },
+    {
+      "url": "https://www.nuffieldtrust.org.uk/news-item/long-waits-for-a-hospital-bed-in-an-emergency-will-urgent-care-policies-make-a-difference-for-patients",
+      "title": "Long waits for a hospital bed in an emergency: will urgent care policies make a difference for patients? (Nuffield Trust)",
+      "why": "Frames the front-door-vs-exit-block mechanism, then complicates its own side of the debate: Nuffield's own ICS-level analysis found NO correlation between delayed-discharge rates and A&E/trolley-wait performance, directly undercutting the RCEM/Darzi exit-block consensus the episode otherwise leans on."
+    },
+    {
+      "url": "https://web.archive.org/web/20251205220906/https://www.kingsfund.org.uk/insight-and-analysis/blogs/delayed-discharges-social-care-capacity",
+      "title": "Delayed Discharges: Why It's Hard To Say How Many Are Due To Social Care Capacity (The King's Fund)",
+      "why": "Directly contests the 'blame social care' framing that RCEM and ministers reach for: decomposing NHS England's own discharge-delay categories, only ~12% of delayed-discharge bed-days are unambiguously attributable to social-care capacity — the empirical check on the most politically convenient answer to who's to blame."
+    },
+    {
+      "url": "https://www.nao.org.uk/wp-content/uploads/2024/07/nhs-financial-management-and-sustainability-summary.pdf",
+      "title": "National Audit Office — NHS Financial Management and Sustainability (2024)",
+      "why": "Parliament's spending watchdog, not an advocacy body: confirms the 95% standard hasn't been hit since July 2015, quantifies near-flat real-terms funding and the £11.6bn estate backlog, and frames the crisis explicitly as an unresolved demand-vs-funding-vs-falling-service-levels question — the neutral fiscal anchor for the underfunding camp."
+    }
+  ]
+}
