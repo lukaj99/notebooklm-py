@@ -1,0 +1,38 @@
+{
+  "topic_id": "toxicology-novel-antidotes",
+  "title": "Toxicology: Novel Reversal Agents and Antidotes — 2026-08-13",
+  "audio_format": "debate",
+  "sources": [
+    {
+      "url": "https://www.cdc.gov/mmwr/volumes/74/wr/mm7415a1.htm",
+      "title": "Overdoses Involving Medetomidine Mixed with Opioids — Chicago, Illinois, May 2024 (MMWR, 2025)",
+      "why": "The defining real-world case series: 92% of confirmed medetomidine-involved overdoses had only partial or no response to naloxone. Explicitly states atipamezole, the veterinary alpha-2 antagonist, is not approved for human use — the anchor for the 'stick with naloxone plus supportive care' side."
+    },
+    {
+      "url": "https://www.cdc.gov/han/php/notices/han00527.html",
+      "title": "Medetomidine in the U.S. Illegal Fentanyl Supply Increasing Risk for Overdose and Severe Withdrawal Syndrome (CDC Health Advisory, April 2026)",
+      "why": "The most current national guidance: reinforces naloxone plus airway/supportive care as the standard response since no approved human antidote exists for medetomidine, and flags the spreading withdrawal syndrome as a distinct, separate management problem."
+    },
+    {
+      "url": "https://pubmed.ncbi.nlm.nih.gov/41571610/",
+      "title": "Atipamezole merits investigation for use in human α-2 agonist toxicity (Blumenberg & Murphy, Addiction, May 2026)",
+      "why": "A direct call from medical toxicologists to fast-track clinical investigation of atipamezole as a targeted human reversal agent, conceptually parallel to naloxone/flumazenil — the 'push a new antidote now' side of the debate."
+    },
+    {
+      "url": "https://pubmed.ncbi.nlm.nih.gov/40505022/",
+      "title": "Pharmacologic Reversal of Xylazine-Induced Unconsciousness in Rats (Park et al., Anesthesia & Analgesia, March 2026)",
+      "why": "Fresh preclinical efficacy data showing atipamezole reverses xylazine-induced sedation — the primary evidence base underpinning the argument for fast-tracking a human alpha-2 reversal agent."
+    },
+    {
+      "url": "https://www.asahq.org/about-asa/newsroom/news-releases/2026/04/new-study-shows-limitations-of-naloxone-in-reversing-overdoses-from-powerful-synthetic-opioids",
+      "title": "New Study Shows Limitations of Naloxone in Reversing Overdoses from Powerful Synthetic Opioids (ASA press release on van Lemmen et al., Anesthesiology, May 2026)",
+      "why": "Human data (30 participants) showing standard naloxone dosing may not fully reverse respiratory depression from fentanyl/sufentanil, and that 'awake' after naloxone doesn't mean 'breathing safely' — complicates the assumption that naloxone alone is adequate, fueling calls for updated dosing and new agents."
+    },
+    {
+      "url": "https://pubmed.ncbi.nlm.nih.gov/39710886/",
+      "title": "Antidotes in the management of poisoned patients: What have we gained over the last decade? (Wood et al., British Journal of Clinical Pharmacology, March 2025)",
+      "why": "Authoritative toxicology review cautioning that recently repurposed/novel antidotes (idarucizumab, andexanet alfa, uridine triacetate) generally lack robust outcome evidence and carry high cost — the evidence-based skepticism anchoring the conservative side."
+    }
+  ],
+  "rationale": "This topic has never run before (no prior queue file), but 2026 has produced a genuinely live controversy rather than a settled 'here are the antidotes' survey. The illicit drug supply's shift to medetomidine (a veterinary alpha-2 agonist up to 300x more potent than xylazine) has produced documented cases where naloxone only partially reverses opioid-involved overdoses — CDC's Chicago MMWR report found 92% of confirmed cases had partial/no response — while the only mechanistically targeted reversal agent, atipamezole, remains unapproved for human use. Toxicologists (Blumenberg & Murphy, May 2026) are now explicitly calling for human investigation of atipamezole, backed by fresh 2026 preclinical rat data (Park et al.), and a parallel human study (van Lemmen et al., reported via ASA) is independently showing standard naloxone dosing may be inadequate against potent synthetic opioids like fentanyl and sufentanil. I upgraded this from the topic list's default 'deep-dive' to 'debate' because there is real, current, citable tension for two ED docs to argue: push to investigate/pursue off-label or expedited access to new reversal pharmacology (atipamezole, revised naloxone dosing) given documented reversal failures in the field, versus Wood et al.'s 2025 evidence-based caution that recently repurposed antidotes have historically lacked robust outcome data and carry real cost and unknown-harm tradeoffs, meaning naloxone plus aggressive supportive/airway care remains the only evidence-backed standard until human trials exist. That is exactly the kind of unresolved, safety-relevant argument that makes for a good debate-format episode rather than a settled deep-dive."
+}
