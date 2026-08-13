@@ -1,0 +1,39 @@
+{
+  "topic_id": "post-cardiac-arrest-ttm",
+  "title": "Cool It or Don't? Post-Cardiac Arrest TTM — 2026-08-13",
+  "audio_format": "debate",
+  "rationale": "What's new since this listener last checked: Resuscitation Council UK's October 2025 guidance (adopting ERC-ESICM 2025) has quietly moved the UK standard from \"32-36°C is an option\" to \"prevent fever, full stop\" — but NICE HTG710, the other UK-facing guidance document, has not been updated to match, so two official UK sources now disagree with each other in the same health system. That institutional split is reinforced at every layer beneath it: ILCOR's own December 2023 task force adopted fever-prevention only by majority (not consensus), and the 2022 ERC-ESICM panel that first proposed dropping hypothermia split 8/15 across three anonymous ballot rounds — this was never a clean consensus, just a majority vote that keeps winning by inertia. Layered against that institutional disagreement is a live evidentiary debate: EMCrit's August 2026 \"A Slow Retreat\" argues the whole hypothermia paradigm was built on 352 patients in two flawed 2002 trials and TTM/TTM2 simply exposed that, while St Emlyn's UK-based appraisal of TTM2 itself flags a genuine methodological confound (mandatory deep sedation in both arms) that keeps the \"is 33°C really equivalent to normothermia\" question honestly open rather than settled. This is a debate episode, not a deep-dive, because the disagreement is not manufactured for effect — it runs through the guideline committees themselves (documented votes), between two current UK guidance documents, and through unresolved subgroup and methodology questions in the trial literature.",
+  "case_vignette": "A 58-year-old man collapses in a shopping centre; bystander CPR starts within 2 minutes, first rhythm is VF, ROSC achieved after 12 minutes with three shocks. He arrives in your resus bay comatose (GCS 3T), haemodynamically stable, with no obvious non-cardiac cause. The nurse asks what temperature target to set on the cooling device and for how long — and whether to even actively cool at all, since your trust's protocol still cites NICE's 32-36°C option while the newest Resus Council UK guidance says just keep him under 37.5°C.",
+  "sources": [
+    {
+      "url": "https://www.resus.org.uk/professional-library/2025-resuscitation-guidelines/post-resuscitation-care-guidelines",
+      "title": "Resuscitation Council UK — Post-Resuscitation Care Guidelines (2025, adopting ERC-ESICM 2025)",
+      "why": "The listener's own society, as of Oct 2025: recommends fever prevention (≤37.5°C) only, formally dropping the 32-36°C hypothermia option their own 2021/22 guidance still carried — the 'current UK standard' anchor."
+    },
+    {
+      "url": "https://www.nice.org.uk/guidance/htg710",
+      "title": "NICE HealthTech Guidance 710 — Temperature control to improve neurological outcomes after cardiac arrest",
+      "why": "The other live UK guidance document, still listing 32-36°C therapeutic hypothermia as co-equal to normothermia — directly contradicts Resus UK 2025 within the same health system, which is the debate in one sentence."
+    },
+    {
+      "url": "https://costr.ilcor.org/document/temperature-control-in-adult-cardiac-arrest-als-tf-sr",
+      "title": "ILCOR ALS Task Force CoSTR — Temperature Control in Adult Cardiac Arrest (Dec 2023)",
+      "why": "Shows fever-prevention was only a 'majority' ILCOR position, not consensus — several task-force members still argue unstudied subgroups (non-shockable, non-cardiac cause, IHCA) may benefit from cooling, since TTM1/TTM2 enrolled mostly shockable OHCA."
+    },
+    {
+      "url": "https://www.ircouncil.it/wp-content/uploads/2022/02/ERC-ESICM-Guidelines-on-Temperature-Control-Nolan-Resuscitation-2022-online.pdf",
+      "title": "ERC-ESICM Guidelines on Temperature Control After Cardiac Arrest in Adults (Nolan/Sandroni, Resuscitation 2022)",
+      "why": "Rare primary-source transparency: the guideline panel itself split 8/15 across three rounds of anonymous voting on whether to keep hypothermia as an option at all — the controversy was contested by the authors, not just critics."
+    },
+    {
+      "url": "https://emcrit.org/emnerd/a-slow-retreat/",
+      "title": "A Slow Retreat (EM Nerd, EMCrit, Aug 2026)",
+      "why": "The freshest and most pointed skeptic case: traces how the entire hypothermia paradigm rested on two small, methodologically weak 2002 trials (352 patients total), and reframes TTM/TTM2/ICECAP as a slow walk-back from a false premise."
+    },
+    {
+      "url": "https://www.stemlynsblog.org/jc-the-ttm2-trial-normothermia-or-hypothermia-post-cardiac-arrest/",
+      "title": "JC: The TTM2 trial — Normothermia or hypothermia post cardiac arrest (St Emlyn's, Simon Carley)",
+      "why": "A UK EM academic's own critical appraisal of the pivotal null-result trial that reset practice — gives the hosts a home-turf methodological read (including the deep-sedation confound) to weigh against the skeptic and pro-cooling camps."
+    }
+  ]
+}
