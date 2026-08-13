@@ -1,0 +1,39 @@
+{
+  "topic_id": "ed-sepsis-bundle-controversies",
+  "title": "Sepsis Bundles on Trial: SSC vs. the World — 2026-08-13",
+  "audio_format": "debate",
+  "sources": [
+    {
+      "url": "https://www.acep.org/news/acep-newsroom-articles/2-2-26-acep-will-not-endorse-new-sepsis-guidelines-from-the-surviving-sepsis-campaign",
+      "title": "ACEP Will Not Endorse New Sepsis Guidelines from the Surviving Sepsis Campaign",
+      "why": "Six months old and the sharpest anchor available: the largest US EM body formally breaking with SCCM/ESICM/IDSA over rigid time-based bundles and lack of EM voice in guideline governance."
+    },
+    {
+      "url": "https://emcrit.org/emcrit/ssc-2026-sepsis-guidelines/",
+      "title": "EMCrit 422 - SSC 2026 Sepsis Guidelines: The Good, the Bad, and the Ugly - with lead author Hallie Prescott",
+      "why": "Gives the SSC side its own voice: Weingart presses lead author Prescott directly on the 20-30 mL/kg jump, code-sepsis huddles, and mandated-vs-conditional recommendations, so the pro-bundle case is argued by the guideline's own author, not a straw man."
+    },
+    {
+      "url": "https://www.nice.org.uk/guidance/ng253",
+      "title": "Suspected sepsis in people aged 16 or over: recognition, assessment and early management (NICE NG253)",
+      "why": "The guideline the listener actually practises under: NEWS2 risk-banded timing rather than blanket hour-1-for-everyone, a structural break from SSC that UK trainees rarely hear justified out loud."
+    },
+    {
+      "url": "https://www.aomrc.org.uk/wp-content/uploads/2022/10/Statement_on_the_initial_antimicrobial_treatment_of_sepsis_V2_1022.pdf",
+      "title": "Statement on the initial antimicrobial treatment of sepsis (Academy of Medical Royal Colleges/FICM, endorsed across UK colleges incl. RCEM)",
+      "why": "The cross-college UK consensus (feeding directly into NG253) that explicitly rejected indiscriminate hour-1 antimicrobials on antimicrobial-stewardship grounds — the origin story of the UK's break from the SSC model."
+    },
+    {
+      "url": "https://web.archive.org/web/20250909205215/https://www.eusem.org/news/1044-european-emergency-departments-face-challenges-in-sepsis-management",
+      "title": "European Emergency Departments Face Challenges in Sepsis Management (EUSEM survey)",
+      "why": "Hard operational data behind the pushback: a 402-ED, 28-country EUSEM survey found only 55% of EDs can complete the hour-1 bundle on time, and flags the bundle as a driver of unnecessary broad-spectrum antibiotics."
+    },
+    {
+      "url": "https://emcrit.org/emcrit/andromeda-shock-2-investigators/",
+      "title": "EMCrit Wee - ANDROMEDA-SHOCK-2 Explosion - A Discussion with the Lead Investigators",
+      "why": "Balances the resuscitation half of the debate: Hernandez and Kattan defend their capillary-refill-guided, personalized bundle against Weingart's methodology challenges, keeping the 'is any bundled protocol the right paradigm' question genuinely two-sided."
+    }
+  ],
+  "rationale": "What's new since this show last touched sepsis is a formal institutional split: in February 2026 ACEP publicly refused to endorse the newest Surviving Sepsis Campaign guidelines, and EMCrit got the SSC's own lead author on record defending the contested pieces (the 20-30 mL/kg fluid jump, mandated vs conditional bundle elements) just weeks later — so for the first time the \"pro-bundle\" case can be heard in its own words rather than reconstructed by its critics. That pairs with a UK guideline architecture (NICE NG253, built on the 2022 AoMRC/RCEM cross-college statement) that has already formally rejected blanket hour-1 timing in favour of NEWS2 risk-stratification, and fresh EUSEM survey data showing European EDs can complete the hour-1 bundle only 55% of the time — evidence the controversy isn't manufactured but operationally real on both sides of the Atlantic. The ANDROMEDA-SHOCK-2 investigator interview extends the same fight into fluid resuscitation, where a \"personalized\" capillary-refill protocol is defended by its authors against the same rigid-bundle skepticism. This is a live, unresolved, evidence-genuine split between two credible institutional positions (not a one-sided pile-on), so debate format is kept rather than downgraded to deep-dive; a UK EM listener will recognise the NICE/AoMRC side as their own daily practice and the SSC/ACEP fight as the transatlantic argument shaping where that practice goes next.",
+  "case_vignette": "A 78-year-old woman arrives from her care home at 3am with NEWS2 of 7: hypotensive at 88/52, tachycardic, mildly confused, no clear source but a vague cough and a leg ulcer. The FY2 clerking her wants to start the \"sepsis six\" clock and push 30 mL/kg of fluid and broad-spectrum antibiotics within the hour per the teaching she got on induction — but the consultant pauses, asking whether NEWS2-banded urgency (per NICE NG253) and a capillary-refill-guided fluid strategy might serve this frail, likely-CKD patient better than a fixed-volume bolus and blanket hour-1 mandate. That bedside disagreement — rigid time-based bundle vs. risk-stratified, individualised resuscitation — is exactly the fault line this episode's sources argue across."
+}
