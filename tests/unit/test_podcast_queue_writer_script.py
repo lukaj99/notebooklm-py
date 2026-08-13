@@ -19,7 +19,7 @@ SCRIPTS_DIR = Path(__file__).resolve().parents[2] / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from podcast_queue_writer import build_payload, extract_json  # noqa: E402
+from podcast_queue_writer import build_payload, extract_json, is_public_url  # noqa: E402
 
 
 def _payload(n_sources: int = 5, **overrides) -> dict:
@@ -62,6 +62,22 @@ def test_extract_json_picks_the_last_object_when_several_appear():
 
 def test_extract_json_returns_none_on_garbage():
     assert extract_json("no json at all here") is None
+
+
+def test_extract_json_returns_the_outer_object_not_a_nested_one():
+    # Regression: a real payload ends with its last source object, so
+    # "take the last object that parses" returned {"url": ...} instead of
+    # the episode, and every field came back None.
+    payload = _payload(3)
+
+    assert extract_json(json.dumps(payload)) == payload
+
+
+def test_extract_json_finds_outer_object_amid_prose_and_nesting():
+    payload = _payload(2)
+    raw = f"Here you go:\n{json.dumps(payload)}\nDone."
+
+    assert extract_json(raw) == payload
 
 
 def test_build_payload_keeps_only_known_fields():
@@ -137,6 +153,61 @@ def test_build_payload_preserves_optional_style_and_vignette():
 
     assert result["style"] == "two riders talking"
     assert result["case_vignette"] == "a case"
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://localhost:2586/agent",
+        "http://127.0.0.1/",
+        "http://169.254.169.254/latest/meta-data/",
+        "http://10.0.0.5/admin",
+        "http://192.168.1.1/",
+        "http://172.16.0.1/",
+        "http://[::1]/",
+        "file:///etc/passwd",
+        "gopher://example.com/",
+    ],
+)
+def test_is_public_url_rejects_internal_and_non_http_targets(url):
+    assert is_public_url(url) is False
+
+
+@pytest.mark.parametrize("url", ["https://pubmed.ncbi.nlm.nih.gov/1/", "http://example.com/x"])
+def test_is_public_url_accepts_ordinary_public_urls(url, monkeypatch):
+    # Stub DNS so the check is exercised without depending on the network.
+    monkeypatch.setattr(
+        "podcast_queue_writer.socket.getaddrinfo",
+        lambda host, port: [(2, 1, 6, "", ("93.184.216.34", 0))],
+    )
+
+    assert is_public_url(url) is True
+
+
+def test_is_public_url_rejects_a_public_name_resolving_to_a_private_ip(monkeypatch):
+    # DNS rebinding: the hostname looks fine, the address does not.
+    monkeypatch.setattr(
+        "podcast_queue_writer.socket.getaddrinfo",
+        lambda host, port: [(2, 1, 6, "", ("127.0.0.1", 0))],
+    )
+
+    assert is_public_url("https://totally-legit.example/paper") is False
+
+
+def test_build_payload_drops_internal_urls_without_fetching_them():
+    raw = _payload(5)
+    raw["sources"][0]["url"] = "http://169.254.169.254/latest/meta-data/"
+    fetched: list[str] = []
+
+    def url_ok(url: str) -> bool:
+        fetched.append(url)
+        return True
+
+    result, dropped = build_payload(raw, topic_id="t", date="2026-08-13", url_ok=url_ok)
+
+    assert "http://169.254.169.254/latest/meta-data/" in dropped
+    assert "http://169.254.169.254/latest/meta-data/" not in fetched
+    assert len(result["sources"]) == 4
 
 
 def test_build_payload_requires_a_sources_list():
