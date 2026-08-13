@@ -122,6 +122,34 @@ def collect_avoid_urls(topic_id: str, queue_dir: Path) -> list[str]:
     return urls
 
 
+def build_workflow_args(
+    topic: dict,
+    queue_dir: Path,
+    *,
+    today: str,
+    max_sources: int,
+) -> dict:
+    """Shape one topic into the argument object the deep-research workflow takes."""
+
+    args = {
+        "topic": {
+            "id": topic["id"],
+            "title": topic["title"],
+            "query": topic.get("query") or topic.get("pubmed_query", ""),
+            "debate": topic.get("debate", False),
+            "domain": topic.get("domain", "medicine"),
+        },
+        "date": today,
+        "avoidUrls": collect_avoid_urls(topic["id"], queue_dir),
+        "maxSources": max_sources,
+    }
+    # Optional: the specific questions this episode has to answer. Only topics
+    # that define one carry it, so the general case stays a broad survey.
+    if topic.get("angle"):
+        args["angle"] = topic["angle"]
+    return args
+
+
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -152,18 +180,7 @@ def main() -> None:
 
     print(
         json.dumps(
-            {
-                "topic": {
-                    "id": topic["id"],
-                    "title": topic["title"],
-                    "query": topic.get("query") or topic.get("pubmed_query", ""),
-                    "debate": topic.get("debate", False),
-                    "domain": topic.get("domain", "medicine"),
-                },
-                "date": today,
-                "avoidUrls": collect_avoid_urls(topic["id"], QUEUE_DIR),
-                "maxSources": args.max_sources,
-            },
+            build_workflow_args(topic, QUEUE_DIR, today=today, max_sources=args.max_sources),
             indent=2,
         )
     )

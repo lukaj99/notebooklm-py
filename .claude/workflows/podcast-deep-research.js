@@ -14,6 +14,7 @@ export const meta = {
 //   date: 'YYYY-MM-DD',                            // UTC date (Date.now is unavailable in workflow scripts)
 //   avoidUrls: ['...'],                            // URLs already used in prior episodes of this topic
 //   maxSources: 6,
+//   angle: '...',                                  // optional: the specific questions this episode must answer
 // }
 if (!args || !args.topic || !args.topic.id || !args.date) {
   throw new Error('args must include topic {id,title,query,debate[,domain]} and date')
@@ -23,6 +24,12 @@ const date = args.date
 const avoid = args.avoidUrls || []
 const maxSources = args.maxSources || 6
 const domain = topic.domain || 'medicine'
+// A caller-supplied angle steers every lens and the curator toward the
+// questions the listener actually asked, instead of a general survey.
+const angle = args.angle || topic.angle || ''
+const angleBlock = angle
+  ? `\nTHE ANGLE FOR THIS EPISODE — every source you return must help answer it:\n${angle}\n`
+  : ''
 
 // ---------------------------------------------------------------------------
 // Domain profiles: who the listener is, where each research lens looks, how
@@ -49,6 +56,28 @@ const DOMAIN_PROFILES = {
     scenarioHint:
       'a realistic, concrete ED case that the chosen sources genuinely inform (age, presentation, the decision point where the controversy bites)',
     style: null,
+  },
+  'health-policy': {
+    audience:
+      'a UK emergency-medicine doctor who works in the system being described and wants the structural argument, not the clinical one — figures, causal mechanisms, and who is actually accountable',
+    sourceRules:
+      'Ideal: RCEM position statements and its Winter/performance data, NHS England statistics pages, King\'s Fund / Nuffield Trust / Health Foundation analyses, National Audit Office and House of Commons Health and Social Care Committee reports, Care Quality Commission State of Care, ONS excess-mortality work, peer-reviewed health-services research, and serious journalism (HSJ, BMJ news and analysis, FT/Guardian/Times investigations). Prefer the primary report page over a news write-up of it where both are public. Avoid pure opinion columns with no data behind them.',
+    lenses: {
+      authority:
+        'OFFICIAL BODIES AND HARD DATA. What do the institutions themselves publish — RCEM, NHS England performance statistics (4-hour standard, 12-hour DTA waits, ambulance handover delays, bed occupancy), the National Audit Office, the Health and Social Care Committee, the CQC? Get the actual current figures and how they have moved over the last 5-10 years. Use mcp__claude_ai_Exa__web_search_exa and mcp__claude_ai_Exa__deep_search_exa.',
+      community:
+        'ANALYSIS AND FRONTLINE ACCOUNT. Think-tank analysis (King\'s Fund, Nuffield Trust, Health Foundation) and serious health journalism (HSJ, BMJ) explaining the causal mechanism — why does the front door back up, what is exit block, what does social-care capacity have to do with it. Include at least one credible frontline or clinical-leader account of what the crisis looks like in the department. Use mcp__claude_ai_Exa__web_search_exa.',
+      evidence:
+        'PEER-REVIEWED EVIDENCE ON HARM AND ON FIXES. Two things: (1) the quantified harm of crowding and long waits — the excess-deaths-per-delayed-patient literature, ambulance-delay outcome studies; (2) evaluations of proposed fixes — same-day emergency care, acute frailty units, discharge-to-assess, 111/urgent-care diversion, corridor-care policy, workforce retention. Which interventions actually have outcome data behind them and which are assertions? Use mcp__claude_ai_Semantic_Scholar__pubmed_search, mcp__claude_ai_Semantic_Scholar__europe_pmc_search, and mcp__claude_ai_Exa__deep_search_exa.',
+      controversy:
+        'THE BLAME ARGUMENT — this is the spine of the episode. Map who the competing candidate causes are and who each camp blames: chronic underfunding and capital starvation; social-care collapse and delayed discharge; workforce attrition, rota gaps and pay disputes; primary-care access pushing demand to the front door; management and flow within trusts; ageing/multimorbidity demand growth; political decisions (Lansley reforms, austerity, targets abolished then reinstated). For each, find a source that argues it IS the primary driver and, where one exists, a source that argues it is a scapegoat or a symptom rather than a cause. Return these as opposing "stance" pairs. Be honest where the evidence points clearly rather than manufacturing balance. Use mcp__claude_ai_Exa__deep_search_exa and mcp__claude_ai_Consensus__search.',
+    },
+    curatorPersona:
+      'You are the EDITOR of an investigative health-policy podcast: two hosts who know the NHS from the inside, follow the money and the data, name names where the evidence supports it, and refuse to let either "it is all the government\'s fault" or "it is all just demand" pass unchallenged.',
+    scenarioHint:
+      'a concrete, recognisable scene from a UK ED that embodies the structural problem — a specific night, a specific patient stuck in a specific part of the pathway — that the chosen sources explain the causes of',
+    style:
+      "Frame this as an investigative discussion between two hosts who know the NHS from the inside: structural and political, not clinical — no management advice for individual patients. Work through what the data actually shows, then argue about causation and accountability, disagreeing openly and resolving it by citing the sources rather than by splitting the difference. Be willing to say plainly where the evidence points and where it genuinely does not. Distinguish carefully between what is measured, what is inferred, and what is asserted. Land on concrete, named interventions and who would have to act to deliver them — not on vague calls for more funding.",
   },
   motorcycling: {
     audience:
@@ -206,7 +235,7 @@ listener is ${profile.audience}. The episode topic is:
   "${topic.title}" (id: ${topic.id}, domain: ${domain})
   seed search query: ${topic.query}
   expected format: ${topic.debate ? 'DEBATE — genuine, citable controversy' : 'deep-dive'}
-
+${angleBlock}
 Ground rules:
 - Every URL you return MUST be freely, publicly fetchable — NotebookLM will
   ingest each page directly, so no paywalled or login-gated links.
@@ -384,7 +413,7 @@ const curatorPrompt = `
 ${profile.curatorPersona} You are curating one episode for the commute of
 ${profile.audience}. Topic: "${topic.title}" (id: ${topic.id}), episode date
 ${date}, default format ${topic.debate ? 'debate' : 'deep-dive'}.
-
+${angleBlock}
 VERIFIED, PUBLICLY ACCESSIBLE candidate sources (every URL here has been
 checked — you may ONLY choose from this list, never invent or substitute
 URLs):

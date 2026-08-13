@@ -2,6 +2,14 @@
   "_comment": "Rotation list for the proactive podcast researcher (scripts/podcast_researcher.py) and the podcast-deep-research workflow (.claude/workflows/podcast-deep-research.js). Each entry is one candidate episode topic. 'domain' defaults to 'medicine'; only medicine topics (with 'pubmed_query' feeding PubMed E-utilities) are eligible for the local PubMed fallback — non-medicine domains ('query' instead) are researched exclusively by the deep-research workflow with domain-appropriate lenses. 'debate' picks --format debate over deep-dive when the topic has genuine, citable controversy.",
   "topics": [
     {
+      "id": "ae-crisis-uk",
+      "title": "The A&E Crisis — What's Happening to UK Emergency Departments",
+      "domain": "health-policy",
+      "query": "UK A&E crisis emergency department crowding four hour standard exit block ambulance handover delays causes solutions",
+      "debate": true,
+      "angle": "Answer four questions, in order, and let the sources rather than the hosts' priors decide each: (1) What is actually happening to UK EDs — the real numbers on four-hour performance, 12-hour DTA waits, ambulance handover delays, bed occupancy, and how they have moved over the last decade. (2) Why — the causal mechanism, distinguishing front-door demand from exit block and whole-system flow, and how much of the change each candidate cause actually accounts for. (3) How to fix it — named interventions with evidence behind them, separated clearly from interventions that are merely asserted, and who would have to act to deliver each. (4) Who is to blame — treat this as a genuine, contested question: lay out each camp's case (underfunding, social-care collapse, workforce attrition, primary-care access, trust-level flow and management, demographic demand, specific political decisions), give each its strongest advocate and its strongest critic, and be willing to conclude that the evidence points harder at some than others rather than distributing blame evenly for the sake of balance."
+    },
+    {
       "id": "ed-sepsis-bundle-controversies",
       "title": "ED Sepsis Bundle Controversies",
       "pubmed_query": "sepsis bundle emergency department controversy OR early goal directed therapy",

@@ -17,7 +17,7 @@ SCRIPTS_DIR = Path(__file__).resolve().parents[2] / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from podcast_next_topic import collect_avoid_urls, select_topic  # noqa: E402
+from podcast_next_topic import build_workflow_args, collect_avoid_urls, select_topic  # noqa: E402
 
 
 def _topic(tid: str, domain: str = "medicine", debate: bool = False) -> dict:
@@ -117,6 +117,38 @@ def test_domain_interleaving_does_not_override_staleness(tmp_path):
     picked = select_topic(topics, tmp_path, today="2026-08-14", cooldown_days=0)
 
     assert picked["id"] == "med1"
+
+
+def test_build_workflow_args_carries_the_angle_through(tmp_path):
+    topic = _topic("a")
+    topic["angle"] = "answer these four questions"
+
+    args = build_workflow_args(topic, tmp_path, today="2026-08-13", max_sources=6)
+
+    assert args["angle"] == "answer these four questions"
+
+
+def test_build_workflow_args_omits_angle_when_absent(tmp_path):
+    args = build_workflow_args(_topic("a"), tmp_path, today="2026-08-13", max_sources=6)
+
+    assert "angle" not in args
+
+
+def test_build_workflow_args_falls_back_to_pubmed_query(tmp_path):
+    topic = {"id": "a", "title": "A", "pubmed_query": "sepsis", "debate": True}
+
+    args = build_workflow_args(topic, tmp_path, today="2026-08-13", max_sources=6)
+
+    assert args["topic"]["query"] == "sepsis"
+    assert args["topic"]["domain"] == "medicine"
+
+
+def test_build_workflow_args_includes_prior_urls_to_avoid(tmp_path):
+    _write_queue(tmp_path, "a", "2026-01-01", ["https://x/1"])
+
+    args = build_workflow_args(_topic("a"), tmp_path, today="2026-08-13", max_sources=6)
+
+    assert args["avoidUrls"] == ["https://x/1"]
 
 
 def test_collect_avoid_urls_gathers_prior_sources_for_that_topic_only(tmp_path):
