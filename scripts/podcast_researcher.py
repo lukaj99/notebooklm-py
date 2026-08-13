@@ -20,6 +20,17 @@ Run unattended (systemd timer) with no arguments. Each run:
    ntfy notification with a short curator blurb explaining what's new and why
    these sources were picked.
 
+Producers feeding the queue
+---------------------------
+Two of them, and this script doesn't care which wrote a given file:
+
+* ``scripts/podcast_research_run.sh`` (``podcast-research.timer``, 03:47)
+  runs the ``podcast-deep-research`` workflow locally — four
+  domain-specific research lenses, adversarial per-source verification, then
+  editorial curation — and covers every domain, medical and not. This is the
+  richer path and the one that supplies ``style`` and ``case_vignette``.
+* The cloud routine below, medicine only.
+
 Cloud-routine handoff
 ----------------------
 A scheduled cloud agent (see ``scripts/podcast_researcher_agent.md``) has

@@ -1,12 +1,22 @@
 # Podcast queue
 
-Handoff directory between the cloud researcher/curator routine
-(`scripts/podcast_researcher_agent.md`) and the local orchestrator
-(`scripts/podcast_researcher.py`, run via the `podcast-pipeline.timer`
-systemd unit on arch-vps).
+Handoff directory between the two *producers* of curated episodes and the
+single *consumer* that turns them into audio.
 
-The cloud routine commits one file here per curated topic:
-`<topic-id>-<YYYY-MM-DD>.json`, shaped as:
+Producers (either may commit a file here; they don't coordinate):
+
+1. **Local deep-research runner** — `scripts/podcast_research_run.sh`
+   (`podcast-research.timer`, 03:47 daily). Picks the next due topic with
+   `scripts/podcast_next_topic.py`, runs the `podcast-deep-research`
+   workflow (four domain-specific research lenses → adversarial per-source
+   verification → editorial curation), and writes the file via
+   `scripts/podcast_queue_writer.py`. Covers every domain, medical and not.
+2. **Cloud routine** — `scripts/podcast_researcher_agent.md`, medicine only.
+
+Consumer: the local orchestrator `scripts/podcast_researcher.py`
+(`podcast-pipeline.timer`, 06:15 daily) on arch-vps.
+
+Each file is `<topic-id>-<YYYY-MM-DD>.json`, shaped as:
 
 ```json
 {
@@ -22,16 +32,20 @@ The cloud routine commits one file here per curated topic:
 }
 ```
 
-`case_vignette` and `style` are optional and typically produced by the local
-`podcast-deep-research` workflow (`.claude/workflows/podcast-deep-research.js`)
-rather than the cloud routine. When present, `case_vignette` is appended to
-the audio instructions so the episode opens with a concrete case/scenario,
-and `style` replaces the default EM-Cases host framing (used by non-medical
-domains — motorcycling, photography, tech — which the workflow researches
-with domain-appropriate lenses).
+`case_vignette` and `style` are optional and come from the deep-research
+workflow rather than the cloud routine. When present, `case_vignette` is
+appended to the audio instructions so the episode opens with a concrete
+case/scenario, and `style` replaces the default EM-Cases host framing —
+that's what lets a motorcycling or photography episode sound like its own
+show instead of a medical one.
 
-The local orchestrator consumes files here oldest-first, tracks what it's
-already processed in `~/.notebooklm/podcast_pipeline_state.json` (not
-committed — local-only), and never deletes or rewrites files in this
-directory itself. Nothing in this directory should be edited by hand except
-for debugging.
+Files here double as the deep-research runner's *history*: it picks the
+least-recently-covered topic by reading these filenames, and gathers the
+URLs to avoid from these payloads. That's why nothing deletes or rewrites
+them — removing a file makes its topic look uncovered and lets already-used
+sources resurface.
+
+The orchestrator consumes files oldest-first (one per run, so a full queue
+paces out over days) and tracks what it has already processed in
+`~/.notebooklm/podcast_pipeline_state.json` (local-only, not committed).
+Nothing in this directory should be edited by hand except for debugging.
