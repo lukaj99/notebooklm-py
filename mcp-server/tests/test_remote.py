@@ -8,7 +8,7 @@ from starlette.testclient import TestClient
 
 from notebooklm_mcp.config import RemoteServerConfig
 from notebooklm_mcp.oauth import FileBackedOAuthProvider
-from notebooklm_mcp.remote import build_auth_settings
+from notebooklm_mcp.remote import build_asgi_app, build_auth_settings
 from notebooklm_mcp.server import create_mcp_server
 
 
@@ -32,7 +32,13 @@ def test_remote_server_oauth_flow(monkeypatch, tmp_path):
         oauth_password=config.oauth_password,
     )
 
-    with TestClient(mcp.streamable_http_app()) as client:
+    # base_url must match an allowed_hosts entry (server.py pins
+    # allowed_hosts to loopback + the production domain): TestClient's
+    # default base_url of http://testserver sends Host: testserver, which
+    # transport_security._validate_host rejects with 421 before ever
+    # reaching the /mcp handler — masking real assertions about /mcp
+    # behavior behind a 421 that happens to also not be 401/403.
+    with TestClient(mcp.streamable_http_app(), base_url="http://localhost:8006") as client:
         root = client.get("/")
         assert root.status_code == 200
         assert root.json()["oauth_enabled"] is True
@@ -126,13 +132,86 @@ def test_remote_server_oauth_flow(monkeypatch, tmp_path):
         assert unauthorized.status_code == 401
         assert "resource_metadata=" in unauthorized.headers["www-authenticate"]
 
+        # A genuine JSON-RPC "initialize" call (matching what a real MCP
+        # client sends, including the Accept header streamable-http
+        # requires) confirms the request actually reached protocol
+        # handling, rather than merely checking "not 401/403" — which a
+        # 421 Invalid Host (wrong TestClient base_url) or 403 Invalid
+        # Origin (unset allowed_origins) would also satisfy without the
+        # request ever being processed.
+        initialize_body = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+                "protocolVersion": "2025-06-18",
+                "capabilities": {},
+                "clientInfo": {"name": "test-client", "version": "1.0"},
+            },
+        }
         authorized = client.post(
             "/mcp",
-            json={},
-            headers={"Authorization": f"Bearer {token_json['access_token']}"},
+            json=initialize_body,
+            headers={
+                "Authorization": f"Bearer {token_json['access_token']}",
+                "Accept": "application/json, text/event-stream",
+            },
         )
-        assert authorized.status_code != 401
-        assert authorized.status_code != 403
+        assert authorized.status_code == 200, authorized.text
+
+        # Browser-based MCP clients (the claude.ai connector UI) always send
+        # an Origin header on cross-origin POSTs — the plain server-to-server
+        # call above never exercises this path.
+        # TransportSecuritySettings.allowed_origins must include the caller's
+        # origin or mcp.server.transport_security._validate_origin rejects
+        # it with 403 "Invalid Origin header" regardless of a valid token.
+        authorized_from_browser = client.post(
+            "/mcp",
+            json=initialize_body,
+            headers={
+                "Authorization": f"Bearer {token_json['access_token']}",
+                "Accept": "application/json, text/event-stream",
+                "Origin": "https://claude.ai",
+            },
+        )
+        assert authorized_from_browser.status_code == 200, authorized_from_browser.text
+
+
+def test_mcp_route_answers_cors_preflight(monkeypatch, tmp_path):
+    """Browser MCP clients (e.g. the claude.ai connector) send an OPTIONS
+    preflight to /mcp before their authenticated POST. Without app-level
+    CORS, that preflight hits RequireAuthMiddleware first (no Authorization
+    header on a preflight) and gets a bare 401 with no
+    Access-Control-Allow-* headers — the browser then blocks the real
+    request as a CORS failure even though a valid token would have worked
+    fine server-to-server. See build_asgi_app()."""
+
+    monkeypatch.setenv("NOTEBOOKLM_MCP_PUBLIC_URL", "http://localhost:8006")
+    monkeypatch.setenv("NOTEBOOKLM_MCP_OAUTH_PASSWORD", "secret-pass")
+    monkeypatch.setenv("NOTEBOOKLM_MCP_OAUTH_STORE_PATH", str(tmp_path / "oauth-state.json"))
+
+    config = RemoteServerConfig.from_env()
+    provider = FileBackedOAuthProvider(config)
+    mcp = create_mcp_server(
+        host=config.host,
+        port=config.port,
+        auth_settings=build_auth_settings(config),
+        auth_provider=provider,
+        oauth_password=config.oauth_password,
+    )
+
+    with TestClient(build_asgi_app(mcp)) as client:
+        preflight = client.options(
+            "/mcp",
+            headers={
+                "Origin": "https://claude.ai",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "authorization,content-type",
+            },
+        )
+        assert preflight.status_code == 200
+        assert preflight.headers["access-control-allow-origin"] == "*"
+        assert "POST" in preflight.headers["access-control-allow-methods"]
 
 
 def test_remote_config_requires_https_outside_localhost(monkeypatch):
