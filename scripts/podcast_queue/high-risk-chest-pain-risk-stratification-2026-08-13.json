@@ -1,0 +1,39 @@
+{
+  "topic_id": "high-risk-chest-pain-risk-stratification",
+  "title": "HEART Score vs Troponin-Alone: The Transatlantic Chest Pain Divide — 2026-08-13",
+  "audio_format": "debate",
+  "sources": [
+    {
+      "url": "https://alaskaacep.org/wp-content/uploads/2025/04/ACEP-guidelines.pdf",
+      "title": "ACEP Clinical Policy: Suspected Non-ST-Elevation ACS",
+      "why": "ACEP's live Level B position: HEART <3 plus a single/serial troponin gives a 0-2% miss rate — the US anchor for 'calculate the score before you discharge.'"
+    },
+    {
+      "url": "https://www.nice.org.uk/guidance/htg552/chapter/1-Recommendations",
+      "title": "NICE HTG552: High-sensitivity troponin tests for the early rule out of NSTEMI",
+      "why": "The listener's own national guidance: rule-out via single below-limit-of-detection or serial hs-cTn sampling, no mandated risk score anywhere in the pathway — the direct NHS counterpoint to ACEP."
+    },
+    {
+      "url": "https://pubmed.ncbi.nlm.nih.gov/36641050/",
+      "title": "Risk Scores for Clinical Risk Stratification of ED Chest Pain (O'Rielly et al., CJC 2023)",
+      "why": "The evidence behind the NICE/ESC stance: once hs-cTn has ruled out MI, residual 30-day MACE risk is already so low that HEART 'may be of little additional value' — a systematic review directly undercutting ACEP's Level B recommendation."
+    },
+    {
+      "url": "https://first10em.com/clinical-decision-rules/",
+      "title": "Clinical decision rules are ruining medicine - First10EM",
+      "why": "Morgenstern's methodological grenade: HEART-style derivation/validation studies overstate real-world discriminative value via spectrum bias and easy-case inclusion — reinforces the anti-CDR side with a citable mechanism, not just outcome data."
+    },
+    {
+      "url": "https://pubmed.ncbi.nlm.nih.gov/40013746/",
+      "title": "2025 ACC/AHA/ACEP/NAEMSP/SCAI Guideline for Acute Coronary Syndromes",
+      "why": "Brand-new (2025) joint US guideline — ACEP co-authored — endorses clinical decision pathways generically (21-43% less unnecessary testing) but stops short of mandating HEART, proving the divide isn't even settled within US cardiology/EM itself."
+    },
+    {
+      "url": "https://rebelem.com/mdcalc-wars-heart-score-vs-edacs/",
+      "title": "MDCalc Wars: HEART Score Vs. EDACS - REBEL EM",
+      "why": "June 2025 head-to-head: even doctors who accept a score should exist can't agree which one — grounds the debate in the practical 'what do I actually press on MDCalc' decision UK and US clinicians both face."
+    }
+  ],
+  "rationale": "This stays a debate because the evidence has genuinely not converged: ACEP's live 2018 policy (reaffirmed in its 2025 joint guideline's refusal to mandate a score) gives HEART a Level B recommendation, while NICE — the listener's own national body — and the 2023 ESC guidelines build rule-out entirely around hs-troponin algorithms with no risk score at all, a structural philosophical split rather than a minor disagreement. A 2023 systematic review (O'Rielly) supplies the evidence engine for the biomarker-only camp, showing HEART adds little once hs-cTn has ruled out MI, while First10EM's methodological critique explains *why* HEART-style derivation studies might overstate real-world value in the first place. REBEL EM's 2025 HEART-vs-EDACS comparison keeps the debate practical rather than purely philosophical, forcing the hosts to argue not just \"score or no score\" but \"if a score, which one.\" The mix of a UK national guideline, a US clinical policy, a systematic review, a FOAMed methodological takedown, and a head-to-head tool comparison gives both hosts real, current, citable ammunition on opposite sides — ideal for a UK EM doctor who lives inside the NICE pathway but constantly encounters US-trained HEART-first teaching.",
+  "case_vignette": "A 54-year-old smoker presents at 02:00 with 40 minutes of central chest tightness that resolved before arrival, a normal ECG, and a first hs-troponin just below the assay's rule-out threshold. Following NICE, the treating registrar wants to discharge on the single below-limit-of-detection sample alone; the visiting US fellow insists on calculating a HEART score first, pointing out the patient's risk factors push him into a moderate-risk band despite the reassuring troponin. Whose protocol is actually safer for this patient walking out the door tonight — and whose is just extra paperwork?"
+}
