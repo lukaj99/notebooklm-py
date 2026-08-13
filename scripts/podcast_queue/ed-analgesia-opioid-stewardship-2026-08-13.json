@@ -1,0 +1,38 @@
+{
+  "topic_id": "ed-analgesia-opioid-stewardship",
+  "title": "ED Analgesia and Opioid Stewardship — 2026-08-13",
+  "audio_format": "debate",
+  "sources": [
+    {
+      "url": "https://pubmed.ncbi.nlm.nih.gov/41810980/",
+      "title": "Updated European Society for Emergency Medicine Guidelines for acute pain management in emergency departments and prehospital care (Eur J Emerg Med, 2026)",
+      "why": "The flagship guideline update since the last EUSEM version (2020): a 2020-2025 systematic review folding in the CERTA framework and a traffic-light triage system, explicitly prioritizing nonopioid/multimodal analgesia and reserving opioids for select indications — the anchor for the 'go opioid-sparing across the board' side."
+    },
+    {
+      "url": "https://doi.org/10.1016/j.acepjo.2026.100337",
+      "title": "Suzetrigine for Acute Pain in the Emergency Department: A First-in-Class NaV1.8 Blocker (JACEP Open, 2026)",
+      "why": "Suzetrigine (FDA-approved Jan 2025) is the first genuinely new nonopioid analgesic class in 20+ years — no respiratory depression or abuse liability, phase 3 data show relief comparable to hydrocodone/acetaminophen. Brand-new 'so what does this actually change' pharmacology for the episode."
+    },
+    {
+      "url": "https://doi.org/10.3389/fpubh.2025.1739805",
+      "title": "Implementation of an ultrasound-guided nerve block program in an academic emergency department (Frontiers in Public Health, 2026)",
+      "why": "Real-world implementation data (PRISM framework, University of Colorado ED): UGNB use went from ~0/quarter to 50+/quarter in five years. Grounds the 'embrace opioid-sparing' argument in what it actually takes operationally, not just guideline text."
+    },
+    {
+      "url": "https://doi.org/10.3390/jcm15093230",
+      "title": "Management of Mild to Moderate Pain from Triage to Discharge in the Emergency Department: A Multidisciplinary Delphi Consensus from SIMEU (J Clin Med, 2026)",
+      "why": "Fresh (2026) Italian national Delphi consensus: paracetamol first-line, fixed-dose paracetamol+ibuprofen strongly endorsed as opioid-sparing across ages. Independent professional-society convergence with EUSEM, useful for gauging how settled this really is."
+    },
+    {
+      "url": "https://doi.org/10.1111/acem.14790",
+      "title": "Efficacy of prescribed opioids for acute pain after being discharged from the emergency department: A systematic review and meta-analysis (Acad Emerg Med, 2023)",
+      "why": "The complicating data point for the debate: pooled RCTs show no opioid-vs-nonopioid difference overall, but that null result is driven by codeine — non-codeine opioids are significantly more effective than nonopioids (at the cost of more adverse events). Undercuts a simple 'nonopioids are just as good' takeaway."
+    },
+    {
+      "url": "https://doi.org/10.1007/s40122-026-00853-8",
+      "title": "French National Guidelines for the Appropriate Use of Opioids: Analgesia, Opioid Use Disorder, and Overdose Prevention — Part 1 (Pain Ther, 2026)",
+      "why": "France's HAS national guidelines still recommend immediate opioid titration as first-line for severe pain (NRS≥6) in the ED, only relegating opioids to second-line for renal colic — a more permissive, real-world-pragmatic counterpoint to EUSEM's opioid-sparing-first framing."
+    }
+  ],
+  "rationale": "This topic has never run before (the queue directory was empty), so there is no 'since last time' delta to report, but 2026 turns out to be an unusually active year for it: EUSEM published a full guideline rewrite in June, the FDA-approved nonopioid suzetrigine has its first ED-specific review, and both Italian (SIMEU) and French (HAS) national bodies issued fresh consensus statements — plus real implementation data on ultrasound-guided nerve blocks scaling from near-zero to routine use at one academic center. I kept audio_format as 'debate' rather than downgrading to 'deep-dive': while there is now broad society-level convergence that multimodal, opioid-sparing analgesia should be the default (EUSEM, SIMEU, the UGNB program), a 2023 SAEM meta-analysis complicates the clean 'nonopioids are just as good' narrative by showing non-codeine opioids are genuinely more effective than nonopioids (with more adverse events as the tradeoff), and France's new national guidelines still keep immediate opioid titration as first-line for severe pain rather than fully opioid-sparing-first. That leaves real, current, citable tension for two ED docs to argue over: how aggressively to push opioid-sparing defaults versus preserving fast, effective opioid access for genuinely severe pain, and whether a novel agent like suzetrigine changes that calculus before it has ED-specific outcome data."
+}
