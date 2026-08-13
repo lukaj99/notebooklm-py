@@ -116,6 +116,20 @@
       "domain": "tech",
       "query": "self-hosting homelab docker services worth running media server automation 2026",
       "debate": true
+    },
+    {
+      "id": "tech-agentic-coding",
+      "title": "Agentic Coding — What Actually Makes Agents Better",
+      "domain": "tech",
+      "query": "AI coding agents harness design evaluation SWE-bench context management multi-agent 2026",
+      "debate": true
+    },
+    {
+      "id": "tech-linux-workstation",
+      "title": "The Linux Workstation — Tooling Worth the Switching Cost",
+      "domain": "tech",
+      "query": "Linux workstation tooling terminal shell editor productivity Arch rolling release 2026",
+      "debate": false
     }
   ]
 }
