@@ -7,16 +7,37 @@
 # resulting queue file. The orchestrator (podcast-pipeline.timer) picks it up
 # on its next run and turns it into a downloaded mp3.
 #
+# Trust boundary
+# --------------
+# The research agents ingest arbitrary web pages, so everything the session
+# returns is untrusted input. The session therefore does exactly one thing:
+# run the workflow and print the resulting JSON payload on stdout. It is given
+# no file-writing tool, no git access, and no general shell — only the
+# research tools and a read-only curl status check. This script, which is
+# trusted, does all the consequential work: validate the JSON, re-check every
+# source URL itself, write the queue file, and commit.
+#
+# (Path-scoped Write/Edit allowlist rules are NOT enforced for headless
+# sessions — verified empirically — so "let the session write only the queue
+# file" is not a control that actually holds. Hence this split.)
+#
 # Exits 0 when nothing is due — every topic covered within its cooldown.
 
 set -euo pipefail
 
 REPO="/home/luka/projects/notebooklm-py"
 NTFY_URL="http://localhost:2586/agent"
+LOG=/tmp/podcast-research-last.log
+MIN_SOURCES=4
 
 cd "$REPO"
 
-# Never research on top of uncommitted work — the session commits and pushes,
+notify() {
+  curl -sS -X POST "$NTFY_URL" -H "Title: $1" -d "$2" >/dev/null 2>&1 || true
+  echo "$2"
+}
+
+# Never research on top of uncommitted work — this script commits and pushes,
 # and sweeping up someone else's in-progress changes would be worse than
 # skipping a cycle.
 if [[ -n "$(git status --porcelain)" ]]; then
@@ -27,12 +48,7 @@ fi
 git fetch --quiet origin main
 git merge --quiet --ff-only origin/main
 
-if ! ARGS=$(uv run python scripts/podcast_next_topic.py 2>/dev/null); then
-  echo "topic selection failed" >&2
-  exit 1
-fi
-
-if [[ -z "$ARGS" ]]; then
+if ! ARGS=$(uv run python scripts/podcast_next_topic.py 2>/dev/null) || [[ -z "$ARGS" ]]; then
   echo "nothing due" >&2
   exit 0
 fi
@@ -45,64 +61,54 @@ echo "researching ${TOPIC_ID} for ${DATE}"
 
 PROMPT=$(
   cat <<EOF
-Run the podcast deep-research workflow and commit its result. Do not ask for
-confirmation at any step; this is an unattended scheduled run.
+Call the Workflow tool exactly once with:
+  scriptPath: "${REPO}/.claude/workflows/podcast-deep-research.js"
+  args: ${ARGS}
 
-1. Call the Workflow tool with:
-   scriptPath: "${REPO}/.claude/workflows/podcast-deep-research.js"
-   args: ${ARGS}
+When it returns, print the workflow result's \`payload\` object as raw JSON and
+nothing else — no prose, no explanation, no markdown fences, before or after.
+Your entire final message must be that JSON object and must parse as JSON.
 
-2. When it completes, write the workflow's returned \`payload\` object — and
-   nothing else from the result — as pretty-printed JSON (2-space indent,
-   ensure_ascii false, trailing newline) to:
-   ${REPO}/${QUEUE_FILE}
-
-3. Before committing, sanity-check every source URL in the payload with:
-   curl -sL -o /dev/null -w "%{http_code}" --max-time 25 "<url>"
-   Drop any source that does not return 200. If fewer than 4 sources
-   survive, do NOT commit — report the failure and stop.
-
-4. git add that one file only, commit with message
-   "chore(podcast): queue ${TOPIC_ID} — ${DATE}", and push to origin main
-   (rebase onto origin/main first if the push is rejected).
-
-Touch no other file in the repository. Your final message should be one line:
-the topic, the number of sources committed, and the audio format.
+Do not create, edit, or delete any file. Do not run any git command.
 EOF
 )
 
-# Deliberately NOT --permission-mode bypassPermissions. The research agents
-# ingest arbitrary web pages, and their findings (titles, rationale) flow back
-# into this session's context — untrusted text reaching a session that can run
-# shell commands. The allowlist below is everything the run legitimately
-# needs and nothing else, so a prompt injection buried in a fetched page has
-# no destructive command available to it.
+# Everything the run legitimately needs and nothing else. Notably absent:
+# any file-editing tool, any git command, and any general-purpose interpreter
+# (python3, uv run, sh) — each of which would turn a prompt injection buried
+# in a fetched page into arbitrary code execution on this host. The single
+# permitted Bash form pins its output to /dev/null so the verification agents
+# can check HTTP status without being able to write anything.
 ALLOWED_TOOLS=(
-  Workflow Read Write Edit Glob Grep ToolSearch WebFetch TodoWrite
-  "Bash(git status:*)" "Bash(git fetch:*)" "Bash(git add:*)" "Bash(git commit:*)"
-  "Bash(git push:*)" "Bash(git rebase:*)" "Bash(git log:*)" "Bash(git diff:*)"
-  "Bash(curl -sL -o /dev/null*)" "Bash(python3:*)" "Bash(uv run:*)"
+  Workflow Read ToolSearch WebFetch TodoWrite
+  "Bash(curl -sL -o /dev/null -w:*)"
   "mcp__claude_ai_Exa__*" "mcp__claude_ai_Semantic_Scholar__*"
   "mcp__claude_ai_Consensus__*" "mcp__claude_ai_Stealth_Scraper__*"
 )
 
-if claude -p "$PROMPT" --allowedTools "${ALLOWED_TOOLS[@]}" \
-  >/tmp/podcast-research-last.log 2>&1; then
-  RESULT=$(tail -5 /tmp/podcast-research-last.log)
-else
-  RESULT="research session exited non-zero; see /tmp/podcast-research-last.log"
+if ! claude -p "$PROMPT" --allowedTools "${ALLOWED_TOOLS[@]}" >"$LOG" 2>&1; then
+  notify "Podcast research failed: ${TOPIC_ID}" \
+    "Research session exited non-zero for ${TOPIC_ID} (${DATE}). See ${LOG}."
+  exit 1
 fi
 
-if git -C "$REPO" log --oneline -1 --format=%s | grep -q "queue ${TOPIC_ID} — ${DATE}"; then
-  MESSAGE="Queued: ${TOPIC_ID} (${DATE})
-${RESULT}"
-else
-  MESSAGE="Podcast research did NOT queue ${TOPIC_ID} (${DATE})
-${RESULT}"
+# The session's stdout is untrusted: parse it defensively, keep only the
+# fields the queue format defines, and re-verify every URL here rather than
+# trusting the agent's own verification.
+if ! SUMMARY=$(QUEUE_FILE="$QUEUE_FILE" TOPIC_ID="$TOPIC_ID" DATE="$DATE" \
+  MIN_SOURCES="$MIN_SOURCES" python3 scripts/podcast_queue_writer.py <"$LOG"); then
+  notify "Podcast research failed: ${TOPIC_ID}" \
+    "Could not build a valid queue file for ${TOPIC_ID} (${DATE}). See ${LOG}."
+  exit 1
 fi
 
-curl -sS -X POST "$NTFY_URL" \
-  -H "Title: Podcast research: ${TOPIC_ID}" \
-  -d "$MESSAGE" >/dev/null 2>&1 || true
+git add -- "$QUEUE_FILE"
+git commit --quiet -m "chore(podcast): queue ${TOPIC_ID} — ${DATE}"
+if ! git push --quiet origin main 2>/dev/null; then
+  git fetch --quiet origin main
+  git rebase --quiet origin/main
+  git push --quiet origin main
+fi
 
-echo "$MESSAGE"
+notify "Podcast queued: ${TOPIC_ID}" "Queued ${TOPIC_ID} (${DATE})
+${SUMMARY}"
