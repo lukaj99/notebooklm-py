@@ -1,5 +1,5 @@
 {
-  "_comment": "Rotation list for the proactive podcast researcher (scripts/podcast_researcher.py). Each entry is one candidate episode topic. 'pubmed_query' feeds PubMed E-utilities esearch directly. 'debate' picks --format debate over deep-dive when the topic has genuine, citable clinical controversy.",
+  "_comment": "Rotation list for the proactive podcast researcher (scripts/podcast_researcher.py) and the podcast-deep-research workflow (.claude/workflows/podcast-deep-research.js). Each entry is one candidate episode topic. 'domain' defaults to 'medicine'; only medicine topics (with 'pubmed_query' feeding PubMed E-utilities) are eligible for the local PubMed fallback — non-medicine domains ('query' instead) are researched exclusively by the deep-research workflow with domain-appropriate lenses. 'debate' picks --format debate over deep-dive when the topic has genuine, citable controversy.",
   "topics": [
     {
       "id": "ed-sepsis-bundle-controversies",
@@ -60,6 +60,62 @@
       "title": "Undifferentiated Shock Resuscitation Pearls",
       "pubmed_query": "undifferentiated shock resuscitation emergency department fluid vasopressor",
       "debate": false
+    },
+    {
+      "id": "moto-track-riding-technique",
+      "title": "Advanced Riding Technique — Braking, Body Position, and Track Days",
+      "domain": "motorcycling",
+      "query": "motorcycle advanced riding technique trail braking body position track day",
+      "debate": false
+    },
+    {
+      "id": "moto-tires-and-grip",
+      "title": "Sport Tires, Pressures, and the Science of Grip",
+      "domain": "motorcycling",
+      "query": "motorcycle sport tire compound pressure grip temperature road track",
+      "debate": true
+    },
+    {
+      "id": "moto-safety-gear-evidence",
+      "title": "Motorcycle Safety Gear — What the Evidence Actually Shows",
+      "domain": "motorcycling",
+      "query": "motorcycle protective equipment airbag vest helmet standard ECE 22.06 injury evidence",
+      "debate": true
+    },
+    {
+      "id": "moto-street-triple-ownership",
+      "title": "Street Triple 765 RS — Upgrades, Maintenance, and Ownership",
+      "domain": "motorcycling",
+      "query": "Triumph Street Triple 765 RS upgrades suspension setup maintenance quickshifter",
+      "debate": false
+    },
+    {
+      "id": "photo-z6iii-mastery",
+      "title": "Nikon Z6 III — Autofocus, Exposure, and Getting the Most from the Body",
+      "domain": "photography",
+      "query": "Nikon Z6 III autofocus settings subject detection pre-release capture technique",
+      "debate": false
+    },
+    {
+      "id": "photo-editing-workflow",
+      "title": "RAW Workflow — Culling at Scale, AI Denoise, and Editing Ethics",
+      "domain": "photography",
+      "query": "RAW photo editing workflow culling AI denoise sharpening Lightroom alternatives",
+      "debate": true
+    },
+    {
+      "id": "photo-composition-light",
+      "title": "Composition and Light — Seeing Better Photographs",
+      "domain": "photography",
+      "query": "photography composition light quality golden hour visual storytelling technique",
+      "debate": false
+    },
+    {
+      "id": "tech-selfhosting-homelab",
+      "title": "Self-Hosting and Homelab — What's Actually Worth Running",
+      "domain": "tech",
+      "query": "self-hosting homelab docker services worth running media server automation 2026",
+      "debate": true
     }
   ]
 }

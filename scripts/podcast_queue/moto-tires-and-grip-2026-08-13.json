@@ -1,0 +1,40 @@
+{
+  "topic_id": "moto-tires-and-grip",
+  "title": "Sport Tires, Pressures, and the Science of Grip — 2026-08-13",
+  "audio_format": "debate",
+  "sources": [
+    {
+      "url": "https://www.motorsport.com/motogp/news/pirelli-explains-why-it-will-keep-motogps-controversial-tyre-pressure-rule-in-2027/10839002/",
+      "title": "Pirelli explains why it will keep MotoGP's controversial tyre pressure rule in 2027",
+      "why": "July 2026, live: Pirelli's own racing director hedges on whether Michelin's front-overheating danger claim even applies to Pirelli's construction — the sharpest current expert-vs-expert split on whether minimum-pressure rules are physics-justified or bureaucratic overcorrection."
+    },
+    {
+      "url": "https://www.crash.net/motogp/feature/1092901/1/how-motogp-tyre-pressure-rules-work-2026",
+      "title": "What are the MotoGP tyre pressure rules in 2026? — Crash.net",
+      "why": "Clean 2026 explainer of the actual feedback loop (hot dirty air raises pressure, shrinks contact patch, kills grip) that both sides of the Pirelli/Michelin argument are interpreting differently — gives hosts the mechanism before the fight."
+    },
+    {
+      "url": "https://www.roadracingworld.com/news/motogp-analysis-how-motogp-tires-work-in-the-october-issue/",
+      "title": "MotoGP Analysis: How MotoGP Tires Work — Roadracing World Magazine",
+      "why": "Michelin's motorsport manager on 'slip is grip' — controlled carcass slip raises the dynamic friction coefficient, meaning pressure and flex can genuinely add usable grip, not just reshape a static patch."
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=hEZeR9E3JyY",
+      "title": "Are Motorcycle Tires a Ripoff? The Darkside Car Tire Experiment (FortNine)",
+      "why": "Direct counterweight to the 'bigger patch = more grip' instinct: FortNine walks the F=μN friction model to argue contact-patch area is largely irrelevant to grip on its own — the mythbusting foil to Michelin's slip-is-grip claim."
+    },
+    {
+      "url": "https://www.cyclenews.com/2016/09/article/understanding-tires-black-art/",
+      "title": "Understanding Tires: The Black Art — Cycle News",
+      "why": "Pirelli/Metzeler R&D engineers on the real trade-off behind every sport-tire choice — softer compound buys grip but tears off faster, and why silica chemistry exists specifically to break that trade-off in cold/wet conditions."
+    },
+    {
+      "url": "https://ridelikeachampion.com/cold-tire-crashes-part-1/",
+      "title": "Cold-Tire Crashes, Part 1 (Nick Ienatsch, Yamaha Champions Riding School)",
+      "why": "The temperature half of the argument from a named riding coach: why the first miles on cold rubber crash riders regardless of what pressure they set, and what that means for a canyon run on a cool morning."
+    }
+  ],
+  "rationale": "What's new this cycle is a live, dated expert split: Pirelli's racing director publicly hedging (July 2026) on whether Michelin's front-tire-overheating danger claim justifies MotoGP's minimum-pressure rule for every tire construction, not just Michelin's — a genuine physics-vs-politics fight with a 2027 deadline, not settled folklore. That pairs naturally with the deeper, more citable argument underneath it: whether more pressure/a bigger contact patch straightforwardly means more grip (Michelin's 'slip is grip' carcass-flex claim) or whether that's a myth that ignores F=μN (FortNine) and the fact that inflation pressure isn't 1:1 with surface contact pressure (Pagi Petang's measured breakdown). Crash.net's mechanism explainer and Cycle News' compound-engineering piece ground both threads in real physics so the debate isn't just vibes. This is squarely a debate episode — there is live, unresolved disagreement among credentialed sources (a MotoGP tire-rule regulator vs. a rival manufacturer's own skepticism, and a friction-physics mythbust vs. a race-engineer's flex-based grip claim), not consensus dressed up as controversy.",
+  "case_vignette": "It's a cool morning and the rider is airing up the Street Triple 765 RS before a canyon run, staring at the OEM placard (street pressure) next to a trackday buddy's advice to drop 3 psi front for 'more edge grip' through the tightening downhill left that's been unsettling the front all season. He's replaced the stock rubber with a sportier compound and now has to decide: trust the placard, trust the folk wisdom, or actually think through what pressure is doing to the carcass, the contact patch, and the tire's temperature window before he trusts his front end at lean.",
+  "style": "Frame this as a scenario-based discussion between two riding-obsessed co-hosts who do their own wrenching: 'what would you actually do on the road / in the garage' framing rather than a spec-sheet read-through. Include moments of genuine disagreement that get resolved by citing the sources. Keep it conversational and energetic, but always land on clear, actionable takeaways a rider can use this weekend."
+}

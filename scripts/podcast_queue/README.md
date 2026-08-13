@@ -16,9 +16,19 @@ The cloud routine commits one file here per curated topic:
   "sources": [
     {"url": "https://...", "title": "...", "why": "one line: why this source, what's new"}
   ],
-  "rationale": "one paragraph: what's new, why these sources, why this format"
+  "rationale": "one paragraph: what's new, why these sources, why this format",
+  "case_vignette": "OPTIONAL: 2-3 sentence opening case/scenario for the hosts to work through",
+  "style": "OPTIONAL: full host-style instructions overriding the default EM-Cases framing"
 }
 ```
+
+`case_vignette` and `style` are optional and typically produced by the local
+`podcast-deep-research` workflow (`.claude/workflows/podcast-deep-research.js`)
+rather than the cloud routine. When present, `case_vignette` is appended to
+the audio instructions so the episode opens with a concrete case/scenario,
+and `style` replaces the default EM-Cases host framing (used by non-medical
+domains — motorcycling, photography, tech — which the workflow researches
+with domain-appropriate lenses).
 
 The local orchestrator consumes files here oldest-first, tracks what it's
 already processed in `~/.notebooklm/podcast_pipeline_state.json` (not

@@ -1,0 +1,39 @@
+{
+  "topic_id": "ccb-beta-blocker-overdose-update",
+  "title": "CCB/Beta-Blocker Overdose — HDI First or Phenotype First? — 2026-08-13",
+  "audio_format": "debate",
+  "sources": [
+    {
+      "url": "https://pubmed.ncbi.nlm.nih.gov/36604796/",
+      "title": "High-dose insulin should be used before vasopressors/inotropes in calcium-channel blocker toxicity (Mégarbane, Br J Clin Pharmacol 2023)",
+      "why": "The 'FOR' half of a published point-counterpoint: Mégarbane argues HDI should be started early and before vasopressor escalation, not held in reserve — the episode's pro-HIET anchor."
+    },
+    {
+      "url": "https://pubmed.ncbi.nlm.nih.gov/39305202/",
+      "title": "Calcium channel blocker overdose: Not all the same toxicity (Isbister et al., Br J Clin Pharmacol 2024/2025)",
+      "why": "The direct counterpoint: a 236-case series arguing HDI should be AVOIDED in dihydropyridine (amlodipine) overdose without a negatively-inotropic co-ingestant, because the problem there is vasoplegia, not pump failure."
+    },
+    {
+      "url": "https://pubmed.ncbi.nlm.nih.gov/41776067/",
+      "title": "Proposed echocardiography-guided flowchart for calcium channel blocker overdose: distinguishing vasoplegia from cardiogenic shock (Mehrpour & Brent, Daru, 2026)",
+      "why": "Brand-new 2026 algorithm that operationalizes the anti-blanket-HDI side — bedside echo picks the therapy, rather than reflexively starting HIET in every severe overdose."
+    },
+    {
+      "url": "https://pubmed.ncbi.nlm.nih.gov/39503210/",
+      "title": "Developments in the epidemiology of calcium channel blocker poisoning and implications for management (Simpson & Cole, Curr Opin Crit Care, 2024)",
+      "why": "Explains why this fight matters now: amlodipine, a pure vasodilator, has overtaken verapamil/diltiazem as the dominant real-world overdose, but HIET dosing was built on the old drugs."
+    },
+    {
+      "url": "https://www.acmt.net/wp-content/uploads/2026/03/Therapeutic-Approaches-in-Beta-Blocker-and-Calcium-Channel.pdf",
+      "title": "Therapeutic Approaches in Beta-Blocker and Calcium Channel Antagonist Poisonings: Findings From the Toxicology Investigators Consortium (ToxIC) Core Registry (ACMT abstract, 2026)",
+      "why": "961-case 2017-2025 registry showing HIET is actually given in only ~15-25% of cases despite guideline endorsement — hard evidence the HDI-first debate is more academic than the real-world adoption gap."
+    },
+    {
+      "url": "https://pubmed.ncbi.nlm.nih.gov/41833262/",
+      "title": "Pearls and Pitfalls for the Emergency Clinician: Beta Blocker and Calcium Channel Blocker Toxicity (Suarez, Koyfman, Long, J Emerg Med, 2026)",
+      "why": "The most current (2026) full-ladder synthesis — calcium, glucagon, HIET, vasopressors, lipid emulsion, methylene blue, ECMO — gives hosts a shared map before they argue about where phenotyping should cut in."
+    }
+  ],
+  "rationale": "What's new since the last time this topic was covered is a direct, same-journal point-counterpoint (Mégarbane 2023 vs. Isbister 2024/2025) plus a brand-new 2026 echocardiography-guided algorithm (Mehrpour & Brent) that operationalizes one side of it — together they turn a vague \"individualize therapy\" platitude into a genuinely contested clinical decision: start high-dose insulin/euglycemia reflexively in every severe overdose, or reserve it for confirmed cardiogenic (not purely vasoplegic) shock. Simpson & Cole's epidemiology piece explains why the fight is live now — amlodipine, a pure vasodilator, has displaced verapamil/diltiazem as the typical overdose, so protocols built on the older drugs' inotropic-failure model may not fit today's typical patient. The ACMT/ToxIC registry abstract adds a reality check: real-world HIET use sits at 15-25% regardless of which side of the guideline debate wins, which the hosts can use to interrogate whether this is a genuine clinical controversy or a moot one given actual practice. Suarez/Koyfman/Long's 2026 synthesis anchors the full treatment ladder so listeners have the map before the argument starts. Format stays \"debate\" because the evidence has not converged — it's an open, citable, expert-level disagreement with sources on record on each side, not a settled consensus being narrated.",
+  "case_vignette": "A 58-year-old woman is brought in by EMS two hours after intentionally ingesting her amlodipine and metoprolol. She's hypotensive at 78/42, mentating poorly, with warm, well-perfused extremities and a lactate of 4.2 — no clear signs of pump failure, just wide-open vessels. As the resident reaches to start the high-dose insulin/euglycemia protocol per habit, the attending stops her: \"Do we actually know her heart is failing, or is this just vasoplegia? Get the echo before you commit to insulin.\""
+}
