@@ -32,14 +32,25 @@ should be touched.
 ## 1. Pick a topic
 
 Read `scripts/podcast_topics.json` (a list of topic objects: id, title,
-pubmed_query, debate). Compute `day_of_year = int(date -u +%j)`. Let
-`index = day_of_year % len(topics)`. That is your candidate topic.
+pubmed_query, debate, and an optional domain).
+
+**Consider only topics whose `domain` is `"medicine"` or absent.** The file
+also carries motorcycling, photography, and tech topics; those have a
+`query` field instead of `pubmed_query`, are researched by the local
+deep-research runner (`scripts/podcast_research_run.sh`) with
+domain-appropriate sources, and are not yours to cover. Filter them out
+first, then work only with the remaining list.
+
+Compute `day_of_year = int(date -u +%j)`. Let
+`index = day_of_year % len(medicine_topics)`. That is your candidate topic.
 
 Check `scripts/podcast_queue/` (glob `<candidate-id>-*.json`). If a file for
 this topic id was committed within the last 18 days, this topic was covered
-recently — advance to `(index + 1) % len(topics)` and repeat, up to once
-through the full list. If every topic has a recent file, stop and just post
-a Slack summary saying nothing was due; do not write a queue file.
+recently — advance to `(index + 1) % len(medicine_topics)` and repeat, up to
+once through the filtered list. The local runner also commits here, so a
+recent file may well be its work rather than yours; either way the topic is
+covered and you skip it. If every medicine topic has a recent file, stop and
+just post a Slack summary saying nothing was due; do not write a queue file.
 
 ## 2. Research (use ALL of these — this is the point of running you instead
 of a dumb script)
