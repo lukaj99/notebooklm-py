@@ -1,0 +1,40 @@
+{
+  "topic_id": "photo-z6iii-mastery",
+  "title": "Nikon Z6 III — Autofocus, Exposure, and Getting the Most from the Body — 2026-08-14",
+  "audio_format": "debate",
+  "rationale": "This episode leans on what actually changed since launch (Nikon's Aug 2025 firmware adding Birds detection, a focus limiter, and Auto Capture) plus two genuinely unresolved arguments in the verified sources: how close the Z6 III's subject-detection AF really is to the Z8/Z9 (DPReview documents real tracking failures on sports panning and busy-background birds, while Thom Hogan quantifies a narrower 95-99% gap and disputes DPReview-style dynamic-range framing as methodologically unfair), and which AF-area mode should be a shooter's default -- the same practitioner (The Cotswold Photographer) argues Wide-area + explicit subject detection for wildlife but 3D-tracking for everyday work, giving the hosts a live, source-backed disagreement to work through by genre rather than by verdict. Digital Camera World's Nikon-School-sourced explainer on the partially-stacked sensor supplies the shared technical foundation both sides argue from. The base-ISO dynamic-range deficit itself is treated as settled (per the research pass) rather than relitigated, keeping the debate focused on AF performance and AF-area-mode choice, where the sources actually disagree.",
+  "case_vignette": "You're at a local rugby match with the Z6 III, ball in flight, players converging from three directions against a cluttered advertising-board background -- do you trust 3D-Tracking to hold the ball carrier through the scrum, or switch to Wide-area AF with explicit Person detection to stop it from snapping to the nearest jersey? Later that evening you're pulling RAWs from a sunrise shoot and deciding whether the Z6 III's base-ISO shadow detail can take the recovery push you'd have gotten away with on a Z6 II.",
+  "style": "Frame this as a scenario-based discussion between two working photographers: 'what would you actually do on this shoot / at this edit' framing rather than a spec-sheet read-through. Include moments of genuine disagreement that get resolved by citing the sources. Keep it conversational and energetic, but always land on clear, actionable technique the listener can try on their next shoot.",
+  "sources": [
+    {
+      "url": "http://web.archive.org/web/20260621203407/https://www.dpreview.com/reviews/nikon-z6iii-review",
+      "title": "Nikon Z6III review: all-round ability puts Nikon into top tier",
+      "why": "DPReview's rigorous lab-and-field breakdown documents where 3D-Tracking and subject detection genuinely fall short of the Z8/Z9 -- sports panning and complex-backdrop bird-in-flight -- the critical counterweight to Nikon's 'inherited from the Z9' marketing line."
+    },
+    {
+      "url": "https://www.zsystemuser.com/z-mount-cameras/nikon-z-camera-reviews/nikon-z6-iii-camera-review.html",
+      "title": "Nikon Z6III Camera Review (Thom Hogan)",
+      "why": "Hogan quantifies the AF gap at 95-99% of Z8/Z9 performance and traces it to the single vs. parallel data-stream architecture -- then pushes back on DPReview-style dynamic-range complaints as unfair unless benchmarked at matched shutter speeds, giving the episode a real technical disagreement to referee."
+    },
+    {
+      "url": "https://www.digitalcameraworld.com/news/what-exactly-is-a-partially-stacked-sensor-nikon-partially-explains-the-z6-iii",
+      "title": "What exactly IS a \"partially stacked\" sensor? Nikon partially explains the Z6 III",
+      "why": "Straight from a Nikon School trainer: the physical explanation of the partially-stacked design that underpins every AF-speed, burst-rate, and DR-tradeoff claim the other sources argue over."
+    },
+    {
+      "url": "https://www.nikon.com/company/news/2025/0827_imaging_01/",
+      "title": "Nikon releases firmware version 2.00 for the Nikon Z6III full-frame mirrorless camera",
+      "why": "Official record of what changed since launch -- dedicated Birds detection, a focus limiter, and Auto Capture -- so the AF debate is grounded in the body as it actually ships today, not an 18-month-old review unit."
+    },
+    {
+      "url": "https://thecotswoldphotographer.com/how-to-set-up-the-nikon-z6iii-for-wildlife-photography/",
+      "title": "How to Set Up the Nikon Z6III for Wildlife Photography (The Cotswold Photographer)",
+      "why": "A working wildlife shooter's case for Wide-area AF + explicit subject detection over 3D-tracking, to avoid false locks on cluttered backgrounds -- concrete button-mapping, not spec-sheet theory."
+    },
+    {
+      "url": "https://thecotswoldphotographer.com/nikon-z6iii-best-settings/",
+      "title": "Nikon Z6III Best Settings: How to Set Up the Camera From Day One (The Cotswold Photographer)",
+      "why": "Same author's contrasting everyday baseline -- 3D-tracking as default AF-area mode for recompose-and-hold simplicity -- setting up a direct, genre-driven fight over which AF-area mode should be the default."
+    }
+  ]
+}
