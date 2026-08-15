@@ -1,0 +1,40 @@
+{
+  "topic_id": "tech-selfhosting-homelab",
+  "title": "Self-Hosting and Homelab — Plex's Paywall, Docker's v29, and What's Actually Worth Running — 2026-08-15",
+  "audio_format": "debate",
+  "rationale": "What's new since the last time this audience thought about their stack: Plex turned remote streaming of your own files into a subscription product in 2025 and just hiked the lifetime pass to $749.99, while Jellyfin shipped free hardware transcoding that closes much of the remaining gap — a live, vendor-sourced controversy, not secondhand griping. In parallel, Docker's own v29 announcement (containerd image store default, API bump) is the stated reason homelabbers cite for evaluating rootless Podman+Quadlet, giving a second genuine architectural fight straight from each side's primary source (Docker vs. Red Hat/Podman). Two independent practitioner pieces round it out: one punctures the 'self-hosting saves money' myth once archival-quality chasing enters the picture, and one quantifies why Kubernetes is usually overkill for a single-operator homelab. Format stays debate because both the Plex/Jellyfin and Docker/Podman axes have opposing primary sources with skin in the game — this is not a converged-evidence topic, it's two live migrations this listener is plausibly mid-decision on.",
+  "case_vignette": "You've been running Plex on your VPS-adjacent media box for years, and the 2026 lifetime-pass hike to $749.99 just landed in your inbox alongside the news that remote streaming now needs a Plex Pass. You're staring down a Jellyfin migration weekend — and since you're already touching the stack, wondering whether it's also time to drop your Docker root daemon for rootless Podman with Quadlet before v29's changes bite you too. Do you do both migrations at once, or is that just asking for an 11pm outage?",
+  "style": "Frame this as a scenario-based discussion between two opinionated engineers who run real infrastructure: 'what would you actually deploy / how would this fail' framing rather than a feature-list read-through. Include moments of genuine disagreement that get resolved by citing the sources. Keep it conversational and energetic, but always land on clear, actionable decisions the listener can apply to their own lab.",
+  "sources": [
+    {
+      "url": "https://www.plex.tv/blog/important-2025-plex-updates/",
+      "title": "Important 2025 Plex Updates (Plex official blog)",
+      "why": "Plex's own primary-source announcement of the 2025 Remote Watch Pass paywall and the 2026 $749.99 lifetime-pass hike — the actual trigger event the Jellyfin migration wave is reacting to, straight from the vendor."
+    },
+    {
+      "url": "https://jellyfin.org/posts/jellyfin-release-10.11.0/",
+      "title": "Jellyfin 10.11.0 (official Jellyfin project blog)",
+      "why": "The FOSS counter-move: free hardware transcoding and FFmpeg 7.1 HDR/Dolby Vision gains that close Plex's remaining polish gap — but the same post admits Jellyfin dropped ARM32/Pi 1-2 support, so this isn't a clean 'FOSS good' story either."
+    },
+    {
+      "url": "https://www.docker.com/blog/docker-engine-version-29/",
+      "title": "Docker Engine v29: Foundational Updates for the Future (official Docker blog)",
+      "why": "Docker's own rationale for the v29 architecture shift (containerd image store default, API version bump) that's the last straw pushing homelab operators toward rootless Podman."
+    },
+    {
+      "url": "https://www.redhat.com/en/blog/quadlet-podman",
+      "title": "Make systemd better for Podman with Quadlet (Red Hat official engineering blog)",
+      "why": "The direct architectural counter-pitch to Docker's root-daemon model: rootless, daemonless, systemd-native containers via Quadlet, from Podman's own backer — grounds the Docker-vs-Podman fight in real tradeoffs, not Reddit vibes."
+    },
+    {
+      "url": "https://www.xda-developers.com/switch-from-streaming-to-self-hosting-media-cost-more-than-expected/",
+      "title": "I switched from streaming to self-hosting my media",
+      "why": "Practitioner receipts that puncture the 'self-hosting saves money' pitch once 4K remux/archival quality enters the picture — a needed reality check before the hosts get too smug about cord-cutting."
+    },
+    {
+      "url": "https://www.bigiron.cc/guides/k3s-vs-talos-vs-microk8s-for-the-homelab-in-2026",
+      "title": "k3s vs Talos vs MicroK8s for the Homelab in 2026",
+      "why": "Quantifies the RAM/YAML/hours tax of running Kubernetes at home versus docker-compose — the blunt 'you probably don't need this' verdict for a listener who might be eyeing k3s next."
+    }
+  ]
+}
