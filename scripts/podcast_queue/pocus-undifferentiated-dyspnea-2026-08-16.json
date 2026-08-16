@@ -1,0 +1,39 @@
+{
+  "topic_id": "pocus-undifferentiated-dyspnea",
+  "title": "POCUS in Undifferentiated Dyspnea: More Certainty, Same Outcomes? — 2026-08-16",
+  "audio_format": "debate",
+  "rationale": "This episode is built around a live, current fault line rather than settled consensus: ACEP reconfirmed in July 2025 a Level B recommendation for lung POCUS in acute heart failure syndromes, and a cardiology-society consensus (EACVI/ESC) goes further still, framing B-lines as accurate enough to help steer decongestion therapy and discharge decisions -- while RCEM's own current UK teaching module explicitly cautions that POCUS \"is mostly ruling in rather than out\" and rarely replaces further imaging, and REBEL EM's critical appraisal of a serial-POCUS RCT shows that improved diagnostic accuracy has not translated into better patient-centered outcomes like length of stay or readmission. EM Cases' walkthrough of the actual likelihood-ratio evidence grounds the argument in numbers a UK EM doctor can quote at the bedside, and REBEL EM's brand-new 2026 piece on E/e' diastology shows the field pushing past simple B-line counting toward hemodynamic phenotyping -- which only sharpens the generalizability question (fellowship-trained operators vs routine practice) running through the whole debate. Because the sources split cleanly on stance -- pro-POCUS specialty/cardiology guidance versus skeptical outcomes-focused appraisal, with RCEM occupying a cautious middle -- this episode is upgraded from the default deep-dive to a debate format: there is genuine, citable disagreement for the hosts to argue, not just accumulated consensus to summarize.",
+  "case_vignette": "A 72-year-old woman with COPD and a vague history of \"heart trouble\" presents to a UK ED at 3am acutely breathless and tachypnoeic; the chest X-ray report is still pending and the NT-proBNP hasn't come back. The on-call SHO reaches for the ultrasound probe and finds diffuse bilateral B-lines suggestive of cardiogenic pulmonary oedema -- but RCEM's \"rule-in, not rule-out\" teaching and REBEL EM's null RCT on serial POCUS give the team pause before committing to IV furosemide and an early safe discharge versus admission for confirmatory imaging. Does the 60-second scan -- plus, per the newest FOAMed teaching, a quick E/e' assessment -- actually change the disposition decision faster and more safely than waiting for the biomarker, or does it just make the team feel more certain, sooner?",
+  "sources": [
+    {
+      "url": "https://www.abem.org/wp-content/uploads/2024/10/Key-Advances_ACEP-Acute-Heart-Failure_Clinical-Policy-Alert-.pdf",
+      "title": "ACEP Clinical Policy Alert: Critical Issues in the Evaluation and Management of Adult ED Patients With Acute Heart Failure Syndromes",
+      "why": "ACEP's own July-2025-reconfirmed Level B recommendation for lung POCUS in acute heart failure -- the freshest, strongest EM-specialty endorsement, and the direct counterweight to ACP's conditional stance and to REBEL EM's outcomes skepticism."
+    },
+    {
+      "url": "https://www.rcemlearning.co.uk/modules/lung-pocus-in-a-breathless-patient/",
+      "title": "Lung POCUS in a breathless patient -- RCEMLearning (RCEM, updated Sept 2025)",
+      "why": "RCEM's current UK training module explicitly teaches that POCUS 'is mostly ruling in rather than out' and rarely replaces further imaging -- the direct curriculum anchor for a UK EM audience, and a tempered middle ground against the more aggressive claims elsewhere."
+    },
+    {
+      "url": "https://rebelem.com/serial-pocus-for-ed-patients-with-acute-dyspnea-is-more-actually-better/",
+      "title": "Serial PoCUS for ED Patients with Acute Dyspnea: Is More Actually Better? -- REBEL EM (2024)",
+      "why": "Critical appraisal of an RCT testing serial cardiopulmonary POCUS against a patient-centered dyspnea outcome -- the sharpest citable evidence that better diagnostic accuracy hasn't yet been shown to improve length of stay, readmission, or mortality."
+    },
+    {
+      "url": "https://web.archive.org/web/20241204153925/https://pmc.ncbi.nlm.nih.gov/articles/PMC11032195/",
+      "title": "Lung ultrasound in acute and chronic heart failure: a clinical consensus statement of the EACVI (Eur Heart J Cardiovasc Imaging, 2023)",
+      "why": "Cardiology-society consensus ties B-lines directly into ESC heart-failure guidelines and treats lung ultrasound as accurate enough to help guide decongestion and discharge -- a materially more aggressive claim than RCEM's 'rule-in only' teaching."
+    },
+    {
+      "url": "https://web.archive.org/web/2024/https://emergencymedicinecases.com/acute-heart-failure-risk-stratification-disposition/",
+      "title": "Acute Heart Failure Risk Stratification & Disposition (PoCUS segment with Ian Chernoff) -- EM Cases (2024)",
+      "why": "Walks through the actual likelihood-ratio evidence (lung US vs CXR+BNP) and the ACEP Level B grading with a concrete sub-30-second bedside technique -- grounds the debate in numbers a commuting UK doc can quote at the bedside."
+    },
+    {
+      "url": "https://rebelem.com/diastology-use-e-e-to-estimate-left-atrial-pressure/",
+      "title": "Diastology: Use E/e' to Estimate Left Atrial Pressure -- REBEL EM (2026)",
+      "why": "Brand-new (2026) FOAMed extension beyond lung-only B-line counting -- a 60-second E/e' estimate of left atrial pressure that could separate cardiogenic edema from mimics -- shows where POCUS practice is heading next and sharpens the operator-skill generalizability question."
+    }
+  ]
+}
