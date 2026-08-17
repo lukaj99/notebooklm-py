@@ -1,0 +1,40 @@
+{
+  "topic_id": "moto-track-riding-technique",
+  "title": "Advanced Riding Technique — Braking, Body Position, and Track Days — 2026-08-17",
+  "audio_format": "debate",
+  "rationale": "This episode leans into a live, citable fight rather than a settled consensus: FortNine's mechanically precise case that trained threshold braking can out-stop ABS sits directly against Bosch's own (Jan 2026) 30%+ injury-reduction history and the Rizzi/IFZ 2024 STRADA crash-database finding that cornering ABS cuts severe curve crashes 70% versus regular ABS — genuine opposing stances on how much a rider should trust electronics versus build raw braking feel, which matters concretely for a Street Triple 765 RS owner deciding whether to lean on cornering ABS or drill threshold-braking practice. A second, equally real disagreement runs through the body-position segment: Life at Lean's Cossalter-grounded argument that extreme hang-off can increase required lean angle for average riders versus Ienatsch's disciplined 100-Points-of-Grip case for precisely timed hang-off — both from credible rider-coaches, not strawmen. The Bridgestone V03 review closes the loop by tying both debates to what the front tire is actually doing under trail-braking lean, giving the hosts a concrete, current data point to argue over rather than abstract theory. Given two independent, well-sourced disagreements with named parties on each side, debate format is upgraded from the default deep-dive.",
+  "case_vignette": "Mid-morning at a trackday, a Street Triple 765 RS owner is rolling into a downhill, decreasing-radius corner still on the brakes — the exact moment where cornering ABS, tire contact patch, and body position all have to work together or the front starts to wash. He's already debating with his riding buddy in the pits whether to trust the bike's IMU-linked ABS through that corner or keep working on his own threshold-braking feel, and whether hanging further off is actually buying him lean-angle margin or just cosmetics.",
+  "style": "Frame this as a scenario-based discussion between two riding-obsessed co-hosts who do their own wrenching: 'what would you actually do on the road / in the garage' framing rather than a spec-sheet read-through. Include moments of genuine disagreement that get resolved by citing the sources. Keep it conversational and energetic, but always land on clear, actionable takeaways a rider can use this weekend.",
+  "sources": [
+    {
+      "url": "https://www.youtube.com/watch?v=sDbWZiaUeDY",
+      "title": "Out-braking the ABS Myth — FortNine",
+      "why": "FortNine + a retired crash-investigator sergeant open the ABS solenoid up mechanically and show a skilled threshold braker can out-stop the system — the technique-first side of the electronics debate."
+    },
+    {
+      "url": "https://www.visordown.com/features/thirty-years-bosch-abs-gpz-imu",
+      "title": "Thirty years of Bosch ABS: From the GPZ to the IMU — Visordown",
+      "why": "Fresh (Jan 2026) manufacturer-engineering history quantifying 30%+ injury reduction from IMU-linked cornering ABS — the electronics-first counterweight to the FortNine argument."
+    },
+    {
+      "url": "https://www.ifz.de/wordpress/wp-content/uploads/2024/11/10_Rizzi_final-paper.pdf",
+      "title": "The Effectiveness of Cornering ABS on Motorcycles in Reducing Real-Life Crashes, Compared to Regular ABS (Rizzi et al., IFZ 2024)",
+      "why": "Swedish STRADA crash-database evidence that cornering ABS cuts severe/fatal single-vehicle curve crashes 70% vs regular ABS — hard numbers that sharpen exactly what trail braking under lean is asking of tires and electronics."
+    },
+    {
+      "url": "https://lifeatlean.com/how-getting-lower-creates-body-position-issues/",
+      "title": "Move Inside, Not Down: How Hunkering Down Creates Body Position Issues — Life at Lean",
+      "why": "Cossalter-cited physics case that extreme MotoGP-style hang-off can actually increase required lean angle for average track-day riders — the skeptical counter to copying pro photos."
+    },
+    {
+      "url": "https://ridelikeachampion.com/why-body-position-matters-at-the-track/",
+      "title": "Why Body Position Matters at the Track — Nick Ienatsch",
+      "why": "Veteran coach's '100 Points of Grip' framework ties hang-off timing precisely to brake-release and throttle points — the disciplined, technique-driven counter-example to sloppy hang-off."
+    },
+    {
+      "url": "https://www.cyclenews.com/2026/01/article/bridgestone-battlax-v03-tires/",
+      "title": "Bridgestone Battlax V03 Tires — Cycle News",
+      "why": "Jan 2026 first-ride data on contact-patch gains and trail-braking front-end feel under lean — grounds the whole braking/body-position discussion in tire engineering the listener can actually buy and fit."
+    }
+  ]
+}
