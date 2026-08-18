@@ -1,0 +1,40 @@
+{
+  "topic_id": "photo-editing-workflow",
+  "title": "RAW Workflow — Culling at Scale, AI Denoise, and Editing Ethics — 2026-08-18",
+  "audio_format": "debate",
+  "rationale": "Nothing here is settled, which is why this stays a debate: on denoise, DPReview's rigorous 2023 shootout and Amateur Photographer's freshly published (Aug 2026) PureRAW 6 review both concede DxO's detail edge is real but shrinking, while Tim Grey's hands-on verdict flips the other way and calls Adobe's free built-in Denoise the better everyday tool -- a live \"is a $140 add-on still worth it\" argument the Z6 III listener is actually facing this week. On ethics, Thom Hogan's assist-versus-generate framework gives the hosts a crisp technical-authority line (denoise and object removal = assist, fabricated scenes = generate), Fstoppers' piece anchors that line to the 2016 Nikon sky-composite scandal so it's not abstract, and PetaPixel's Aftershoot story extends the same fight from single edits to AI culling at scale -- who controls the keep/reject call and the photographer's style once AI is doing the sorting. Together these six sources give the hosts a genuine two-front argument (which denoise tool actually earns its cost, and where correction becomes fabrication) with named practitioners on opposing sides of both, rather than a settled consensus to summarize.",
+  "case_vignette": "You just got back from a dim indoor gymnastics meet with 3,000 Z6 III RAWs shot at ISO 12800, and Lightroom's culling queue is staring at you: do you trust the built-in AI to flag the keepers, or manually check every frame for that half-closed-eyes moment AI still misses? Once you've culled to 200, do you run them through DxO PureRAW before import, or trust Adobe's free Denoise slider -- and when a stray gym-mat edge photobombs your hero shot, is cloning it out just restoring what you saw through the viewfinder, or the first step toward generative fill?",
+  "style": "Frame this as a scenario-based discussion between two working photographers: 'what would you actually do on this shoot / at this edit' framing rather than a spec-sheet read-through. Include moments of genuine disagreement that get resolved by citing the sources. Keep it conversational and energetic, but always land on clear, actionable technique the listener can try on their next shoot.",
+  "sources": [
+    {
+      "url": "http://web.archive.org/web/20260310104519/https://www.dpreview.com/articles/2453597978/pixels-at-dawn-adobe-denoise-duels-with-dxo-deepprime-xd-in-our-noise-reduction-challenge",
+      "title": "Adobe Denoise vs. DxO DeepPRIME XD (DPReview)",
+      "why": "The lab-grade baseline both other denoise sources argue against or with: DxO wins raw detail/speed, Adobe wins convenience/price, and DPReview's own read is that DxO's 'extra detail' is partly sharper-looking noise, not more real signal."
+    },
+    {
+      "url": "https://amateurphotographer.com/review/dxo-pureraw-6-review/",
+      "title": "DxO PureRAW 6 review (Amateur Photographer)",
+      "why": "The freshest verdict in the set (Aug 2026): still comes down pro-DxO, but explicitly asks whether a $140 add-on is still justified now that Adobe Denoise ships free -- the live purchase decision the Z6 III listener actually faces."
+    },
+    {
+      "url": "https://asktimgrey.com/2023/05/01/topaz-versus-adobe-denoise/",
+      "title": "Topaz versus Adobe Denoise (Ask Tim Grey)",
+      "why": "The opposing practitioner verdict: a working educator's hands-on test concludes Adobe's built-in Denoise edges out Topaz -- and that manual NR often still beats both -- directly contesting the 'pay for a dedicated tool' camp."
+    },
+    {
+      "url": "https://www.bythom.com/newsviews/assist-versus-generate.html",
+      "title": "Assist versus Generate (Thom Hogan, bythom.com)",
+      "why": "The Z-system authority's sharpest, most recent (Sept 2025) line-drawing: AI denoise, culling, and generative object removal are fine as 'assist,' full scene generation is not -- the ethical framework the debate needs, not just a tools shootout."
+    },
+    {
+      "url": "https://fstoppers.com/landscapes/editing-vs-reality-how-far-too-far-landscape-photography-701137",
+      "title": "Editing vs. Reality: How Far is Too Far in Landscape Photography? (Fstoppers)",
+      "why": "Grounds the ethics debate in a concrete, citable precedent -- the 2016 Nikon competition sky-composite scandal -- and lays out where working landscape shooters actually draw the enhancement-vs-deception line today."
+    },
+    {
+      "url": "https://petapixel.com/2026/03/25/aftershoot-promises-to-develop-ai-that-works-for-never-against-photographers/",
+      "title": "Aftershoot Promises to Develop AI That Works for, Never Against, Photographers (PetaPixel)",
+      "why": "Extends the ethics fight from single-image edits to AI culling at scale: a named vendor's public pledge, issued in direct response to the Evoto backlash, over who controls a photographer's style and images once AI touches the workflow."
+    }
+  ]
+}
