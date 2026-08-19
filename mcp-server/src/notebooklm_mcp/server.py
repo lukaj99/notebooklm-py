@@ -19,6 +19,7 @@ from notebooklm.rpc import AudioFormat, AudioLength
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse
 
+from .config import redirect_uri_matches
 from .oauth import FileBackedOAuthProvider, PendingAuthorization
 
 # Mirrors the CLI's kebab-case choices (src/notebooklm/cli/generate_cmd.py) so
@@ -42,6 +43,7 @@ def _require_audio_choice(choices: dict[str, Any], value: str, *, flag: str) -> 
     except KeyError:
         allowed = ", ".join(choices)
         raise ValueError(f"{flag} must be one of: {allowed}") from None
+
 
 # Patch FastMCP default token expiry to 365 days for self-hosted use.
 # The in-memory provider defaults to 1 hour, which causes "Connection expired" errors.
@@ -279,6 +281,8 @@ def create_mcp_server(
     auth_provider: FileBackedOAuthProvider | None = None,
     oauth_password: str | None = None,
     trusted_access_emails: tuple[str, ...] = (),
+    auto_approve_redirect_uris: tuple[str, ...] = (),
+    proxy_shared_secret: str = "",
 ) -> FastMCP:
     """Create a FastMCP server for stdio or remote HTTP transports."""
 
@@ -359,6 +363,17 @@ def create_mcp_server(
         def _trusted_access_email(request: Request) -> str | None:
             if not trusted_access_emails_set:
                 return None
+
+            # The identity header is only meaningful when it arrived through
+            # the fronting proxy. The proxy sets this shared secret on every
+            # request it forwards and overwrites any client-supplied copy, so
+            # a request that reaches this process by some other path cannot
+            # produce it. Checked first: an unproven request has no identity
+            # to speak of, whatever it claims.
+            presented = request.headers.get("x-auth-gate-secret", "")
+            if not proxy_shared_secret or not hmac.compare_digest(presented, proxy_shared_secret):
+                return None
+
             email = request.headers.get("cf-access-authenticated-user-email")
             if email is None:
                 return None
@@ -386,13 +401,43 @@ def create_mcp_server(
                     if client
                     else "unknown-client"
                 )
+                authenticated_email = _trusted_access_email(request)
+
+                # Silent approval. The owner identity is already proven for
+                # this request (the fronting proxy only sets the trusted
+                # header after an authenticated session), so the consent
+                # button would add a click without adding a decision.
+                #
+                # It is gated on the redirect_uri allowlist because a GET is
+                # reachable by cross-site navigation: without that gate, a
+                # page the owner visits could point the browser at a grant it
+                # created and have the code delivered to itself. An attacker
+                # cannot put its own callback on the allowlist, and a listed
+                # callback delivers the code to the real client instead.
+                if authenticated_email is not None and redirect_uri_matches(
+                    str(pending.redirect_uri), auto_approve_redirect_uris
+                ):
+                    await auth_provider.trust_client(pending.client_id)
+                    redirect_url = await auth_provider.approve_pending_authorization(grant_id)
+                    if redirect_url is not None:
+                        logger.info(
+                            "Silently approved %s for %s (redirect_uri on allowlist)",
+                            client_name,
+                            authenticated_email,
+                        )
+                        return RedirectResponse(
+                            redirect_url,
+                            status_code=302,
+                            headers={"Cache-Control": "no-store"},
+                        )
+
                 return HTMLResponse(
                     _render_consent_page(
                         pending=pending,
                         client_name=client_name,
                         resource_url=pending.resource,
                         require_password=not trusted_access_emails_set,
-                        authenticated_email=_trusted_access_email(request),
+                        authenticated_email=authenticated_email,
                     )
                 )
 

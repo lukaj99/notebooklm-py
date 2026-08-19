@@ -50,6 +50,47 @@ def _split_emails(value: str | None) -> tuple[str, ...]:
     return tuple(dict.fromkeys(emails))
 
 
+def _split_redirect_uris(value: str | None) -> tuple[str, ...]:
+    if not value:
+        return ()
+    uris = tuple(uri.strip() for uri in value.replace(";", ",").split(",") if uri.strip())
+    for uri in uris:
+        parsed = urlparse(uri.replace("*", "0", 1) if ":*" in uri else uri)
+        if parsed.scheme not in {"http", "https"}:
+            raise ValueError(
+                "NOTEBOOKLM_MCP_AUTO_APPROVE_REDIRECT_URIS entries must be http or https URLs"
+            )
+    return tuple(dict.fromkeys(uris))
+
+
+def redirect_uri_matches(candidate: str, patterns: tuple[str, ...]) -> bool:
+    """Return True if ``candidate`` is covered by the allowlist ``patterns``.
+
+    A pattern matches exactly, except that ``*`` may stand in for the port of
+    a loopback host (``http://localhost:*/callback``) because local OAuth
+    clients bind an ephemeral port on every run.
+    """
+
+    for pattern in patterns:
+        if pattern == candidate:
+            return True
+        if ":*" not in pattern:
+            continue
+
+        prefix, _, suffix = pattern.partition(":*")
+        if not candidate.startswith(prefix + ":") or not candidate.endswith(suffix):
+            continue
+
+        port = candidate[len(prefix) + 1 : len(candidate) - len(suffix) or None]
+        if not port.isdigit():
+            continue
+
+        host = urlparse(prefix + ":0").hostname
+        if host in {"localhost", "127.0.0.1", "::1"}:
+            return True
+    return False
+
+
 def _normalize_public_base_url(value: str) -> str:
     parsed = urlparse(value)
     if parsed.scheme not in {"http", "https"}:
@@ -94,6 +135,8 @@ class RemoteServerConfig:
     tls_certfile: Path | None
     tls_keyfile: Path | None
     trusted_access_emails: tuple[str, ...] = ()
+    auto_approve_redirect_uris: tuple[str, ...] = ()
+    proxy_shared_secret: str = ""
 
     @property
     def issuer_url(self) -> str:
@@ -116,6 +159,16 @@ class RemoteServerConfig:
         if not oauth_password and not trusted_access_emails:
             raise ValueError(
                 "Set NOTEBOOKLM_MCP_OAUTH_PASSWORD or NOTEBOOKLM_MCP_TRUSTED_ACCESS_EMAILS"
+            )
+
+        auto_approve_redirect_uris = _split_redirect_uris(
+            os.environ.get("NOTEBOOKLM_MCP_AUTO_APPROVE_REDIRECT_URIS")
+        )
+        if auto_approve_redirect_uris and not trusted_access_emails:
+            raise ValueError(
+                "NOTEBOOKLM_MCP_AUTO_APPROVE_REDIRECT_URIS requires "
+                "NOTEBOOKLM_MCP_TRUSTED_ACCESS_EMAILS, which supplies the owner identity "
+                "that silent approval is granted on behalf of"
             )
 
         client_secret_expiry_raw = os.environ.get("NOTEBOOKLM_MCP_CLIENT_SECRET_EXPIRY_SECONDS")
@@ -145,14 +198,29 @@ class RemoteServerConfig:
         if trusted_access_emails and host not in {"127.0.0.1", "localhost", "::1"}:
             # trusted_access_emails is enforced by trusting the
             # cf-access-authenticated-user-email header, which is only safe
-            # if this process is unreachable except through the Cloudflare
-            # Access-gated tunnel (which forwards to loopback). Binding
-            # anywhere else would let a direct request forge that header
-            # and bypass authorization entirely.
+            # if this process is unreachable except through a fronting proxy
+            # that strips any client-supplied copy of that header and sets it
+            # itself from an authenticated session. Binding anywhere else
+            # would let a direct request forge it and bypass authorization.
             raise ValueError(
                 "NOTEBOOKLM_MCP_TRUSTED_ACCESS_EMAILS requires NOTEBOOKLM_MCP_HOST to be "
                 "a loopback address (127.0.0.1, localhost, or ::1), since it trusts a "
-                "header that only a fronting Cloudflare Access tunnel may set safely"
+                "header that only a fronting authenticating proxy may set safely"
+            )
+
+        proxy_shared_secret = os.environ.get("NOTEBOOKLM_MCP_PROXY_SHARED_SECRET", "")
+        if trusted_access_emails and not proxy_shared_secret:
+            # Without this the owner identity rests entirely on a header any
+            # client can send. The fronting proxy is supposed to strip a
+            # client-supplied copy, but nothing here can verify that it did,
+            # so a proxy misconfiguration would fail open and silently. A
+            # shared secret the proxy also sets makes the identity header
+            # unusable on its own, which fails closed instead.
+            raise ValueError(
+                "NOTEBOOKLM_MCP_TRUSTED_ACCESS_EMAILS requires "
+                "NOTEBOOKLM_MCP_PROXY_SHARED_SECRET. Set it to a random value and have "
+                "the fronting proxy send it as the X-Auth-Gate-Secret header on every "
+                "proxied request (Caddy: `header_up X-Auth-Gate-Secret {$SECRET}`)"
             )
 
         return cls(
@@ -161,6 +229,8 @@ class RemoteServerConfig:
             public_base_url=_normalize_public_base_url(public_base_url_raw),
             oauth_password=oauth_password,
             trusted_access_emails=trusted_access_emails,
+            auto_approve_redirect_uris=auto_approve_redirect_uris,
+            proxy_shared_secret=proxy_shared_secret,
             oauth_store_path=_expand_path(
                 os.environ.get("NOTEBOOKLM_MCP_OAUTH_STORE_PATH"),
                 DEFAULT_STORE_PATH,
