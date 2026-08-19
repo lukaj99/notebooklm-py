@@ -14,7 +14,8 @@ Also follow the file/naming conventions in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ```bash
 # Canonical contributor install (respects uv.lock; full guide: docs/installation.md)
-uv sync --frozen --extra browser --extra dev --extra markdown
+uv sync --frozen --extra browser --extra dev --extra markdown \
+        --extra mcp --extra server --extra impersonate
 source .venv/bin/activate
 uv run playwright install chromium
 
@@ -24,12 +25,32 @@ uv run pytest tests/e2e -m e2e    # e2e (requires auth)
 uv run notebooklm --help          # CLI
 ```
 
+**Install the full extras set.** Omitting `mcp`/`server` does not fail -- it
+*skips*. `tests/unit/mcp/` and the server suites are `importorskip`-guarded, so
+without `fastmcp`/`fastapi` they vanish silently and their source counts as
+uncovered. Measured on one commit: the three-extra install runs **13,939** tests
+at **84.39%** coverage and fails the 90% gate, while CI's set runs **15,478** at
+**96.61%** and passes. That ~1,500-test blind spot hid a real MCP-adapter defect
+through eight red CI jobs on #2198.
+
+To reproduce a CI test run exactly (`.github/workflows/test.yml`):
+
+```bash
+uv run pytest -n auto --dist loadgroup --cov=src/notebooklm \
+  --cov-report=term-missing --cov-fail-under=90
+```
+
+`--dist loadgroup` matters: it honors `@pytest.mark.xdist_group`, and at least
+one test fails under plain `-n auto` but passes under `loadgroup`. Check the
+exit status directly rather than through a pipe -- piping into `tail`/`grep`
+reports the *pipeline's* status, which has masked real failures here before.
+
 ## Before Pushing
 
 The pre-commit hook runs ruff (format + lint) on staged files. Also run these manually -- CI fails otherwise:
 
 ```bash
-uv run mypy src/notebooklm --ignore-missing-imports
+uv run mypy src/notebooklm scripts/_live_auth_scenarios --ignore-missing-imports
 uv run pytest
 ```
 
