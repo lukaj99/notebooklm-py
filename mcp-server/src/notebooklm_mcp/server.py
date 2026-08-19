@@ -273,6 +273,21 @@ def _render_consent_page(
 """
 
 
+def _secret_equals(presented: str, expected: str) -> bool:
+    """Constant-time compare of two secrets that may contain non-ASCII.
+
+    ``hmac.compare_digest`` raises TypeError on ``str`` inputs holding
+    non-ASCII, and both sides here are attacker-reachable: header values
+    arrive decoded as latin-1 and form fields as UTF-8. Comparing the encoded
+    bytes keeps the timing property without letting a hostile header or form
+    field turn into a 500.
+    """
+
+    if not expected:
+        return False
+    return hmac.compare_digest(presented.encode("utf-8"), expected.encode("utf-8"))
+
+
 def create_mcp_server(
     *,
     host: str = "127.0.0.1",
@@ -371,7 +386,7 @@ def create_mcp_server(
             # produce it. Checked first: an unproven request has no identity
             # to speak of, whatever it claims.
             presented = request.headers.get("x-auth-gate-secret", "")
-            if not proxy_shared_secret or not hmac.compare_digest(presented, proxy_shared_secret):
+            if not _secret_equals(presented, proxy_shared_secret):
                 return None
 
             email = request.headers.get("cf-access-authenticated-user-email")
@@ -485,7 +500,7 @@ def create_mcp_server(
                         ),
                         status_code=403,
                     )
-            elif not hmac.compare_digest(password, oauth_password):
+            elif not _secret_equals(password, oauth_password):
                 return HTMLResponse(
                     _render_consent_page(
                         pending=pending,

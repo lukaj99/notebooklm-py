@@ -10,7 +10,7 @@ from starlette.testclient import TestClient
 from notebooklm_mcp.config import RemoteServerConfig, redirect_uri_matches
 from notebooklm_mcp.oauth import FileBackedOAuthProvider
 from notebooklm_mcp.remote import build_asgi_app, build_auth_settings
-from notebooklm_mcp.server import create_mcp_server
+from notebooklm_mcp.server import _secret_equals, create_mcp_server
 
 
 def _pkce_challenge(verifier: str) -> str:
@@ -619,3 +619,73 @@ def test_consent_post_rejects_forged_identity_without_gate_secret(monkeypatch, t
         )
 
         assert forged.status_code == 403
+
+
+def test_consent_survives_non_ascii_gate_secret_header(monkeypatch, tmp_path):
+    """Header values arrive decoded as latin-1, so a client can put non-ASCII
+    in them at will. `hmac.compare_digest` raises TypeError on non-ASCII str,
+    which would turn a hostile header into a 500 instead of a refusal."""
+
+    mcp = _silent_approval_client(
+        monkeypatch, tmp_path, allowlist="https://claude.ai/api/mcp/auth_callback"
+    )
+
+    with TestClient(mcp.streamable_http_app(), base_url="http://localhost:8006") as client:
+        consent_url = _consent_url_for(client, "https://claude.ai/api/mcp/auth_callback")
+
+        consent = client.get(
+            consent_url,
+            # Sent as raw bytes because that is what reaches the server on
+            # the wire; Starlette decodes header bytes as latin-1, which is
+            # how a non-ASCII str gets into compare_digest in the first place.
+            headers={
+                b"x-auth-gate-secret": "sécret-ÿ".encode("latin-1"),
+                b"cf-access-authenticated-user-email": b"owner@example.com",
+            },
+            follow_redirects=False,
+        )
+
+        assert consent.status_code == 200
+        assert "Authorize NotebookLM MCP" in consent.text
+
+
+def test_consent_post_survives_non_ascii_password(monkeypatch, tmp_path):
+    """Same crash on the password path: form fields decode as UTF-8, so an
+    accented character reached compare_digest as non-ASCII str."""
+
+    monkeypatch.setenv("NOTEBOOKLM_MCP_PUBLIC_URL", "http://localhost:8006")
+    monkeypatch.setenv("NOTEBOOKLM_MCP_OAUTH_PASSWORD", "secret-pass")
+    monkeypatch.setenv("NOTEBOOKLM_MCP_OAUTH_STORE_PATH", str(tmp_path / "oauth-state.json"))
+    monkeypatch.delenv("NOTEBOOKLM_MCP_TRUSTED_ACCESS_EMAILS", raising=False)
+    monkeypatch.delenv("NOTEBOOKLM_MCP_AUTO_APPROVE_REDIRECT_URIS", raising=False)
+
+    config = RemoteServerConfig.from_env()
+    provider = FileBackedOAuthProvider(config)
+    mcp = create_mcp_server(
+        host=config.host,
+        port=config.port,
+        auth_settings=build_auth_settings(config),
+        auth_provider=provider,
+        oauth_password=config.oauth_password,
+    )
+
+    with TestClient(mcp.streamable_http_app(), base_url="http://localhost:8006") as client:
+        consent_url = _consent_url_for(client, "https://claude.ai/api/mcp/auth_callback")
+        grant_id = parse_qs(urlparse(consent_url).query)["grant_id"][0]
+
+        rejected = client.post(
+            "/oauth/consent",
+            data={"grant_id": grant_id, "password": "wröng-pässword", "action": "approve"},
+            follow_redirects=False,
+        )
+
+        assert rejected.status_code == 403
+
+
+def test_secret_equals_rejects_empty_expected():
+    """An unset secret must never compare equal, including to an empty
+    presented value."""
+
+    assert _secret_equals("", "") is False
+    assert _secret_equals("anything", "") is False
+    assert _secret_equals("s", "s") is True
