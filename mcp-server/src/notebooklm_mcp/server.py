@@ -432,7 +432,13 @@ def create_mcp_server(
                 if authenticated_email is not None and redirect_uri_matches(
                     str(pending.redirect_uri), auto_approve_redirect_uris
                 ):
-                    await auth_provider.trust_client(pending.client_id)
+                    # Deliberately NOT trust_client(): that would let
+                    # OAUTH_AUTO_APPROVE clear this client_id later without
+                    # the proxy identity and without the allowlist gate,
+                    # widening a grant no human ever reviewed. Trust is for
+                    # clients that passed the interactive page. Costs nothing
+                    # here — claude.ai registers a new client_id per connect,
+                    # and a repeat of this one takes this same branch again.
                     redirect_url = await auth_provider.approve_pending_authorization(grant_id)
                     if redirect_url is not None:
                         logger.info(

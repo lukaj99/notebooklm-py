@@ -14,6 +14,7 @@ DEFAULT_STORE_PATH = Path("~/.notebooklm/mcp-oauth.json")
 DEFAULT_ACCESS_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 365  # 365 days
 DEFAULT_REFRESH_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 365  # 365 days
 DEFAULT_AUTHORIZATION_CODE_TTL_SECONDS = 600
+LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 
 
 def _parse_int(name: str, default: int) -> int:
@@ -60,7 +61,35 @@ def _split_redirect_uris(value: str | None) -> tuple[str, ...]:
             raise ValueError(
                 "NOTEBOOKLM_MCP_AUTO_APPROVE_REDIRECT_URIS entries must be http or https URLs"
             )
+        # A wildcard the matcher does not understand would sit in the
+        # allowlist matching nothing, and the operator would see an
+        # unexplained consent page rather than a configuration error.
+        if "*" in uri:
+            if ":*" not in uri or uri.count("*") != 1:
+                raise ValueError(
+                    "NOTEBOOKLM_MCP_AUTO_APPROVE_REDIRECT_URIS supports `*` only as the "
+                    "port, for example http://localhost:*/callback"
+                )
+            if parsed.hostname not in LOOPBACK_HOSTS:
+                raise ValueError(
+                    "NOTEBOOKLM_MCP_AUTO_APPROVE_REDIRECT_URIS port wildcards are allowed "
+                    "only for loopback hosts (localhost, 127.0.0.1, ::1), since they exist "
+                    "for local clients that bind an ephemeral port"
+                )
     return tuple(dict.fromkeys(uris))
+
+
+def _normalize_redirect_uri(value: str) -> str:
+    """Give a path-less URL the explicit ``/`` that URL types add.
+
+    ``PendingAuthorization.redirect_uri`` is a pydantic ``AnyUrl``, and
+    stringifying one appends ``/`` when the URL has no path. Patterns are
+    hand-written and usually omit it, so without normalising both sides a
+    path-less entry such as ``http://localhost:*`` could never match.
+    """
+
+    probe = value.replace(":*", ":0", 1) if ":*" in value else value
+    return value + "/" if not urlparse(probe).path else value
 
 
 def redirect_uri_matches(candidate: str, patterns: tuple[str, ...]) -> bool:
@@ -71,7 +100,8 @@ def redirect_uri_matches(candidate: str, patterns: tuple[str, ...]) -> bool:
     clients bind an ephemeral port on every run.
     """
 
-    for pattern in patterns:
+    candidate = _normalize_redirect_uri(candidate)
+    for pattern in map(_normalize_redirect_uri, patterns):
         if pattern == candidate:
             return True
         if ":*" not in pattern:
@@ -85,8 +115,7 @@ def redirect_uri_matches(candidate: str, patterns: tuple[str, ...]) -> bool:
         if not port.isdigit():
             continue
 
-        host = urlparse(prefix + ":0").hostname
-        if host in {"localhost", "127.0.0.1", "::1"}:
+        if urlparse(prefix + ":0").hostname in LOOPBACK_HOSTS:
             return True
     return False
 
