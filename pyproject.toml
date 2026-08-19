@@ -1,6 +1,6 @@
 [project]
 name = "notebooklm-py"
-version = "0.8.0"
+version = "0.8.1"
 description = "Unofficial Python library for automating Google NotebookLM"
 dynamic = ["readme"]
 requires-python = ">=3.10"
@@ -42,7 +42,7 @@ Issues = "https://github.com/teng-lin/notebooklm-py/issues"
 [project.optional-dependencies]
 markdown = ["markdownify>=0.14.1,<2"]
 browser = ["playwright>=1.40.0,<2"]
-cookies = ["rookiepy>=0.1.0,<1"]
+cookies = ["rookie-cookies>=0.1.0,<1"]
 # EXPERIMENTAL / PoC: optional curl_cffi transport for browser TLS-JA3
 # impersonation (NOTEBOOKLM_TRANSPORT=curl_cffi). Native wheels, so excluded from
 # `all` like `cookies`. Opt in via pip install "notebooklm-py[impersonate]".
