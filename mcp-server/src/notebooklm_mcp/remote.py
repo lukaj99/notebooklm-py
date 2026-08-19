@@ -77,7 +77,13 @@ class Mcp400DiagnosticMiddleware:
                 key.decode("latin-1"): value.decode("latin-1")
                 for key, value in scope.get("headers", [])
                 if key.decode("latin-1").lower()
-                in ("accept", "content-type", "mcp-session-id", "mcp-protocol-version", "authorization")
+                in (
+                    "accept",
+                    "content-type",
+                    "mcp-session-id",
+                    "mcp-protocol-version",
+                    "authorization",
+                )
             }
             if "authorization" in headers:
                 headers["authorization"] = "***redacted***"
@@ -213,6 +219,8 @@ def main() -> None:
             auth_provider=auth_provider,
             oauth_password=config.oauth_password,
             trusted_access_emails=config.trusted_access_emails,
+            auto_approve_redirect_uris=config.auto_approve_redirect_uris,
+            proxy_shared_secret=config.proxy_shared_secret,
         )
 
     logger.info("NotebookLM MCP resource URL: %s", config.resource_server_url)
