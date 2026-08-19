@@ -1,0 +1,40 @@
+{
+  "topic_id": "tech-agentic-coding",
+  "title": "Multi-Agent or One Smart Agent? The Real Data on Coding Agents — 2026-08-19",
+  "audio_format": "debate",
+  "rationale": "What's new here is that the loudest agentic-coding argument of the year has a real, dated arc: Cognition's 2025 \"Don't Build Multi-Agents\" got a direct same-week rebuttal from Anthropic's own multi-agent research system, and then Cognition itself partially reversed course in 2026 once Devin had production mileage -- so the debate isn't stale, it's mid-negotiation between two credible maintainers who both ship real agent products. GitHub and Augment Code extend the same fight into \"how do you actually engineer it,\" landing on opposite defaults (discipline fixes it vs. it's usually not worth it) for exactly the kind of automated-migration decision the listener runs against his own homelab. Layered on top, OpenAI's own retraction of SWE-bench Verified matters editorially because every claim in this debate about \"agent X is better\" implicitly leans on a benchmark OpenAI itself now says is broken -- so the hosts have grounds to interrogate whether any side's evidence is trustworthy, not just which side is right. That's live, citable, maintainer-vs-maintainer controversy, which keeps this a debate rather than a converged deep-dive.",
+  "case_vignette": "Luka's about to point an agent at migrating his self-hosted media stack -- Jellyfin, Riven, Traefik, a dozen interdependent Docker Compose files and secrets -- off one VPS onto a three-node swarm. Does he spin up a team of parallel coding agents to divide the compose files, or hand the whole migration to one agent with full repo context, working serially? And when he's choosing which model to drive that agent, can he trust the SWE-bench score on the vendor's landing page, or is that number already known to be gamed by training-data contamination?",
+  "style": "Frame this as a scenario-based discussion between two opinionated engineers who run real infrastructure: 'what would you actually deploy / how would this fail' framing rather than a feature-list read-through. Include moments of genuine disagreement that get resolved by citing the sources. Keep it conversational and energetic, but always land on clear, actionable decisions the listener can apply to their own lab.",
+  "sources": [
+    {
+      "url": "https://cognition.com/blog/dont-build-multi-agents",
+      "title": "Don't Build Multi-Agents (Cognition/Devin engineering blog, Walden Yan)",
+      "why": "The anchor position: Devin's own maker argues parallel coding agents can't share context, so they make conflicting implicit decisions and ship fragile diffs -- the primary source every later rebuttal in this episode is arguing against."
+    },
+    {
+      "url": "https://www.anthropic.com/engineering/multi-agent-research-system",
+      "title": "How we built our multi-agent research system (Anthropic Engineering)",
+      "why": "The direct counterweight from an equally credible maintainer: Anthropic's own orchestrator-worker system beat single-agent Opus by 90.2% on breadth-first research -- but Anthropic itself flags coding as write-heavy and a worse fit than research, which is the crux of the disagreement."
+    },
+    {
+      "url": "https://cognition.com/blog/multi-agents-working",
+      "title": "Multi-Agents: What's Actually Working (Cognition/Devin engineering blog, 2026 follow-up)",
+      "why": "What's new: Cognition walks back its own absolutism a year later with production data -- manager/child Devins and reviewer loops work, but only with writes kept single-threaded and reads parallelized, showing how the 'no multi-agent' rule bent under real deployment."
+    },
+    {
+      "url": "https://github.blog/ai-and-ml/generative-ai/multi-agent-workflows-often-fail-heres-how-to-engineer-ones-that-dont/",
+      "title": "Multi-agent workflows often fail. Here's how to engineer ones that don't. (GitHub Blog, Feb 2026)",
+      "why": "GitHub's applied-engineering answer: treat agent swarms as distributed systems -- typed schemas and explicit contracts fix the implicit-state failures Cognition warned about, arguing the problem is engineering discipline, not multi-agent itself."
+    },
+    {
+      "url": "https://www.augmentcode.com/guides/when-multi-agent-ai-is-overkill",
+      "title": "When Multi-Agent Is Overkill: A Decision Framework (Augment Code, Apr 2026)",
+      "why": "Sharpens the fight against GitHub's piece: cites a Microsoft five-agent-swarm experiment where coordination overhead and context fragmentation made the swarm slower than one agent -- multi-agent only pays off on genuinely parallelizable, spec-governed work."
+    },
+    {
+      "url": "http://web.archive.org/web/20260811105804/https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/",
+      "title": "Why SWE-bench Verified no longer measures frontier coding capabilities (OpenAI)",
+      "why": "The second controversy thread: OpenAI's own postmortem says it has stopped reporting SWE-bench Verified after finding 59.4% of hard-tail problems have flawed tests and every frontier model shows training contamination -- undercuts the very benchmark cited to justify harness choices."
+    }
+  ]
+}
