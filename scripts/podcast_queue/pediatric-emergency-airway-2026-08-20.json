@@ -1,0 +1,34 @@
+{
+  "topic_id": "pediatric-emergency-airway",
+  "title": "The Knife or the Needle: Pediatric Emergency Airway Management — 2026-08-20",
+  "audio_format": "debate",
+  "rationale": "This episode centers on a live, citable disagreement rather than settled science: UK guideline consensus (DAS/APA's 2024-refreshed pediatric difficult-airway algorithms) still teaches needle cricothyroidotomy/jet ventilation as the default rescue technique for young children in a can't-intubate-can't-oxygenate scenario, while an increasingly-cited FOAMed evidence review (First10EM, twice -- the literature critique and its companion bedside algorithm) and a detailed procedural teaching case (EMCrit with Cliff Reid) argue the data actually favor going straight to a surgical/scalpel approach because needle techniques fail too often in small airways. That is a genuine guideline-vs-evidence fault line with named advocates on each side, which is exactly what a debate format needs -- it is not a manufactured controversy, and DAS is the listener's own national guidance, so the disagreement has direct bedside stakes for a UK ED doctor. The 2024 ILCOR CoSTR is included as a second, related provocation: its consensus that bag-mask ventilation should be preferred over early advanced-airway attempts in pediatric cardiac arrest cuts against the instinct to secure a definitive airway quickly, reinforcing the episode's throughline that \"do more, faster\" is not always what the newest evidence supports in pediatric airway emergencies. Format stays debate because these are not converged positions -- major society guidance and prominent FOAMed literature reviews are still pulling in different directions on how to manage the single highest-stakes pediatric airway decision point.",
+  "case_vignette": "A 5-year-old boy arrives in resus with rapidly worsening stridor and drooling after 12 hours of fever, now tiring with SpO2 88% on high-flow oxygen; a supraglottic process is suspected and the team elects to secure the airway in resus rather than risk transfer. After induction, ventilation and laryngoscopy both fail -- blood and swelling obscure the view, bag-mask ventilation won't move air, and the saturation alarm is sliding through the 70s. The team has seconds to choose: needle cricothyroidotomy as the DAS algorithm teaches, or go straight to the scalpel, as First10EM and EMCrit argue the evidence actually supports for a child this size.",
+  "sources": [
+    {
+      "url": "https://das.uk.com/guidelines/paediatric-difficult-airway-guidelines/",
+      "title": "Paediatric Difficult Airway Guidelines — Difficult Airway Society / Association of Paediatric Anaesthetists",
+      "why": "The UK's own bedside cognitive-aid algorithms for difficult mask ventilation and can't-intubate-can't-oxygenate in 1-8-year-olds, refreshed via a 2024 Delphi process -- this is the needle-first guideline default that the FOAMed sources below directly challenge, and it is the listener's own national guidance."
+    },
+    {
+      "url": "https://costr.ilcor.org/document/advanced-airway-interventions-in-pediatric-cardiac-arrest-pls-p1-tfsr",
+      "title": "Advanced Airway Interventions in Pediatric Cardiac Arrest — ILCOR Pediatric Life Support Task Force CoSTR",
+      "why": "The 2024 international consensus that bag-mask ventilation, not early tracheal intubation or a supraglottic device, should be the default in pediatric cardiac arrest -- graded very-low-certainty with a possible harm signal from advanced-airway attempts, cutting against most ED clinicians' instinct to secure a definitive airway fast."
+    },
+    {
+      "url": "https://first10em.com/the-pediatric-cant-intubate-cant-oxygenate-scenario-use-a-knife/",
+      "title": "The pediatric can't intubate can't oxygenate scenario (Use a knife) — First10EM",
+      "why": "Morgenstern's evidence review concluding needle front-of-neck-access techniques fail too often in children and a surgical (scalpel) approach should be preferred -- a direct, citable challenge to the needle-first teaching embedded in guideline algorithms like DAS."
+    },
+    {
+      "url": "https://first10em.com/pediatric-front-of-neck-access/",
+      "title": "Pediatric front of neck access (the surgical tracheotomy) — First10EM",
+      "why": "Turns that literature review into a concrete bedside CICO algorithm for children, explicitly flagged by the author as a 'difficult topic with differing opinions' -- gives the hosts an actionable script to argue over rather than abstract evidence alone."
+    },
+    {
+      "url": "https://emcrit.org/emcrit/pediatric-tracheotomy/",
+      "title": "EMCrit 401 — Pediatric Tracheotomy / FONA with Cliff Reid",
+      "why": "Weingart and Reid's step-by-step surgical tracheotomy technique for under-8s (whose cricothyroid membrane is often too small for a standard cric), backed by 2024 ethics/legal and pediatric-anaesthesia FONA trial citations -- supplies the practical 'how' behind the surgical-first argument, plus a genuine consent/legal dimension for a rescue procedure done under duress."
+    }
+  ]
+}
