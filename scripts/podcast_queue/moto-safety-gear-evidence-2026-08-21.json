@@ -1,0 +1,40 @@
+{
+  "topic_id": "moto-safety-gear-evidence",
+  "title": "Motorcycle Safety Gear — What the Evidence Actually Shows — 2026-08-21",
+  "audio_format": "debate",
+  "rationale": "What's new here is a direct, citable clash between the standards bodies/manufacturers who say force-transmission numbers on the label mean what riders assume they mean, and the crash investigators/biomechanics researchers who measured real commercial gear underperforming those numbers in the field. SHARP and Bennetts ground the pro-standard case (with the exact kN thresholds and an admission that even the regulator's own scheme sets a stricter internal bar than the legal minimum); Dainese makes the strongest manufacturer argument for airbags over rigid armor; RAC Foundation and IRCOBI supply government-funded and peer-reviewed evidence that several commercial airbag vests miss activation windows or barely reduce chest deflection versus the lab claims. FortNine bridges the two sides with hard comparative numbers and the genuinely odd cultural fact that almost no one — including most OEMs — actually uses the safest tech available. That's live, sourced disagreement on a topic (does gear certification predict real-world outcome) rather than settled consensus, so debate format is the right call, and it maps directly onto a gear-buying decision a Street Triple rider who wrenches on his own bike would actually face.",
+  "case_vignette": "You're standing at the gear rack the week before a Cadwell Park trackday, trying to decide whether the Street Triple's stock riding kit is enough or whether it's finally time to drop 400 pounds on an airbag vest. The Dainese pitch says it crushes rigid armor on paper; the RAC Foundation report says some units on that same rack won't even fire in time. Which number do you actually trust with your spine at 100mph through the Mountain?",
+  "style": "Frame this as a scenario-based discussion between two riding-obsessed co-hosts who do their own wrenching: 'what would you actually do on the road / in the garage' framing rather than a spec-sheet read-through. Include moments of genuine disagreement that get resolved by citing the sources. Keep it conversational and energetic, but always land on clear, actionable takeaways a rider can use this weekend.",
+  "sources": [
+    {
+      "url": "https://sharp.dft.gov.uk/2024/09/04/ece-r22-06-what-you-need-to-know-about-the-new-helmet-standard/",
+      "title": "ECE R22-06: what you need to know about the new helmet standard - SHARP (UK DfT)",
+      "why": "The UK government's own helmet-rating body explains the new oblique/rotational test — and admits its own SHARP protocols are stricter than the legal minimum, planting the seed that 'legally certified' and 'actually safest' aren't the same claim."
+    },
+    {
+      "url": "https://www.bennetts.co.uk/bikesocial/news-and-views/features/product/safest-motorcycle-gear-ce-ratings",
+      "title": "What's the safest motorcycle gear? CE ratings explained - Bennetts BikeSocial",
+      "why": "Lays out the exact EN1621-1/2/3/4/5 kN thresholds and directly rebuts the 'armor standards are naive marketing' critique — the pro-standard case with hard numbers."
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=N2jZryt607U",
+      "title": "Motorcycle Airbags Exist – But No One Uses Them? (FortNine, 2021)",
+      "why": "18kN dispersed vs 0.36kN absorbed by an airbag and 89% cervical-injury reduction from helmet immobilization, plus the real cultural puzzle: only Honda has integrated the tech and most riders skip it anyway."
+    },
+    {
+      "url": "https://www.dainese.com/rs/en/demonerosso/moto/dainese-motorcycle-airbag-how-it-works-guide/651281462.html",
+      "title": "What is a motorcycle airbag? How does it work? The definitive Dainese guide",
+      "why": "The inventor of D-air quantifies airbag vs rigid armor (2.5kN vs 9kN Level-2 back protector) — the manufacturer's own case for why airbags outperform foam, straight from primary R&D."
+    },
+    {
+      "url": "https://www.racfoundation.org/wp-content/uploads/RCIP-2021-Safety-Advice-Notice-2021-02_-Motorcycle-jackets-intervention-times-and-standards.pdf",
+      "title": "Road Collision Investigation Project Safety Advice Notice: Motorcycle jackets, intervention times and standards - RAC Foundation",
+      "why": "Government-funded crash investigators found several commercial airbag jackets miss the 200ms activation window needed before ground contact — and compliance isn't even legally mandatory, directly undercutting the manufacturer pitch."
+    },
+    {
+      "url": "https://www.ircobi.org/wordpress/downloads/irc23/pdf-files/2355.pdf",
+      "title": "Method Development for Assessing Risk of Thoracic Injury to Motorcycle Riders - IRCOBI 2023",
+      "why": "Peer-reviewed biomechanics data benchmarking real commercial airbag vests at only 7-36% chest-deflection reduction, questioning whether the EN1621-4 test rig reflects actual crash dynamics."
+    }
+  ]
+}
