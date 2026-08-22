@@ -1,0 +1,40 @@
+{
+  "topic_id": "photo-composition-light",
+  "title": "Composition and Light — Seeing Better Photographs — 2026-08-22",
+  "audio_format": "debate",
+  "rationale": "This episode is built around two genuinely live practitioner disputes rather than a single settled explainer, which is why it stays a debate rather than downgrading to deep-dive: Fstoppers ran back-to-back 2026 pieces where Craig Roberts argues composition carries a photograph even in flat light and Adam Gibbs directly counters that contrast and light quality are still the real subject, and separately PetaPixel's sponsor-backed golden-hour primer sits against Fstoppers' contrarian case that golden-hour worship is a scheduling crutch that shrinks how often people actually shoot. Thom Hogan's \"Settings Versus Seeing\" and PetaPixel's rule-of-thirds takedown extend the same fault line into technique itself — is disciplined rule-following (settings, thirds, golden hour) the foundation of good photographs, or a comfortable substitute for developing judgment? For a Z6 III stills shooter who can't always chase sunrise and edits his own RAWs, these six sources give the hosts real, sourced disagreement to stage rather than a lecture, while staying squarely in the domain the enthusiast cares about: when to shoot, how to compose, and how much of either is actually provable versus received wisdom.",
+  "case_vignette": "You've got a two-hour window at a coastal harbor at 1pm — flat, cloudless, harsh overhead sun, exactly the light every golden-hour guide tells you to avoid. You can pack the Z6 III up and come back at 7pm, or build a composition around shape, texture, and color contrast that makes the harsh light beside the point. Back at the computer, you're deciding whether to crop hard to a rule-of-thirds intersection because that's what you were taught, or trust what your eye actually told you in the viewfinder — and whether either choice is provable, or just a story photographers tell themselves.",
+  "style": "Frame this as a scenario-based discussion between two working photographers: 'what would you actually do on this shoot / at this edit' framing rather than a spec-sheet read-through. Include moments of genuine disagreement that get resolved by citing the sources. Keep it conversational and energetic, but always land on clear, actionable technique the listener can try on their next shoot.",
+  "sources": [
+    {
+      "url": "https://fstoppers.com/education/what-actually-makes-strong-photograph-900289",
+      "title": "Composition Over Light: What Makes Photos Strong (Fstoppers, Feb 2026)",
+      "why": "Working pro Craig Roberts argues structure carries a frame even in flat, overcast light — makes the case for shooting outside the golden-hour window instead of waiting for it."
+    },
+    {
+      "url": "https://fstoppers.com/education/how-contrast-shape-and-texture-can-replace-perfect-light-901049",
+      "title": "How Contrast Replaces Perfect Light (Fstoppers, Mar 2026)",
+      "why": "Direct rebuttal from landscape pro Adam Gibbs: light quality still drives the shot, and his 12:30pm cloudless frame only works because of color/tonal contrast — the live counter-argument to Roberts."
+    },
+    {
+      "url": "https://petapixel.com/2025/07/16/11-pro-tips-to-instantly-elevate-your-golden-hour-photography/",
+      "title": "11 Pro Tips to Instantly Elevate Your Golden Hour Photography (PetaPixel, Jul 2025)",
+      "why": "Sponsor-backed pro Colby Brown treats golden hour as the default foundation of good light, with concrete manual-mode, RAW-dynamic-range, and silhouette-metering workflow to argue over."
+    },
+    {
+      "url": "https://fstoppers.com/lighting/why-golden-hour-might-be-holding-back-720155",
+      "title": "Why Golden Hour Might Be Holding You Back (Fstoppers, Dec 2025)",
+      "why": "Contrarian pro James Reader argues golden-hour worship becomes a scheduling crutch that shrinks shooting frequency — the direct counter to Brown's golden-hour-as-default framing, with harsh-daylight workflow advice."
+    },
+    {
+      "url": "https://www.bythom.com/technique/essays/settings-versus-seeing.html",
+      "title": "Settings Versus Seeing (Thom Hogan, bythom.com)",
+      "why": "Nikon-system authority argues camera settings are near-irrelevant next to 'seeing' and intent — reframes the whole episode around developing an eye rather than chasing EXIF-perfect exposure."
+    },
+    {
+      "url": "https://petapixel.com/2016/01/30/10-myths-about-the-rule-of-thirds/",
+      "title": "10 Myths About the Rule of Thirds (PetaPixel, Jan 2016)",
+      "why": "Landmark takedown of rule-of-thirds orthodoxy in favor of dynamic symmetry/Gestalt principles — gives the 'seeing over rules' thesis a concrete compositional-doctrine fight to chew on."
+    }
+  ]
+}
