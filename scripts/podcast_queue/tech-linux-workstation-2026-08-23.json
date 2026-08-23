@@ -1,0 +1,40 @@
+{
+  "topic_id": "tech-linux-workstation",
+  "title": "The Linux Workstation — Is Arch Still Worth the Rolling-Release Bet? — 2026-08-23",
+  "audio_format": "debate",
+  "rationale": "This episode leans debate because the strongest evidence in this batch is genuinely split on the central homelab question — is Arch's rolling-release model, and the AUR trust model underneath it, still the right call for a daily-driver workstation that also anchors GPU/LLM and self-hosted infra work? The June 2026 AUR malicious-package incident (official Arch advisory) supplies a concrete, recent failure case; zenvanriel's practitioner comparison argues Ubuntu LTS/NixOS reliability now beats Arch's CUDA freshness for GPU homelab work, while thelibre.news's three-year retrospective documents a real breakage (GNOME 49/Wayland/Nvidia) yet still lands pro-Arch given disciplined maintenance habits — that's a live, citable disagreement between people who've actually run the stack, not a resolved question. Around that spine, Ghostty's 1.3.0 notes and jvns.ca's Helix-switching account ground the terminal/editor half of \"tooling worth the switching cost\" in what's new and what it actually costs to adopt, and the Atuin self-hosting piece keeps the episode anchored to a listener who already runs Docker and Tailscale rather than a pure desktop-Linux audience. Together these six sources give the hosts a real fight on the distro question and enough fresh, dated material (2025–2026) on individual tools to back every claim.",
+  "case_vignette": "Your homelab GPU box just got flagged: a routine `-Syu` pulled in a kernel bump that broke the Nvidia driver ABI overnight, the same week Arch's own advisory confirmed a malicious AUR package had been harvesting SSH and Docker credentials from rolling-release boxes. You're staring at a choice — stay on Arch for the CUDA/llama.cpp freshness your local-LLM workflow depends on, or move that box to Ubuntu LTS or NixOS and eat the version lag for atomic rollback safety. Meanwhile your workstation's shell history is still synced through a hosted service you've never audited, and the terminal stack you're running hasn't been touched since 2023.",
+  "style": "Frame this as a scenario-based discussion between two opinionated engineers who run real infrastructure: 'what would you actually deploy / how would this fail' framing rather than a feature-list read-through. Include moments of genuine disagreement that get resolved by citing the sources. Keep it conversational and energetic, but always land on clear, actionable decisions the listener can apply to their own lab.",
+  "sources": [
+    {
+      "url": "https://archlinux.org/news/active-aur-malicious-packages-incident/",
+      "title": "Arch Linux News: Active AUR malicious packages incident",
+      "why": "Official Arch staff advisory on the June 2026 AUR rootkit/infostealer incident targeting SSH, Docker, Vault, and GitHub credentials — the primary-source evidence that AUR's 'review the PKGBUILD yourself' trust model has a real, recent failure mode for anyone running self-hosted infra."
+    },
+    {
+      "url": "https://zenvanriel.com/ai-engineer-blog/arch-vs-ubuntu-vs-nixos-local-llm-home-lab/",
+      "title": "Arch vs Ubuntu vs NixOS for Local LLM Home Lab",
+      "why": "A working AI engineer's practitioner verdict: for GPU homelab workloads, Arch's driver/kernel desync risk outweighs its CUDA freshness, and NixOS's atomic rollback wins on reliability — the pro-reliability side of the rolling-release debate."
+    },
+    {
+      "url": "https://thelibre.news/what-have-i-learned-from-daily-driving-arch-linux-for-three-years/",
+      "title": "What Have I Learned From Daily Driving Arch Linux For Three Years?",
+      "why": "A three-year retrospective, not a honeymoon post: names a real breakage (GNOME 49 forcing Wayland, wrecking an Nvidia workflow) yet still concludes Arch is worth it with disciplined pacman-cache rollback habits — the pro-Arch counterweight to zenvanriel's verdict."
+    },
+    {
+      "url": "https://ghostty.org/docs/install/release-notes/1-3-0",
+      "title": "Ghostty 1.3.0 Release Notes",
+      "why": "Official maintainer notes for the terminal most cited as 'worth switching to' right now — scrollback search, native scrollbars, OSC133 integration — grounds the terminal-emulator segment in what's actually new, not just hype."
+    },
+    {
+      "url": "https://jvns.ca/blog/2025/10/10/notes-on-switching-to-helix-from-vim/",
+      "title": "Notes on switching to Helix from vim",
+      "why": "A 20-year Vim veteran's unusually honest account of relearning muscle memory for Helix's built-in LSP — she admits she might switch back — the clearest first-hand data point on what 'switching cost' actually costs in hours and frustration."
+    },
+    {
+      "url": "https://duchaine.dev/posts/atuin/",
+      "title": "Install Atuin and reshape your shell history management",
+      "why": "Self-hosts Atuin's sync server via Docker Compose against Postgres instead of trusting the hosted service — the one source that ties terminal tooling directly to the audience's own homelab/Docker/Tailscale stack rather than treating it as a desktop-only concern."
+    }
+  ]
+}
