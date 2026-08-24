@@ -1,0 +1,39 @@
+{
+  "topic_id": "mesenteric-ischemia-literature-update",
+  "title": "Mesenteric Ischemia: Biomarkers, Bowel, and the UK Pathway Problem — 2026-08-24",
+  "audio_format": "deep-dive",
+  "rationale": "This episode is built around a single live tension rather than a clean-cut debate: guideline-level enthusiasm for biomarker-assisted rule-out of acute mesenteric ischaemia (WSES 2022's weak recommendation for lactate/D-dimer/leukocytosis) is being quietly reversed in practice, and the UK's own frontline pathways are caught mid-transition — NHS Highland's live guideline still leans on a negative D-dimer for exclusion while disavowing lactate for the same purpose, and REBEL EM's FOAMed teaching (built on the Cudnik meta-analysis) states flatly that normal labs cannot exclude the diagnosis. Format is deep-dive rather than debate: the strongest documented reversal in the research pass is the ESVS 2025 Class IIIb recommendation against single-biomarker rule-out, but that guideline itself did not clear source verification and isn't in the citable set, so the hosts have only one side of that specific dispute to cite directly — staging it as an adversarial debate would overstate the evidence available. Instead the episode threads a genuine, fully-citable practice tension through diagnosis (WSES vs. NHS Highland vs. REBEL on biomarkers), imaging (ACR's ranked appropriateness criteria), UK system delivery (RCEM's 2024 escalation standards against static NELA mortality), and resuscitation dogma (ALiEM's challenge to vasopressor-caution teaching) — each source contributing a concrete, current UK-relevant decision point rather than a rehearsed pro/con split.",
+  "case_vignette": "A 78-year-old with known AF (on apixaban, but morning dose missed) presents to a UK ED with sudden, severe central abdominal pain that looks strikingly out of proportion to a soft, only mildly tender abdomen on exam. Her lactate comes back normal and D-dimer is borderline; the on-call SHO, following the local pathway's \"D-dimer helps exclude it\" line, considers discharging with analgesia and a GP follow-up. The registrar pushes back, citing the labs-can't-rule-this-out teaching and pressing for an urgent CTA — and when the patient later becomes hypotensive, the team also has to decide whether starting a noradrenaline infusion risks worsening her bowel ischaemia or is simply good resuscitation.",
+  "sources": [
+    {
+      "url": "http://web.archive.org/web/20260624233532/https://pmc.ncbi.nlm.nih.gov/articles/PMC9580452/",
+      "title": "Acute mesenteric ischemia: updated guidelines of the World Society of Emergency Surgery (WSES)",
+      "why": "The still-current framework guideline (2022) that gives lactate/D-dimer/leukocytosis a weak positive recommendation for diagnosis — sets up the baseline the rest of the episode's UK-pathway sources are quietly drifting away from."
+    },
+    {
+      "url": "https://rcem.ac.uk/wp-content/uploads/2024/10/RCEM-Advisory-Statement-regarding-the-management-of-adults-presenting-to-the-Emergency-Department-who-may-require-an-emergency-laparotomy-2-2.pdf",
+      "title": "RCEM Advisory Statement: Management of Adults Presenting to the ED Who May Require an Emergency Laparotomy",
+      "why": "UK-specific, 2024, RCEM-authored: defines who needs ST4+ escalation and time-to-theatre standards for suspected ischaemic bowel, but also reports 30-day laparotomy mortality static at ~9% for five years despite those standards — the process-vs-outcome tension the hosts should sit with."
+    },
+    {
+      "url": "https://www.rightdecisions.scot.nhs.uk/tam-treatments-and-medicines-nhs-highland/adult-therapeutic-guidelines/vascular/acute-mesenteric-ischaemia-in-the-acute-hospital-setting-guidelines/",
+      "title": "Acute Mesenteric Ischaemia in the Acute Hospital Setting (NHS Highland Right Decisions guideline)",
+      "why": "A live NHS pathway doctors are actually using today, and it's internally split: it still tells staff a negative D-dimer helps exclude AMI while saying lactate is not recommended for rule-out — a real-time snapshot of a guideline caught mid-reversal, not a hypothetical."
+    },
+    {
+      "url": "https://acsearch.acr.org/docs/70909/narrative/",
+      "title": "ACR Appropriateness Criteria: Imaging of Mesenteric Ischemia",
+      "why": "Answers the practical 'what do I actually order' question with a ranked panel verdict — CTA abdomen/pelvis with IV contrast at the top, plain film and non-contrast CT flagged 'usually not appropriate' — the imaging-protocol counterpart to the biomarker debate."
+    },
+    {
+      "url": "https://rebelem.com/rebel-core-cast-45-0-mesenteric-ischemia/",
+      "title": "REBEL Core Cast 45.0 — Mesenteric Ischemia",
+      "why": "The canonical FOAMed teaching point, built on the Cudnik meta-analysis: normal labs cannot exclude AMI — directly tests whether NHS Highland's own D-dimer-for-exclusion line actually holds up."
+    },
+    {
+      "url": "http://web.archive.org/web/20240418051142/https://www.aliem.com/myth-vasopressors-ischemia/",
+      "title": "ALiEM — The Myth of Vasopressors and Ischemia",
+      "why": "Takes direct aim at a widespread ED reflex — withholding or under-dosing pressors for fear of worsening gut ischaemia — arguing the dose-response evidence doesn't support the dogma, a genuinely contested practice point worth arguing over on air."
+    }
+  ]
+}
