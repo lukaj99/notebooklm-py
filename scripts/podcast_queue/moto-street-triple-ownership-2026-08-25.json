@@ -1,0 +1,40 @@
+{
+  "topic_id": "moto-street-triple-ownership",
+  "title": "Street Triple 765 RS — Firm Suspension, DIY Service, and the Upgrade Path — 2026-08-25",
+  "audio_format": "debate",
+  "rationale": "This episode leans on the freshest source in the set — Cycle News's 2026 first ride of the Öhlins NIX30-forked RX sibling — set directly against a BikesRepublic road test whose author actively softens the RS's factory compression and rebound settings mid-ride; the two disagree in the field, not in theory, on whether the RS's stock STX40/NIX30 damping is right for the street or only shines at track-firm settings, which earns this a debate format rather than a settled deep-dive. Around that live disagreement, the Motorcyclist spec comparison and the MoreBikes engineering teardown ground the \"what's actually different and why\" question for a self-wrenching owner weighing upgrades, while the Team-BHP ownership log and the maintenanceschedule.com factory interval table anchor the maintenance and ownership-cost half of the brief in real DIY experience rather than press-fleet impressions. Together the six sources let the hosts move from \"should I soften my suspension\" through \"what does the Moto2 update actually change mechanically\" to \"what will my next service actually cost and involve\" — the three questions this listener, who wrenches on his own 765 RS, is most likely to be chewing on.",
+  "case_vignette": "Picture cresting a familiar decreasing-radius bend on a frost-heaved B-road at 7am, RS still dialed to the factory-firm Öhlins settings from last weekend's track day — every ripple thumping through the bars, making you wonder whether you should have wound the compression back before leaving the garage that morning. Later that evening, sight glass in hand at the 6,000-mile mark, you're deciding whether to trust a dealer quote or pull the valve cover yourself off the factory schedule, and whether the Moto2 model's reworked gearing would actually change how the bike feels on that same corner.",
+  "style": "Frame this as a scenario-based discussion between two riding-obsessed co-hosts who do their own wrenching: 'what would you actually do on the road / in the garage' framing rather than a spec-sheet read-through. Include moments of genuine disagreement that get resolved by citing the sources. Keep it conversational and energetic, but always land on clear, actionable takeaways a rider can use this weekend.",
+  "sources": [
+    {
+      "url": "https://www.motorcyclistonline.com/triumph/street-triple-765/",
+      "title": "2025 Triumph Street Triple 765 R, R Low, RS & Moto2 Buyer's Guide — Motorcyclist",
+      "why": "One table puts the R's Showa suspension against the RS's Öhlins STX40/NIX30 and the Moto2's full kit, giving hosts the actual spec delta an owner is buying into (or upgrading toward) rather than marketing copy."
+    },
+    {
+      "url": "https://www.morebikes.co.uk/features/276642/naked-or-superbike-is-the-triumph-street-triple-765-moto2-the-best-of-both-worlds/",
+      "title": "Triumph Street Triple 765 Moto2: the best of both worlds? — MoreBikes",
+      "why": "Goes past ride-impression fluff into the actual mechanical why of the 2023 chassis update — gearbox ratios, sprocket teeth, wheelbase and bar geometry changes — the engineering-literate segment this listener wants."
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=Ln0BvsJoD94",
+      "title": "2026 Triumph Street Triple 765 RX First Ride - Cycle News",
+      "why": "Freshest source in the set (2026): a road-racing journalist laps Barber on the RS's Öhlins NIX30-forked RX sibling and reports a composed, confidence-inspiring front end at track-firm factory settings — the pro-stiff side of the suspension debate."
+    },
+    {
+      "url": "http://web.archive.org/web/20251016083847/https://www.bikesrepublic.com/english/triumph-street-triple-765-rs-test-review/",
+      "title": "Triumph Street Triple 765 RS Test & Review - BikesRepublic.com",
+      "why": "The direct counterpoint: mid-ride, this reviewer actually backs off compression and rebound on both ends and explains why he prefers a softer street-biased front end — rare in-the-field damping reasoning that disagrees with the RX video's factory-firm verdict."
+    },
+    {
+      "url": "http://web.archive.org/web/20250828221211/https://www.team-bhp.com/news/purchased-2017-street-triple-765-rs-ownership-review-after-6500-km",
+      "title": "Purchased a 2017 Street Triple 765 RS: Ownership review after 6500 km",
+      "why": "An owner-mechanic's unsentimental 6,500km logbook — dipstick-vs-sight-glass gripes, a real £650 major-service bill, vibration and mirror issues — the candid ownership friction dealer reviews never mention."
+    },
+    {
+      "url": "https://maintenanceschedule.com/triumph-street-triple-rs-maintenance-schedule/",
+      "title": "Triumph Street Triple RS (765cc, 2017+) Maintenance Schedule",
+      "why": "A factory-manual-sourced, interval-by-interval table (oil, valve clearances, fork oil, steering-head bearings, coolant, brake fluid) — the reference backbone for a self-wrenching owner planning their own service calendar."
+    }
+  ]
+}
