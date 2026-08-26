@@ -1,0 +1,39 @@
+{
+  "topic_id": "acute-intermittent-porphyria",
+  "title": "Acute Intermittent Porphyria — The Diagnosis You Must Not Miss — 2026-08-26",
+  "audio_format": "deep-dive",
+  "rationale": "Deep-dive rather than debate: these six sources are complementary layers — the UK emergency protocol, full-text society guidance, two FOAMed recognition-and-management pieces, a comprehensive background reference, and the definitive givosiran RCT — not advocates arguing opposite sides, so staging a debate would manufacture conflict the source set does not contain. What is genuinely new here is that EXPLORE-era natural-history work and the final (not interim) ENVISION results now put hard numbers on two things clinicians usually reason about anecdotally: how long undiagnosed patients suffer, and how much givosiran actually buys in attack reduction against what it costs in hepatic and renal safety signals. The hosts should still surface several live tensions honestly, because the sources disagree even where none of them argues a case: BIMDG gives haem arginate via a large peripheral vein while the AGA update recommends a high-flow central line; the FOAMed sources still teach the classic triad and carbohydrate loading as first-line while the hepatology literature treats the triad as unreliable and glucose as a weak bridging measure at best; and the AGA update itself concedes that the haem-arginate standard rests on a single small trial from 1989, which no FOAMed source engages with. Worth flagging on air but not in the citable set: NICE (HST16) funds givosiran only for recurrent severe attacks, narrower than its marketing authorisation — a coverage-versus-licence gap that decides what a UK patient can actually get. The episode covers recognition, ED diagnosis, acute management, the 3am drug-safety problem, givosiran, and the open questions, for an audience who will see this once in a career and must not miss it.",
+  "case_vignette": "A 24-year-old woman is brought to your ED for the fourth time in eight months with severe, diffuse abdominal pain and vomiting; her abdomen is soft with no peritonism, her heart rate is 118, her sodium is 128, and two prior CT scans and a gastroenterology workup have all been normal. She has already had cyclizine for the vomiting, and the ward is about to start levetiracetam after a witnessed seizure overnight. The decision point is whether anyone sends a light-protected random urine PBG before those drugs go in, and whether this department reaches for haem arginate empirically or waits on a callback from the porphyria service.",
+  "sources": [
+    {
+      "url": "https://bimdg.org.uk/wp-content/uploads/2024/11/Acute_Porphyria_Emergency_Management_BIMDG_FINAL_632490_15122017.pdf",
+      "title": "Acute Porphyria Adult Emergency Management (BIMDG / National Acute Porphyria Service)",
+      "why": "The actual UK 3am protocol: haem arginate dose, dilution and large-peripheral-vein technique, the named safe drugs for pain, vomiting, agitation, seizures and BP, the dextrose-in-water hyponatraemia trap, and the two NAPS out-of-hours numbers. The practical spine of the episode."
+    },
+    {
+      "url": "http://web.archive.org/web/20251210233546/https://pmc.ncbi.nlm.nih.gov/articles/PMC10335308/",
+      "title": "AGA Clinical Practice Update on Diagnosis and Management of Acute Hepatic Porphyrias: Expert Review (2023)",
+      "why": "Full-text society guidance spanning the whole arc — who to suspect, spot urine PBG/ALA with creatinine correction, hemin dosing, hyponatraemia and hypomagnesaemia, the four-attacks-a-year prophylaxis threshold, transplant, and lifelong HCC and CKD surveillance. It also concedes how thin the haem-arginate evidence base is, and recommends a high-flow central line where BIMDG says large peripheral vein — a real transatlantic disagreement to sit with."
+    },
+    {
+      "url": "http://web.archive.org/web/20250824002602/https://first10em.com/rapid-review-acute-intermittent-porphyria/",
+      "title": "Rapid Review: Acute Intermittent Porphyria — First10EM",
+      "why": "Distils the Bissell/Anderson/Bonkovsky NEJM review into the exact ED failure mode this episode opens with: recurrent unexplained abdominal pain, normal prior workups, and a classic triad that is far less reliable than the teaching suggests — plus which anticonvulsants are unsafe and why benzodiazepines are the fallback."
+    },
+    {
+      "url": "http://web.archive.org/web/20260514124231/https://litfl.com/porphyria/",
+      "title": "Porphyria — LITFL Critical Care Compendium",
+      "why": "Nickson's crisis-management sequence — stop the precipitant, treat seizures and hyponatraemia, haem arginate 3 mg/kg daily for four days, beta-blockade for the tachycardia and hypertension — is the cleanest worked FOAMed algorithm, and its safe/unsafe/possible drug lists are a live example of bedside drug triage."
+    },
+    {
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK547665/",
+      "title": "Acute Intermittent Porphyria (StatPearls, NCBI Bookshelf)",
+      "why": "The comprehensive background layer the FOAMed posts assume: epidemiology and why most HMBS carriers never attack, the full neurovisceral presentation including motor neuropathy, seizures, PRES and psychiatric change, urine PBG and ALA testing mechanics, and carbohydrate loading's honest role."
+    },
+    {
+      "url": "http://web.archive.org/web/20250802055708/https://pubmed.ncbi.nlm.nih.gov/37479139/",
+      "title": "Kuter DJ, Bonkovsky HL, Monroy S, et al. Efficacy and safety of givosiran for acute hepatic porphyria: final results of the randomized phase III ENVISION trial. J Hepatol. 2023 Nov;79(5):1150-1158.",
+      "why": "The definitive 36-month dataset rather than the 6-month interim: sustained attack-rate reduction on givosiran, but also the transaminase rises, declining eGFR and injection-site reactions that the enthusiasm tends to skate past. The numbers behind 'what is new'."
+    }
+  ]
+}
