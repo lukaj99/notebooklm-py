@@ -265,13 +265,18 @@ const lensResults = await parallel(
   LENSES.map((l) => () => agent(l.prompt, { label: `research:${l.key}`, phase: 'Research', schema: SOURCES_SCHEMA }))
 )
 
-const normalize = (u) =>
-  (u || '')
-    .trim()
-    .toLowerCase()
-    .replace(/^http:/, 'https:')
-    .replace(/\/+$/, '')
-    .replace(/\?(utm|ref)[^#]*/, '')
+// Hand-rolled rather than URL-based: the workflow sandbox has no `URL` global,
+// and a parser-based version fails closed on every candidate at once.
+const TRACKING_PARAM = /^(utm_.*|fbclid|gclid|mc_cid|mc_eid)$/i
+const normalize = (u) => {
+  const match = /^(https?):\/\/([^/?#]+)([^?#]*)(?:\?([^#]*))?/i.exec((u || '').trim())
+  if (!match) return ''
+  const [, scheme, host, path, query] = match
+  const kept = (query || '')
+    .split('&')
+    .filter((pair) => pair && !TRACKING_PARAM.test(pair.split('=')[0]))
+  return `${scheme.toLowerCase()}://${host.toLowerCase()}${path || '/'}${kept.length ? `?${kept.join('&')}` : ''}`
+}
 const seen = new Set(avoid.map(normalize))
 const candidates = []
 const controversies = []
