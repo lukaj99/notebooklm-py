@@ -28,7 +28,12 @@ dev = [
 https = ["uvicorn[standard]>=0.30.0"]
 
 [project.scripts]
-notebooklm-mcp = "notebooklm_mcp.server:main"
+# NOT `notebooklm-mcp`: the root notebooklm-py package already ships a console
+# script by that name (notebooklm.mcp.__main__:main, its upstream-documented
+# entry point). Both packages install into the same venv, so a shared name is
+# won by whichever is installed last — which silently swapped this CLI for the
+# root's and broke callers passing the positional `stdio` arg this one takes.
+notebooklm-mcp-local = "notebooklm_mcp.server:main"
 notebooklm-mcp-remote = "notebooklm_mcp.remote:main"
 notebooklm-mcp-sse = "notebooklm_mcp.sse_server:main"
 
