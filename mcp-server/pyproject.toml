@@ -6,8 +6,14 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 dependencies = [
-    "notebooklm-py>=0.3.0",
-    "mcp>=1.0.0,<2.0.0",
+    # [mcp] pulls fastmcp (pinned ==3.4.4 in the root pyproject, where the
+    # rationale lives). Required two ways: the root package's `notebooklm-mcp`
+    # stdio entry point imports fastmcp at module scope, and server.py patches
+    # fastmcp's in-memory token expiry to 365 days. That patch is wrapped in
+    # try/except ImportError, so without fastmcp it silently no-ops and remote
+    # OAuth tokens revert to a 1-hour expiry ("Connection expired" on reconnect).
+    "notebooklm-py[mcp]>=0.3.0",
+    "mcp>=1.28.1",
     "starlette>=0.37.0",
     "uvicorn[standard]>=0.30.0",
 ]
