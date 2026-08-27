@@ -32,7 +32,7 @@ notebooklm login
 Run the MCP server over stdio:
 
 ```bash
-notebooklm-mcp
+notebooklm-mcp-local
 ```
 
 Claude / MCP client config:
@@ -46,7 +46,7 @@ Claude / MCP client config:
         "--directory",
         "/path/to/notebooklm-py/mcp-server",
         "run",
-        "notebooklm-mcp"
+        "notebooklm-mcp-local"
       ]
     }
   }
