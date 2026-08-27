@@ -12,7 +12,7 @@ dependencies = [
     # fastmcp's in-memory token expiry to 365 days. That patch is wrapped in
     # try/except ImportError, so without fastmcp it silently no-ops and remote
     # OAuth tokens revert to a 1-hour expiry ("Connection expired" on reconnect).
-    "notebooklm-py[mcp]>=0.3.0",
+    "notebooklm-py[mcp]>=0.8.0",
     "mcp>=1.28.1",
     "starlette>=0.37.0",
     "uvicorn[standard]>=0.30.0",
