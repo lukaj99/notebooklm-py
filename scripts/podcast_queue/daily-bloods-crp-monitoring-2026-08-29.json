@@ -1,0 +1,60 @@
+{
+  "topic_id": "daily-bloods-crp-monitoring",
+  "title": "Daily Bloods and the Daily CRP — Dismantling a Ward Ritual — 2026-08-29",
+  "audio_format": "debate",
+  "rationale": "This episode argues that daily CRP monitoring fails on four independent grounds and asks the hosts to test each one properly rather than agree early. The kinetic leg comes from Vigushin's 1993 radioiodinated turnover study, which found the plasma half-life fixed between 16.9 and 19.9 hours across health, rheumatoid arthritis, acute bacterial infection and malignancy — meaning clearance carries no information, plasma level is a pure readout of hepatic synthesis rate, and the maximum possible fall in 24 hours is 58%. Pepys and Hirschfield supply the rise: nothing detectable for six hours, peak at 48. The measurement leg comes from the 2024 meta-analysis of within-subject variation (60 studies, median CV 0.41, pooled ICC 0.55), from which the smallest statistically detectable fall works out larger than the largest physiologically possible one. The decisive leg is ADAPT-Sepsis: 2,760 patients across 41 NHS intensive care units, where a protocolised daily CRP saved 0.09 days of antibiotics against usual care while procalcitonin saved 0.88. Giannini's two-ward natural experiment adds the mechanism — more CRP testing did not shorten antibiotics and was associated with slower IV-to-oral switching. The hosts must then steelman the practice properly using the Cleveland Clinic Journal of Medicine counterpoint, which shows the iatrogenic anaemia case is genuinely overstated, and using Singh's anastomotic-leak meta-analysis, which shows exactly where serial CRP does earn its keep: one sample, biologically timed, threshold pre-specified, used to rule out. Elliott's Mendelian randomisation work grounds the underlying point that CRP is a reporter and not a mediator. The practical close draws on the systematic review of 41 lab-stewardship interventions and the UK cost-feedback study, plus the early-morning phlebotomy data showing 30% of draws happen between 4am and 7am with a twenty-two-fold variation between hospitals.",
+  "case_vignette": "It is 09:10 on a Tuesday post-take ward round. Bed 14 is a 78-year-old admitted 36 hours ago with community-acquired pneumonia, now afebrile, eating breakfast, oxygen weaned to room air, and asking to go home. The registrar opens the results screen: CRP 212 yesterday, 188 today. Someone says 'it's not really settling' and the plan becomes another 48 hours of IV co-amoxiclav and repeat bloods in the morning. Nobody in the room can say what CRP value would have led to a different decision — and per the kinetics, a fall from 212 to 188 is exactly what you would expect from a patient whose infection has already resolved.",
+  "style": "Frame this as a genuine disagreement between two senior UK hospital clinicians who both trained in the NHS and respect each other. Host A is a laboratory-medicine-literate acute physician who thinks the practice is mechanistically indefensible and wants it stopped. Host B is an experienced general physician who agrees with most of the biochemistry, but pushes back hard and fairly on three fronts: that the anaemia argument has been overstated for a decade and undermines the credibility of the whole campaign; that the reference-change-value arithmetic is being extrapolated from stable outpatients to acutely ill inpatients where it was never validated; and that the number does real work as medico-legal cover and as a way for a stretched team to hand over concern between shifts, which is not nothing. Use British ward vernacular naturally — 'bloods', 'chase the CRP', 'post-take', 'the FY1', 'not settling', 'coroner' — and keep the arithmetic audible: say the half-life, say the 58% ceiling, say 0.09 days. Do the maths out loud rather than gesturing at it. Land on concrete practice change a listener could take to their own ward round tomorrow — 48-hourly rather than daily sampling, no CRP within 48 hours of surgery or a procedure, and the halving rule for reading a fall — and be explicit that this is an argument about sampling interval and pre-stated thresholds, not an argument for measuring less carefully.",
+  "sources": [
+    {
+      "url": "https://www.jci.org/articles/view/116336",
+      "title": "Vigushin, Pepys & Hawkins — Metabolic and scintigraphic studies of radioiodinated human C-reactive protein in health and disease (J Clin Invest 1993)",
+      "why": "The load-bearing source. Radiolabelled turnover in 8 controls and 35 patients: monoexponential clearance, half-life 18.8h in health, 19.9h in acute bacterial infection, 16.9h in malignancy, fractional catabolic rate independent of concentration. Gives the hosts the hard 58% ceiling on any 24-hour fall."
+    },
+    {
+      "url": "https://www.jci.org/articles/view/18921",
+      "title": "Pepys & Hirschfield — C-reactive protein: a critical update (J Clin Invest 2003)",
+      "why": "The canonical review: hepatocyte-only synthesis under IL-6 transcriptional control, no detectable rise for about six hours, peak at 48 hours, half-life constant in all conditions of health and disease. Supplies the rise limb that the kinetic argument needs alongside Vigushin's fall limb."
+    },
+    {
+      "url": "https://journals.plos.org/plosone/article?id=10.1371%2Fjournal.pone.0304961",
+      "title": "Within-subject variation of CRP and hsCRP: systematic review and meta-analysis (PLOS One 2024)",
+      "why": "Sixty studies pooled: median within-subject CV 0.41, pooled ICC just 0.55. This is where the noise floor comes from, and the paper itself warns that single or even multiple measurements may not reflect a patient's true mean — the authors' own caveat is the steelman Host B needs."
+    },
+    {
+      "url": "https://research.birmingham.ac.uk/en/publications/biomarker-guided-antibiotic-duration-for-hospitalized-patients-wi/",
+      "title": "ADAPT-Sepsis — Biomarker-guided antibiotic duration for hospitalized patients with suspected sepsis (JAMA 2025)",
+      "why": "The decisive evidence and the episode's spine. 2,760 adults, 41 UK NHS ICUs, three arms. Daily procalcitonin cut antibiotics by 0.88 days non-inferiorly; the daily CRP protocol produced a difference of 0.09 days (95% CI -0.60 to 0.79, p=.79) with an inconclusive mortality comparison. A mandated, protocolised daily CRP in the most favourable possible setting did nothing."
+    },
+    {
+      "url": "https://www.springermedicine.com/antibiotic/comparative-impact-of-c-reactive-protein-testing-in-hospitalized/23099660",
+      "title": "Giannini et al. — Comparative impact of C-reactive protein testing in hospitalized patients with acute respiratory tract infection (Adv Ther 2019)",
+      "why": "The natural experiment that supplies the mechanism: two internal medicine wards, 1.14 versus 3.43 CRP tests per patient, no difference in antibiotic duration, but IV-to-oral switching significantly more likely on the low-testing ward (HR 2.90). Repetitive CRP did not accelerate care; it licensed waiting. Confounded by indication, and the hosts should say so."
+    },
+    {
+      "url": "https://researchspace.auckland.ac.nz/items/c86c9465-26c8-48f2-b1f2-63892dad149f",
+      "title": "Singh et al. — Serum CRP to predict anastomotic leak after colorectal surgery: systematic review and meta-analysis (Br J Surg 2014)",
+      "why": "The exception that defines the rule, and the fairest counterweight in the set. Seven studies, 2,483 patients: day 3-5 CRP gives a negative predictive value of 97% at pre-specified cut-offs but a positive predictive value of only 21-23%. One sample, biologically timed, threshold set in advance, used to rule out and license discharge — the structural opposite of daily bloods."
+    },
+    {
+      "url": "https://www.ccjm.org/content/89/12/685",
+      "title": "Should 'daily labs' be a quality priority in hospital medicine? (Cleve Clin J Med 2022)",
+      "why": "The best available argument against this episode's thesis, and Host B's primary weapon. Argues the iatrogenic anaemia case is substantially overstated — attributable haemoglobin fall from genuinely inappropriate daily labs is roughly 0.1 g/dL over a five-day stay — and that the resources devoted to the campaign should match its modest real impact."
+    },
+    {
+      "url": "https://bmjopenquality.bmj.com/content/12/1/e002128",
+      "title": "Interventions to reduce repetitive ordering of low-value inpatient laboratory tests: a systematic review (BMJ Open Qual 2023)",
+      "why": "Forty-one studies across five intervention categories, showing electronic ordering change is the most frequently and most durably effective single strategy while education alone reliably fades. This is what the practical third act should be built on, and it explains why exhorting junior doctors has never worked."
+    },
+    {
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12980245/",
+      "title": "Early morning blood draw timing and frequency among hospitalized patients (JAMA Netw Open 2026)",
+      "why": "3.5 million draws across 526,000 admissions in 18 hospitals: 30.3% of phlebotomy occurs between 04:00 and 07:00, 56.7% of admissions include at least one, and between-hospital rates range from 6.9% to 69.4%. That twenty-two-fold spread proves the 5am round is a workflow choice rather than a clinical necessity — the sleep and delirium harm is discretionary."
+    },
+    {
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2803020/",
+      "title": "Elliott et al. — Genetic loci influencing C-reactive protein levels and risk of coronary heart disease (JAMA 2009)",
+      "why": "Mendelian randomisation across more than 28,000 cases and 100,000 controls found no association between CRP-locus variants and coronary disease despite clear effects on CRP levels. Grounds the conceptual point that CRP is a downstream reporter of IL-6 rather than a mediator — there is no CRP compartment to treat."
+    }
+  ]
+}
