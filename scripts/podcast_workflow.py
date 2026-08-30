@@ -183,6 +183,150 @@ class QualityRejected(ValueError):
     """The evidence or editorial gates rejected generation."""
 
 
+OFFICIAL_DOMAINS = frozenset(
+    {
+        "who.int",
+        "nice.org.uk",
+        "nih.gov",
+        "cdc.gov",
+        "fda.gov",
+        "ema.europa.eu",
+        "clinicaltrials.gov",
+        "cochranelibrary.com",
+    }
+)
+OFFICIAL_SUFFIXES = (".gov", ".gov.uk", ".mil")
+
+PRIMARY_STUDY_PATTERNS = (
+    r"\brandomized\s+(?:controlled\s+)?trial\b",
+    r"\bclinical\s+trial\b",
+    r"\bdouble-blind\b",
+    r"\bmulticenter\b",
+    r"\bmeta-analysis\b",
+    r"\bsystematic\s+review\b",
+    r"\bprospective\s+cohort\b",
+    r"\bcohort\s+study\b",
+    r"\btrial\s+registration\b",
+    r"\bnct\d{8}\b",
+    r"\bisrctn\d{8}\b",
+)
+
+COMMENTARY_PATTERNS = (
+    r"\beditorial\b",
+    r"\bletter\s+to\s+the\s+editor\b",
+    r"\bcommentary\b",
+    r"\bopinion\b",
+    r"\bperspective\b",
+    r"\bviewpoint\b",
+    r"\bnews\s+and\s+views\b",
+)
+
+
+INDEXING_ARCHIVES = frozenset({"pubmed.ncbi.nlm.nih.gov", "ncbi.nlm.nih.gov"})
+
+
+def classify_source_provenance(url: str, title: str, content: str = "") -> dict[str, Any]:
+    """Classify provenance and primary/official evidence status from identity and document type."""
+    parsed = urllib.parse.urlsplit(url)
+    host = (parsed.hostname or "").lower()
+    combined = f"{title} {content[:4000]}".lower()
+
+    # 1. Official international and government regulatory bodies (excluding literature archives like PubMed)
+    is_archive = any(host == a or host.endswith(f".{a}") for a in INDEXING_ARCHIVES)
+    is_official = (not is_archive) and (
+        any(host == d or host.endswith(f".{d}") for d in OFFICIAL_DOMAINS)
+        or any(host.endswith(s) for s in OFFICIAL_SUFFIXES)
+    )
+    if is_official:
+        return {
+            "primary": True,
+            "evidence_tier": "official",
+            "publisher": host,
+        }
+
+    # 2. Check for explicit commentary/opinion indicators in title
+    title_lower = title.lower()
+    is_opinion = any(re.search(pat, title_lower) for pat in COMMENTARY_PATTERNS)
+
+    # 3. Check for primary empirical study markers
+    has_primary_markers = any(re.search(pat, combined) for pat in PRIMARY_STUDY_PATTERNS)
+
+    if has_primary_markers and not (is_opinion and not re.search(r"\bmethods\b", combined)):
+        return {
+            "primary": True,
+            "evidence_tier": "primary_empirical",
+            "publisher": host or "academic",
+        }
+
+    return {
+        "primary": False,
+        "evidence_tier": "secondary_or_commentary",
+        "publisher": host,
+    }
+
+
+def curate_usable_sources(
+    usable: list[dict],
+    *,
+    max_sources: int = 10,
+    risk: str = "ordinary",
+    requested_format: str = "auto",
+) -> list[dict]:
+    """Curate excess usable sources down to max_sources while preserving balance and evidence gates."""
+    if len(usable) <= max_sources:
+        return list(usable)
+
+    selected: list[dict] = []
+    selected_ids: set[str] = set()
+
+    def _add(row: dict) -> bool:
+        if row["source_id"] in selected_ids:
+            return False
+        selected.append(row)
+        selected_ids.add(row["source_id"])
+        return True
+
+    # 1. First preserve required primary sources (up to 2 for high risk, 1 for ordinary)
+    needed_primary = 2 if risk == "high" else 1
+    for row in usable:
+        if row.get("primary") and len([r for r in selected if r.get("primary")]) < needed_primary:
+            _add(row)
+
+    # 2. Ensure both discovery channels remain represented
+    for channel in ("claude", "notebooklm"):
+        if not any(channel in r.get("channels", []) for r in selected):
+            for row in usable:
+                if channel in row.get("channels", []):
+                    if _add(row):
+                        break
+
+    # 3. Ensure side balance if debate requested
+    if requested_format == "debate":
+        for side in ("for", "against"):
+            for row in usable:
+                if (
+                    row.get("side") == side
+                    and len([r for r in selected if r.get("side") == side]) < 2
+                ):
+                    _add(row)
+
+    # 4. Maximize independent publishers
+    for row in usable:
+        if len(selected) >= max_sources:
+            break
+        pub = row.get("publisher")
+        if pub and pub not in {r.get("publisher") for r in selected}:
+            _add(row)
+
+    # 5. Fill remaining slots with remaining usable sources
+    for row in usable:
+        if len(selected) >= max_sources:
+            break
+        _add(row)
+
+    return selected
+
+
 def evaluate_quality(
     ledger: list[dict],
     claims: list[dict],
@@ -190,10 +334,18 @@ def evaluate_quality(
     risk: str,
     requested_format: str,
     critic: dict,
+    min_sources: int = 6,
+    max_sources: int = 10,
 ) -> QualityResult:
     usable = [row for row in ledger if row.get("ready") and row.get("sane")]
-    if not 6 <= len(usable) <= 10:
-        raise QualityRejected("final corpus must contain 6-10 sane READY sources")
+    if len(usable) < min_sources:
+        raise QualityRejected(
+            f"final corpus must contain at least {min_sources} sane READY sources (found {len(usable)})"
+        )
+    if len(usable) > max_sources:
+        usable = curate_usable_sources(
+            usable, max_sources=max_sources, risk=risk, requested_format=requested_format
+        )
     if len({row.get("publisher") for row in usable if row.get("publisher")}) < 4:
         raise QualityRejected("final corpus needs four independent publishers")
     channels = {channel for row in usable for channel in row.get("channels", [])}

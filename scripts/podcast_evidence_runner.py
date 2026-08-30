@@ -19,6 +19,7 @@ from podcast_workflow import (
     RunStage,
     RunStore,
     canonicalize_url,
+    classify_source_provenance,
     evaluate_quality,
 )
 
@@ -111,9 +112,39 @@ class EvidencePodcastRunner:
     async def _execute(self) -> None:
         current = RunStage(self.store.read_json("state.json")["stage"])
         if current is RunStage.RETRYABLE_FAILURE:
-            # Restart discovery into a new, explicitly recorded notebook. This
-            # never retries an unknown generation task; generation has its own
-            # persisted task-id reconciliation below.
+            state = self.store.read_json("state.json")
+            resume_stage = state.get("resume_stage")
+            output_file = self.store.path / f"{self.store.path.name}.mp3"
+
+            # If failed during delivery and audio already downloaded on disk:
+            if resume_stage == RunStage.DELIVERING.value and (
+                state.get("audio_path") or output_file.is_file()
+            ):
+                output = Path(state.get("audio_path") or output_file)
+                if output.is_file() and output.stat().st_size > 0:
+                    self.store.transition(RunStage.DELIVERING)
+                    await self._deliver(output)
+                    self.store.transition(RunStage.DELIVERED)
+                    return
+
+            # If failed while downloading/generating and task_id was already persisted:
+            generation_task_id = state.get("generation_task_id")
+            notebook_id = state.get("notebook_id")
+            if (
+                resume_stage in {RunStage.DOWNLOADING.value, RunStage.GENERATING.value}
+                and generation_task_id
+                and notebook_id
+            ):
+                self.store.transition(RunStage.DOWNLOADING)
+                async with NotebookLMClient.from_storage() as client:
+                    await self._download_and_deliver(
+                        client,
+                        notebook_id,
+                        generation_task_id,
+                        state.get("final_source_ids", []),
+                    )
+                return
+
             self.store.transition(RunStage.DISCOVERING, retrying=True)
         elif current is RunStage.REQUESTED:
             self.store.transition(RunStage.DISCOVERING)
@@ -142,7 +173,8 @@ class EvidencePodcastRunner:
                 for source in task["sources"]
                 if source.get("url")
             }
-            for url in sorted(claude_urls - notebook_urls):
+            remaining_quota = max(0, (self.request.max_sources + 2) - len(notebook_urls))
+            for url in sorted(claude_urls - notebook_urls)[:remaining_quota]:
                 await client.sources.add_url(notebook_id, url, wait=True, wait_timeout=180)
 
             self.store.transition(RunStage.GROUNDING)
@@ -167,6 +199,8 @@ class EvidencePodcastRunner:
                 risk=self._effective_risk(),
                 requested_format=adjudication.get("audio_format", self.request.audio_format),
                 critic=critic,
+                min_sources=self.request.min_sources,
+                max_sources=self.request.max_sources,
             )
             brief = adjudication["editorial_brief"]
             self.store.write_json("editorial_brief.json", brief)
@@ -192,32 +226,39 @@ class EvidencePodcastRunner:
                 audio_length=AudioLength.LONG,
             )
             self.store.transition(RunStage.DOWNLOADING, generation_task_id=status.task_id)
-            status = await client.artifacts.wait_for_completion(
-                notebook_id, status.task_id, timeout=3_600
+            await self._download_and_deliver(
+                client, notebook_id, status.task_id, list(quality.source_ids)
             )
-            if not status.is_complete:
-                raise RuntimeError(f"audio generation ended in {status.status}")
-            output = self.store.path / f"{self.store.path.name}.mp3"
-            await client.artifacts.download_audio(
-                notebook_id, str(output), artifact_id=status.task_id
-            )
-            if not output.is_file() or output.stat().st_size == 0:
-                raise RuntimeError("downloaded audio is empty")
-            digest = hashlib.sha256(output.read_bytes()).hexdigest()
-            self.store.transition(RunStage.DELIVERING, audio_path=str(output), sha256=digest)
-            self.store.write_json(
-                "manifest.json",
-                {
-                    "run_id": self.store.path.name,
-                    "notebook_id": notebook_id,
-                    "generation_task_id": status.task_id,
-                    "source_ids": list(quality.source_ids),
-                    "audio_path": str(output),
-                    "sha256": digest,
-                },
-            )
-            await self._deliver(output)
-            self.store.transition(RunStage.DELIVERED)
+
+    async def _download_and_deliver(
+        self,
+        client: NotebookLMClient,
+        notebook_id: str,
+        task_id: str,
+        source_ids: list[str],
+    ) -> None:
+        status = await client.artifacts.wait_for_completion(notebook_id, task_id, timeout=3_600)
+        if not status.is_complete:
+            raise RuntimeError(f"audio generation ended in {status.status}")
+        output = self.store.path / f"{self.store.path.name}.mp3"
+        await client.artifacts.download_audio(notebook_id, str(output), artifact_id=status.task_id)
+        if not output.is_file() or output.stat().st_size == 0:
+            raise RuntimeError("downloaded audio is empty")
+        digest = hashlib.sha256(output.read_bytes()).hexdigest()
+        self.store.transition(RunStage.DELIVERING, audio_path=str(output), sha256=digest)
+        self.store.write_json(
+            "manifest.json",
+            {
+                "run_id": self.store.path.name,
+                "notebook_id": notebook_id,
+                "generation_task_id": status.task_id,
+                "source_ids": source_ids,
+                "audio_path": str(output),
+                "sha256": digest,
+            },
+        )
+        await self._deliver(output)
+        self.store.transition(RunStage.DELIVERED)
 
     async def _claude_discovery(self) -> dict:
         topic_id = self.store.path.name[-8:]
@@ -281,8 +322,11 @@ class EvidencePodcastRunner:
             )
         )
         result = []
+        max_per_task = max(2, self.request.max_sources // 2)
         for start, task in zip(starts, tasks, strict=True):
-            sources = [source for source in task.sources if not source.is_report and source.url][:6]
+            sources = [source for source in task.sources if not source.is_report and source.url][
+                :max_per_task
+            ]
             if sources:
                 await client.research.import_sources_with_verification(
                     notebook_id, start.task_id, sources, max_elapsed=1_800
@@ -310,9 +354,11 @@ class EvidencePodcastRunner:
                 canonical = canonicalize_url(url)
             except ValueError:
                 canonical = ""
+            fulltext_content = ""
             try:
                 fulltext = await client.sources.get_fulltext(notebook_id, source.id)
-                sane = _sane_fulltext(fulltext.content)
+                fulltext_content = fulltext.content
+                sane = _sane_fulltext(fulltext_content)
             except Exception:
                 sane = False
             channels = []
@@ -321,16 +367,16 @@ class EvidencePodcastRunner:
             if canonical in notebook_urls:
                 channels.append("notebooklm")
             host = urllib.parse.urlsplit(canonical).hostname if canonical else ""
+            provenance = classify_source_provenance(canonical, source.title, fulltext_content)
             rows.append(
                 {
                     "source_id": source.id,
                     "url": canonical,
                     "title": source.title,
-                    "publisher": host or source.id,
+                    "publisher": provenance.get("publisher") or host or source.id,
                     "channels": channels,
-                    "primary": any(
-                        token in (host or "") for token in (".gov", ".edu", "doi.org", "pubmed")
-                    ),
+                    "primary": provenance.get("primary", False),
+                    "evidence_tier": provenance.get("evidence_tier", "secondary_or_commentary"),
                     "side": "neutral",
                     "ready": True,
                     "sane": sane,
