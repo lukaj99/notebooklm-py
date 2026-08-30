@@ -37,6 +37,7 @@ class _FakeSources:
         if url in self.failing_urls:
             raise RuntimeError(f"403 fetching {url}")
         self.added.append(url)
+        return type("Source", (), {"id": f"source-{len(self.added)}"})()
 
 
 class _FakeStatus:
@@ -50,9 +51,11 @@ class _FakeStatus:
 class _FakeArtifacts:
     def __init__(self) -> None:
         self.instructions = None
+        self.source_ids = None
 
     async def generate_audio(self, notebook_id: str, *, instructions=None, **kwargs):
         self.instructions = instructions
+        self.source_ids = kwargs.get("source_ids")
         return _FakeStatus()
 
     async def download_audio(self, notebook_id: str, path: str, **kwargs):
@@ -89,6 +92,13 @@ async def test_all_sources_succeed(tmp_path):
 
     assert Path(path).exists()
     assert client.sources.added == urls
+    assert client.artifacts.source_ids == [
+        "source-1",
+        "source-2",
+        "source-3",
+        "source-4",
+        "source-5",
+    ]
 
 
 @pytest.mark.asyncio
