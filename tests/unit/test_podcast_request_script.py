@@ -65,3 +65,35 @@ def test_live_run_delegates_to_runner(tmp_path, monkeypatch, capsys):
 
     assert podcast_request.run_cli(["--home", str(tmp_path), "run", "A prompt"]) == 0
     assert seen == [capsys.readouterr().out.strip()]
+
+
+def test_resume_delivers_existing_audio_without_regeneration(tmp_path, monkeypatch):
+    import asyncio
+
+    import podcast_evidence_runner
+    from podcast_workflow import PodcastRequest, RunStage, RunStore
+
+    store = RunStore.create(tmp_path / "podcast_runs", PodcastRequest(prompt="A prompt"))
+    audio_file = store.path / f"{store.path.name}.mp3"
+    audio_file.write_bytes(b"existing audio content")
+
+    store.transition(RunStage.DISCOVERING)
+    store.transition(
+        RunStage.RETRYABLE_FAILURE,
+        resume_stage=RunStage.DELIVERING.value,
+        audio_path=str(audio_file),
+    )
+
+    delivered = []
+
+    async def fake_deliver(self, output):
+        delivered.append(str(output))
+
+    monkeypatch.setattr(podcast_evidence_runner.EvidencePodcastRunner, "_deliver", fake_deliver)
+
+    runner = podcast_evidence_runner.EvidencePodcastRunner(store)
+    asyncio.run(runner.execute())
+
+    state = store.read_json("state.json")
+    assert state["stage"] == RunStage.DELIVERED.value
+    assert delivered == [str(audio_file)]
