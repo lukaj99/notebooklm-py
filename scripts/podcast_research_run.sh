@@ -13,7 +13,7 @@
 # returns is untrusted input. The session therefore does exactly one thing:
 # run the workflow and print the resulting JSON payload on stdout. It is given
 # no file-writing tool, no git access, and no general shell — only the
-# research tools and a read-only curl status check. This script, which is
+# research tools and WebFetch. This script, which is
 # trusted, does all the consequential work: validate the JSON, re-check every
 # source URL itself, write the queue file, and commit.
 #
@@ -76,12 +76,9 @@ EOF
 # Everything the run legitimately needs and nothing else. Notably absent:
 # any file-editing tool, any git command, and any general-purpose interpreter
 # (python3, uv run, sh) — each of which would turn a prompt injection buried
-# in a fetched page into arbitrary code execution on this host. The single
-# permitted Bash form pins its output to /dev/null so the verification agents
-# can check HTTP status without being able to write anything.
+# in a fetched page into arbitrary code execution on this host.
 ALLOWED_TOOLS=(
   Workflow Read ToolSearch WebFetch TodoWrite
-  "Bash(curl -sL -o /dev/null -w:*)"
   "mcp__claude_ai_Exa__*" "mcp__claude_ai_Semantic_Scholar__*"
   "mcp__claude_ai_Consensus__*" "mcp__claude_ai_Stealth_Scraper__*"
 )

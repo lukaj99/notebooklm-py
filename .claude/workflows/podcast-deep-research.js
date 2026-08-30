@@ -181,11 +181,11 @@ const SOURCES_SCHEMA = {
 
 const VERIFY_SCHEMA = {
   type: 'object',
-  required: ['http_status', 'accessible', 'content_matches', 'reason'],
+  required: ['accessible', 'content_matches', 'reason'],
   properties: {
     http_status: {
       type: 'integer',
-      description: 'HTTP status observed from the raw curl command — the actual number, never guessed',
+      description: 'HTTP status observed by WebFetch when available; omit rather than guess',
     },
     accessible: { type: 'boolean', description: 'publicly fetchable without login/paywall' },
     content_matches: { type: 'boolean', description: 'page content actually matches the claimed title/topic' },
@@ -278,20 +278,36 @@ const normalize = (u) => {
   return `${scheme.toLowerCase()}://${host.toLowerCase()}${path || '/'}${kept.length ? `?${kept.join('&')}` : ''}`
 }
 const seen = new Set(avoid.map(normalize))
-const candidates = []
+const candidatesByLens = {}
 const controversies = []
-for (const r of lensResults.filter(Boolean)) {
+for (let index = 0; index < lensResults.length; index += 1) {
+  const r = lensResults[index]
+  if (!r) continue
+  const lens = LENSES[index].key
+  candidatesByLens[lens] = []
   for (const c of r.controversies || []) controversies.push(c)
-  for (const s of r.sources || []) {
+  for (const s of (r.sources || []).slice(0, 4)) {
     const key = normalize(s.url)
     if (!key || seen.has(key)) continue
     seen.add(key)
-    candidates.push(s)
+    candidatesByLens[lens].push({ ...s, lens })
   }
 }
 const CAP = 12
-if (candidates.length > CAP) log(`capping verification at ${CAP} of ${candidates.length} candidates (kept in lens order)`)
-const toVerify = candidates.slice(0, CAP)
+const candidates = Object.values(candidatesByLens).flat()
+const toVerify = []
+for (let depth = 0; toVerify.length < CAP; depth += 1) {
+  let added = false
+  for (const lens of LENSES.map((item) => item.key)) {
+    const candidate = (candidatesByLens[lens] || [])[depth]
+    if (!candidate) continue
+    toVerify.push(candidate)
+    added = true
+    if (toVerify.length === CAP) break
+  }
+  if (!added) break
+}
+if (candidates.length > CAP) log(`capping verification fairly at ${CAP} of ${candidates.length} candidates`)
 log(`${candidates.length} unique candidates, ${controversies.length} controversy lines; verifying ${toVerify.length}`)
 
 const verifyPrompt = (c) => `
@@ -300,25 +316,7 @@ Adversarially verify one candidate source for a podcast pipeline. The claim:
   URL: ${c.url}
   Claimed title: ${c.title}
 
-STEP 1 — MANDATORY, do this FIRST, no exceptions. Run exactly:
-
-    curl -sL -o /dev/null -w "%{http_code} %{url_effective}" --max-time 25 "${c.url}"
-
-Report that status code verbatim in http_status. This is the ground truth
-that decides accessibility — NotebookLM's ingester is a plain automated
-fetcher just like curl, so what curl sees is what NotebookLM gets. Your own
-impression, WebFetch's rendered output, or knowing the paper is "open
-access in principle" do NOT override it. Never guess the number; if the
-command fails to produce one, report 0 and set accessible=false.
-
-Rules, applied mechanically:
-- http_status is 200 → may proceed to step 2.
-- http_status is 401/403 (bot protection or login wall — common on
-  onlinelibrary.wiley.com, sciencedirect.com, pmc.ncbi.nlm.nih.gov,
-  and doi.org links that resolve to them) → accessible=false. No exceptions.
-- Any other status (404, 5xx, 000/timeout) → accessible=false.
-
-STEP 2 — only if status was 200. Fetch the content (WebFetch; load it via
+STEP 1 — Fetch the content with WebFetch (load it via
 ToolSearch("select:WebFetch") if needed) and decide:
 - accessible: is there substantive readable content — at least a full
   abstract or article body? A page showing only "Purchase PDF" or "Log in
@@ -336,7 +334,7 @@ ToolSearch("select:WebFetch") if needed) and decide:
   elsewhere under a different byline. When a good article turns up on such
   a site, find the ORIGINAL and put that in alternative_url instead.
 
-STEP 3 — rescue. If accessible=false but the work itself is real and
+STEP 2 — suggest a rescue. If accessible=false but the work itself is real and
 genuinely useful, find a public equivalent of the SAME work. In rough order
 of preference:
   a. Its PubMed abstract page, for anything indexed there — search
@@ -350,8 +348,8 @@ of preference:
      but 403 every automated fetcher — parliament.uk, some think-tank and
      FOAMed sites, several publishers. Do not skip it just because the
      original "should" be public; what matters is what a fetcher can read.
-Curl whichever candidate you pick the same way; only put it in
-alternative_url if IT returns 200 with real content.
+Put the candidate in alternative_url. It will be treated as new untrusted
+input and independently verified; your suggestion never bypasses normal gates.
 
 Default to FALSE when uncertain. Put the final resolved URL in final_url.`
 
@@ -367,11 +365,8 @@ const resolveUsable = (c) => {
   const v = c && c.verify
   if (!v) return null
   const credible = v.credible_source !== false
-  if (v.accessible && v.content_matches && credible && v.http_status === 200) {
+  if (v.accessible && v.content_matches && credible) {
     return { ...c, url: v.final_url || c.url }
-  }
-  if (v.alternative_url && v.content_matches) {
-    return { ...c, url: v.alternative_url, rescued_from: c.url }
   }
   return null
 }
@@ -391,6 +386,24 @@ const runVerification = (items) =>
 phase('Verify')
 const verified = await runVerification(toVerify)
 let usable = verified.filter(Boolean).map(resolveUsable).filter(Boolean)
+const rescuedCandidates = verified
+  .filter((candidate) => candidate && candidate.verify && candidate.verify.alternative_url)
+  .map((candidate) => ({
+    ...candidate,
+    url: candidate.verify.alternative_url,
+    rescued_from: candidate.url,
+    verify: undefined,
+  }))
+  .filter((candidate) => {
+    const key = normalize(candidate.url)
+    if (!key || seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+if (rescuedCandidates.length) {
+  const rescuedVerified = await runVerification(rescuedCandidates)
+  usable = usable.concat(rescuedVerified.filter(Boolean).map(resolveUsable).filter(Boolean))
+}
 const rescuedCount = usable.filter((c) => c.rescued_from).length
 log(
   `${usable.length}/${toVerify.length} candidates survived verification` +

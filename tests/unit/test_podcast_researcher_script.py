@@ -166,3 +166,35 @@ def test_load_topics_skips_non_medicine_domains(tmp_path, monkeypatch):
     topics = load_topics()
 
     assert [t.id for t in topics] == ["med", "med2"]
+
+
+def test_next_queue_item_uses_embedded_date_not_filename_order(tmp_path, monkeypatch):
+    import podcast_researcher
+
+    (tmp_path / "aaa-2026-08-25.json").write_text(
+        json.dumps({"topic_id": "new", "created_at": "2026-08-25T01:00:00Z"})
+    )
+    (tmp_path / "zzz-2026-08-13.json").write_text(json.dumps({"topic_id": "old"}))
+    monkeypatch.setattr(podcast_researcher, "sync_queue_repo", lambda: tmp_path)
+
+    payload, filename = podcast_researcher.next_queue_item({})
+
+    assert payload["topic_id"] == "old"
+    assert filename == "zzz-2026-08-13.json"
+
+
+def test_next_queue_item_prefers_created_at_and_breaks_ties_by_name(tmp_path, monkeypatch):
+    import podcast_researcher
+
+    (tmp_path / "b.json").write_text(
+        json.dumps({"topic_id": "b", "created_at": "2026-08-13T09:00:00Z"})
+    )
+    (tmp_path / "a.json").write_text(
+        json.dumps({"topic_id": "a", "created_at": "2026-08-13T09:00:00Z"})
+    )
+    monkeypatch.setattr(podcast_researcher, "sync_queue_repo", lambda: tmp_path)
+
+    payload, filename = podcast_researcher.next_queue_item({})
+
+    assert payload["topic_id"] == "a"
+    assert filename == "a.json"
