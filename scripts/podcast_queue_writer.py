@@ -10,7 +10,8 @@ its field names, or its own claim that a URL works:
 * only the fields the queue format defines survive — anything else the model
   decided to add is dropped rather than written to disk,
 * every source URL is re-checked here with a real HTTP request, regardless of
-  what the session's verification agents concluded,
+  what the session's verification agents concluded, and a 200 only counts if
+  a readable document comes back with it,
 * and an episode that ends up too thin is refused outright rather than
   queued in a degraded state.
 
@@ -44,6 +45,41 @@ SOURCE_FIELDS = ("url", "title", "why")
 AUDIO_FORMATS = {"debate", "deep-dive"}
 MIN_SOURCES_DEFAULT = 4
 URL_TIMEOUT = 25.0
+MAX_REDIRECTS = 5
+
+# A 200 is not evidence that a page holds anything worth ingesting. Two
+# distinct failures both answer 200 with nothing usable: metadata APIs (a
+# bot-blocked PubMed page "rescued" into its eutils JSON record fetches
+# perfectly and contains no abstract), and pages that render only under
+# JavaScript (Europe PMC article pages, Cloudflare interstitials).
+#
+# Content type catches the first by category, because a JSON record is never a
+# document however long it is — length alone cannot separate a 4kB metadata
+# blob from a short but genuine FOAMed post. The size floors catch the second.
+DOCUMENT_TYPES = frozenset({"text/html", "application/xhtml+xml", "text/plain", "application/pdf"})
+# Measured against real sources: a JS shell strips to ~900 visible characters
+# and a Cloudflare challenge to ~300, while the thinnest genuine source in use
+# (a LITFL compendium entry) holds ~5,900.
+MIN_TEXT_CHARS = 1500
+# PDFs are binary, so tag-stripping them is meaningless — weigh the raw bytes.
+MIN_DOCUMENT_BYTES = 4096
+# Enough to judge substance without pulling a whole large PDF into memory.
+READ_CAP = 512 * 1024
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Expose redirects to the caller so every destination is revalidated."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: ANN001, ANN201
+        return None
+
+    def http_error_302(self, req, fp, code, msg, headers):  # noqa: ANN001, ANN201
+        return fp
+
+    http_error_301 = http_error_302
+    http_error_303 = http_error_302
+    http_error_307 = http_error_302
+    http_error_308 = http_error_302
 
 
 def extract_json(raw: str) -> dict | None:
@@ -106,23 +142,58 @@ def is_public_url(url: str) -> bool:
     return True
 
 
-def url_is_reachable(url: str) -> bool:
-    """True when the URL answers 200 to a plain automated fetch.
+def has_substantive_content(content_type: str, body: bytes) -> bool:
+    """True when a fetched body is a document with something in it to read.
+
+    Rejects non-document content types outright, then applies a size floor:
+    visible text for markup and plain text, raw bytes for PDFs.
+    """
+
+    if content_type not in DOCUMENT_TYPES:
+        return False
+    if content_type == "application/pdf":
+        return len(body) >= MIN_DOCUMENT_BYTES
+
+    text = body.decode("utf-8", "replace")
+    text = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", " ", text)
+    text = re.sub(r"(?s)<[^>]+>", " ", text)
+    return len(re.sub(r"\s+", " ", text).strip()) >= MIN_TEXT_CHARS
+
+
+def url_is_reachable(url: str, *, opener=None) -> bool:  # noqa: ANN001
+    """True when the URL answers 200 with a readable document behind it.
 
     Deliberately the same shape of request NotebookLM's own ingester makes —
     a page that needs a real browser to render is a page the pipeline cannot
-    use, however genuinely open-access it may be.
+    use, however genuinely open-access it may be. The status code alone is not
+    enough: see ``has_substantive_content`` for what else a 200 has to clear.
     """
 
-    request = urllib.request.Request(  # noqa: S310 - scheme is validated by the caller
-        url,
-        headers={"User-Agent": "notebooklm-py-podcast-pipeline/1.0"},
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=URL_TIMEOUT) as response:  # noqa: S310
-            return response.status == 200
-    except Exception:
-        return False
+    client = opener or urllib.request.build_opener(_NoRedirect())
+    current = url
+    for _ in range(MAX_REDIRECTS + 1):
+        if not is_public_url(current):
+            return False
+        request = urllib.request.Request(  # noqa: S310 - every hop is validated above
+            current,
+            headers={"User-Agent": "notebooklm-py-podcast-pipeline/1.0"},
+        )
+        try:
+            with client.open(request, timeout=URL_TIMEOUT) as response:  # noqa: S310
+                if response.status == 200:
+                    return has_substantive_content(
+                        (response.headers.get_content_type() or "").lower(),
+                        response.read(READ_CAP),
+                    )
+                if response.status not in {301, 302, 303, 307, 308}:
+                    return False
+                location = response.headers.get("Location")
+                if not location:
+                    return False
+                current = urllib.parse.urljoin(current, location)
+        except Exception:
+            return False
+    return False
 
 
 def build_payload(

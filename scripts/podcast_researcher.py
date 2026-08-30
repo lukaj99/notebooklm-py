@@ -59,6 +59,7 @@ import subprocess
 import sys
 import time
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
@@ -133,7 +134,8 @@ def next_queue_item(state: dict) -> tuple[dict, str] | None:
         return None
 
     processed = set(state.setdefault("processed_queue_files", []))
-    for path in sorted(queue_dir.glob("*.json")):
+    candidates: list[tuple[datetime, str, Path, dict]] = []
+    for path in queue_dir.glob("*.json"):
         if path.name in processed:
             continue
         try:
@@ -142,8 +144,29 @@ def next_queue_item(state: dict) -> tuple[dict, str] | None:
             logger.exception("skipping unreadable queue file %s", path.name)
             processed.add(path.name)
             continue
-        return payload, path.name
+        candidates.append((_queue_created_at(payload, path), path.name, path, payload))
+    if candidates:
+        _, filename, _, payload = min(candidates, key=lambda item: (item[0], item[1]))
+        return payload, filename
     return None
+
+
+def _queue_created_at(payload: dict, path: Path) -> datetime:
+    """Return a stable UTC creation time for legacy and v2 queue items."""
+
+    created_at = payload.get("created_at")
+    if isinstance(created_at, str):
+        try:
+            parsed = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                return parsed.replace(tzinfo=timezone.utc)
+            return parsed.astimezone(timezone.utc)
+        except ValueError:
+            pass
+    match = __import__("re").search(r"(\d{4}-\d{2}-\d{2})(?:\.json)?$", path.name)
+    if match:
+        return datetime.fromisoformat(match.group(1)).replace(tzinfo=timezone.utc)
+    return datetime.max.replace(tzinfo=timezone.utc)
 
 
 @dataclass

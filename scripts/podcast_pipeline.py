@@ -96,16 +96,20 @@ async def build_podcast(
     notebook_id = notebook.id
 
     ingested: list[str] = []
+    ingested_source_ids: list[str] = []
     failed_sources: list[tuple[str, str]] = []
     for url in source_urls:
         try:
-            await client.sources.add_url(
+            source = await client.sources.add_url(
                 notebook_id, url, wait=True, wait_timeout=source_wait_timeout
             )
         except Exception as exc:  # noqa: BLE001 - collected and reported together below
             failed_sources.append((url, str(exc)))
         else:
             ingested.append(url)
+            source_id = getattr(source, "id", None)
+            if source_id:
+                ingested_source_ids.append(str(source_id))
 
     if failed_sources:
         detail = "; ".join(f"{url}: {err}" for url, err in failed_sources)
@@ -122,6 +126,7 @@ async def build_podcast(
 
     status = await client.artifacts.generate_audio(
         notebook_id,
+        source_ids=ingested_source_ids or None,
         instructions=instructions,
         audio_format=audio_format,
         audio_length=audio_length,

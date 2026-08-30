@@ -19,7 +19,12 @@ SCRIPTS_DIR = Path(__file__).resolve().parents[2] / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from podcast_queue_writer import build_payload, extract_json, is_public_url  # noqa: E402
+from podcast_queue_writer import (  # noqa: E402
+    build_payload,
+    extract_json,
+    is_public_url,
+    url_is_reachable,
+)
 
 
 def _payload(n_sources: int = 5, **overrides) -> dict:
@@ -218,3 +223,138 @@ def test_build_payload_requires_a_sources_list():
             date="2026-08-13",
             url_ok=lambda u: True,
         )
+
+
+def test_url_is_reachable_revalidates_every_redirect(monkeypatch):
+    class Response:
+        status = 302
+        headers = {"Location": "http://127.0.0.1/private"}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+    class Opener:
+        def open(self, request, timeout):
+            return Response()
+
+    fetched = []
+    monkeypatch.setattr(
+        "podcast_queue_writer.is_public_url",
+        lambda url: fetched.append(url) is None and not url.startswith("http://127."),
+    )
+
+    assert url_is_reachable("https://example.com/start", opener=Opener()) is False
+    assert fetched == ["https://example.com/start", "http://127.0.0.1/private"]
+
+
+class _Body:
+    """A 200 response carrying a content type and a body, for the content gate."""
+
+    status = 200
+
+    def __init__(self, content_type: str, body: bytes) -> None:
+        self._content_type = content_type
+        self._body = body
+        self.headers = self
+
+    def get_content_type(self) -> str:
+        return self._content_type
+
+    def get(self, _name, default=None):  # noqa: ANN001, ANN201 - Location lookups only
+        return default
+
+    def read(self, amount: int | None = None) -> bytes:
+        return self._body if amount is None else self._body[:amount]
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return None
+
+
+def _opener_serving(content_type: str, body: bytes):
+    class Opener:
+        def open(self, request, timeout):  # noqa: ANN001, ANN201
+            return _Body(content_type, body)
+
+    return Opener()
+
+
+def test_url_is_reachable_rejects_a_json_api_response(monkeypatch):
+    """An esummary-style metadata endpoint answers 200 with no readable prose.
+
+    This is the concrete regression: a bot-blocked PubMed page was "rescued"
+    into its eutils JSON record, which fetches perfectly and contains no
+    abstract at all.
+    """
+
+    monkeypatch.setattr("podcast_queue_writer.is_public_url", lambda url: True)
+    body = json.dumps({"result": {"37479139": {"title": "x" * 4000}}}).encode()
+    assert (
+        url_is_reachable(
+            "https://eutils.example.com/esummary", opener=_opener_serving("application/json", body)
+        )
+        is False
+    )
+
+
+def test_url_is_reachable_rejects_a_page_that_needs_javascript(monkeypatch):
+    """A JS shell answers 200 with markup but almost no visible text."""
+
+    monkeypatch.setattr("podcast_queue_writer.is_public_url", lambda url: True)
+    body = (
+        b"<html><head><script>var a=" + b"1" * 40000 + b";</script>"
+        b"<style>" + b"p{color:red}" * 2000 + b"</style></head>"
+        b"<body><p>This site requires JavaScript to function.</p></body></html>"
+    )
+    assert (
+        url_is_reachable("https://example.com/js", opener=_opener_serving("text/html", body))
+        is False
+    )
+
+
+def test_url_is_reachable_accepts_html_with_substantive_text(monkeypatch):
+    monkeypatch.setattr("podcast_queue_writer.is_public_url", lambda url: True)
+    body = b"<html><body><p>" + b"clinical prose. " * 400 + b"</p></body></html>"
+    assert (
+        url_is_reachable("https://example.com/article", opener=_opener_serving("text/html", body))
+        is True
+    )
+
+
+def test_url_is_reachable_accepts_a_pdf_by_size_not_stripped_text(monkeypatch):
+    """PDFs are binary — tag-stripping them is meaningless, so weigh the bytes."""
+
+    monkeypatch.setattr("podcast_queue_writer.is_public_url", lambda url: True)
+    body = b"%PDF-1.4\n" + bytes(range(256)) * 200
+    assert (
+        url_is_reachable(
+            "https://example.com/protocol.pdf", opener=_opener_serving("application/pdf", body)
+        )
+        is True
+    )
+
+
+def test_url_is_reachable_rejects_a_stub_pdf(monkeypatch):
+    monkeypatch.setattr("podcast_queue_writer.is_public_url", lambda url: True)
+    assert (
+        url_is_reachable(
+            "https://example.com/stub.pdf", opener=_opener_serving("application/pdf", b"%PDF-1.4\n")
+        )
+        is False
+    )
+
+
+def test_url_is_reachable_accepts_plain_text_with_enough_content(monkeypatch):
+    monkeypatch.setattr("podcast_queue_writer.is_public_url", lambda url: True)
+    body = b"Abstract. " * 400
+    assert (
+        url_is_reachable(
+            "https://example.com/abstract.txt", opener=_opener_serving("text/plain", body)
+        )
+        is True
+    )
