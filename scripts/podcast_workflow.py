@@ -115,10 +115,28 @@ class PodcastRequest:
 
     @classmethod
     def from_dict(cls, value: dict[str, Any]) -> PodcastRequest:
+        if not isinstance(value, dict):
+            raise ValueError("request payload must be a JSON object")
         fields = set(cls.__dataclass_fields__)
         unknown = set(value) - fields
         if unknown:
             raise ValueError(f"unknown request field(s): {', '.join(sorted(unknown))}")
+        for str_field in (
+            "prompt",
+            "audience",
+            "angle",
+            "risk",
+            "audio_format",
+            "language",
+            "length",
+        ):
+            if str_field in value and not isinstance(value[str_field], str):
+                raise ValueError(f"{str_field} must be a string")
+        for int_field in ("min_sources", "max_sources", "schema_version"):
+            if int_field in value and (
+                not isinstance(value[int_field], int) or isinstance(value[int_field], bool)
+            ):
+                raise ValueError(f"{int_field} must be an integer")
         return cls(**value)
 
 
@@ -412,28 +430,33 @@ class RunStore:
     def read_json(self, name: str) -> dict:
         return json.loads((self.path / name).read_text())
 
+    def _write_json_unlocked(self, target: Path, value: Any) -> None:
+        fd, temporary = tempfile.mkstemp(prefix=f".{target.name}.", dir=self.path)
+        try:
+            with os.fdopen(fd, "w") as stream:
+                json.dump(value, stream, indent=2, ensure_ascii=False)
+                stream.write("\n")
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.chmod(temporary, 0o600)
+            os.replace(temporary, target)
+        finally:
+            if os.path.exists(temporary):
+                os.unlink(temporary)
+
     def write_json(self, name: str, value: Any) -> None:
         target = self.path / name
         with self.lock:
-            fd, temporary = tempfile.mkstemp(prefix=f".{name}.", dir=self.path)
-            try:
-                with os.fdopen(fd, "w") as stream:
-                    json.dump(value, stream, indent=2, ensure_ascii=False)
-                    stream.write("\n")
-                    stream.flush()
-                    os.fsync(stream.fileno())
-                os.chmod(temporary, 0o600)
-                os.replace(temporary, target)
-            finally:
-                if os.path.exists(temporary):
-                    os.unlink(temporary)
+            self._write_json_unlocked(target, value)
 
     def transition(self, stage: RunStage, **updates: Any) -> None:
-        state = self.read_json("state.json")
-        current = RunStage(state["stage"])
-        if stage not in TRANSITIONS.get(current, set()):
-            raise ValueError(f"invalid transition: {current.value} -> {stage.value}")
-        state.update(updates)
-        state["stage"] = stage.value
-        state["updated_at"] = datetime.now(timezone.utc).isoformat()
-        self.write_json("state.json", state)
+        target = self.path / "state.json"
+        with self.lock:
+            state = json.loads(target.read_text())
+            current = RunStage(state["stage"])
+            if stage not in TRANSITIONS.get(current, set()):
+                raise ValueError(f"invalid transition: {current.value} -> {stage.value}")
+            state.update(updates)
+            state["stage"] = stage.value
+            state["updated_at"] = datetime.now(timezone.utc).isoformat()
+            self._write_json_unlocked(target, state)
