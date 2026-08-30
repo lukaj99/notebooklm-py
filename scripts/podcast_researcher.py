@@ -158,6 +158,8 @@ def _queue_created_at(payload: dict, path: Path) -> datetime:
     if isinstance(created_at, str):
         try:
             parsed = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                return parsed.replace(tzinfo=timezone.utc)
             return parsed.astimezone(timezone.utc)
         except ValueError:
             pass
