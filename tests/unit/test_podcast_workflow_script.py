@@ -138,3 +138,73 @@ def test_quality_gate_rejects_unsupported_major_claim():
                 "scores": dict.fromkeys(("novelty", "tension", "audio_fit", "coverage"), 5),
             },
         )
+
+
+def test_quality_gate_curates_excess_sources_down_to_max():
+    ledger = []
+    for i in range(14):
+        ledger.append(
+            {
+                "source_id": f"s{i}",
+                "publisher": f"publisher-{i % 5}",
+                "channels": ["claude"] if i < 7 else ["notebooklm"],
+                "primary": i < 2,
+                "side": "for",
+                "ready": True,
+                "sane": True,
+            }
+        )
+    result = evaluate_quality(
+        ledger,
+        [{"claim": "major", "major": True, "supporting_source_ids": ["s0", "s1"]}],
+        risk="high",
+        requested_format="deep-dive",
+        critic={
+            "passed": True,
+            "scores": dict.fromkeys(("novelty", "tension", "audio_fit", "coverage"), 5),
+        },
+        min_sources=6,
+        max_sources=8,
+    )
+    assert len(result.source_ids) == 8
+    assert "s0" in result.source_ids and "s1" in result.source_ids
+
+
+def test_source_provenance_recognizes_official_bodies():
+    from podcast_workflow import classify_source_provenance
+
+    who = classify_source_provenance(
+        "https://www.who.int/news/item/123",
+        "Clinical management of bacterial meningitis",
+        "WHO clinical guideline for health systems",
+    )
+    assert who["primary"] is True
+    assert who["evidence_tier"] == "official"
+
+    nice = classify_source_provenance(
+        "https://www.nice.org.uk/guidance/ng240",
+        "Meningitis (bacterial) and meningococcal disease",
+        "NICE guideline published 2024",
+    )
+    assert nice["primary"] is True
+    assert nice["evidence_tier"] == "official"
+
+
+def test_source_provenance_distinguishes_empirical_trials_from_opinion():
+    from podcast_workflow import classify_source_provenance
+
+    rct = classify_source_provenance(
+        "https://pubmed.ncbi.nlm.nih.gov/12345678/",
+        "Dexamethasone in Adults with Bacterial Meningitis: A Randomized Double-Blind Trial",
+        "Methods: In a double-blind, randomized multicenter trial... Results: 301 patients...",
+    )
+    assert rct["primary"] is True
+    assert rct["evidence_tier"] == "primary_empirical"
+
+    opinion = classify_source_provenance(
+        "https://pubmed.ncbi.nlm.nih.gov/87654321/",
+        "Editorial: Rethinking Meningitis Protocols",
+        "In this commentary, we reflect on recent controversies...",
+    )
+    assert opinion["primary"] is False
+    assert opinion["evidence_tier"] == "secondary_or_commentary"
