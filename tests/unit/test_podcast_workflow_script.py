@@ -68,8 +68,9 @@ def test_round_robin_candidates_prevents_early_lens_starvation():
 def test_run_store_is_private_atomic_and_enforces_transitions(tmp_path):
     store = RunStore.create(tmp_path, PodcastRequest(prompt="A useful prompt"))
 
-    assert stat.S_IMODE(store.path.stat().st_mode) == 0o700
-    assert stat.S_IMODE((store.path / "request.json").stat().st_mode) == 0o600
+    if sys.platform != "win32":
+        assert stat.S_IMODE(store.path.stat().st_mode) == 0o700
+        assert stat.S_IMODE((store.path / "request.json").stat().st_mode) == 0o600
     store.transition(RunStage.DISCOVERING, notebook_id="nb-1")
     state = json.loads((store.path / "state.json").read_text())
     assert state["stage"] == "DISCOVERING"
