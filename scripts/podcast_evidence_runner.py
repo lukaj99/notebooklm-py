@@ -64,6 +64,10 @@ async def _run_process(args: list[str], *, timeout: float) -> str:
         process.kill()
         await process.wait()
         raise RuntimeError(f"process timed out after {timeout:.0f}s") from None
+    except asyncio.CancelledError:
+        process.kill()
+        await process.wait()
+        raise
     if process.returncode:
         detail = stderr.decode(errors="replace")[-2_000:]
         raise RuntimeError(f"process exited {process.returncode}: {detail}")
@@ -97,6 +101,9 @@ class EvidencePodcastRunner:
             await self._execute()
         except QualityRejected as exc:
             self._fail(RunStage.REJECTED_QUALITY, str(exc))
+            raise
+        except asyncio.CancelledError:
+            self._fail(RunStage.CANCELLED, "run cancelled")
             raise
         except Exception as exc:
             self._fail(RunStage.RETRYABLE_FAILURE, str(exc))
@@ -508,6 +515,11 @@ class EvidencePodcastRunner:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        _, stderr = await process.communicate()
+        try:
+            _, stderr = await process.communicate()
+        except asyncio.CancelledError:
+            process.kill()
+            await process.wait()
+            raise
         if process.returncode:
             raise RuntimeError(f"rclone delivery failed: {stderr.decode(errors='replace')[-1000:]}")

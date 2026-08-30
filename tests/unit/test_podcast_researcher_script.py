@@ -198,3 +198,14 @@ def test_next_queue_item_prefers_created_at_and_breaks_ties_by_name(tmp_path, mo
 
     assert payload["topic_id"] == "a"
     assert filename == "a.json"
+
+
+def test_queue_created_at_defaults_naive_timestamp_to_utc(tmp_path):
+    from datetime import datetime, timezone
+
+    import podcast_researcher
+
+    naive_payload = {"created_at": "2026-08-30T17:00:00"}
+    dt = podcast_researcher._queue_created_at(naive_payload, tmp_path / "test.json")
+    assert dt.tzinfo == timezone.utc
+    assert dt == datetime(2026, 8, 30, 17, 0, 0, tzinfo=timezone.utc)

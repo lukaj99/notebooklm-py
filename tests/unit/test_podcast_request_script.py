@@ -97,3 +97,25 @@ def test_resume_delivers_existing_audio_without_regeneration(tmp_path, monkeypat
     state = store.read_json("state.json")
     assert state["stage"] == RunStage.DELIVERED.value
     assert delivered == [str(audio_file)]
+
+
+def test_runner_records_cancelled_on_cancellation(tmp_path, monkeypatch):
+    import asyncio
+
+    import podcast_evidence_runner
+    import pytest
+    from podcast_workflow import PodcastRequest, RunStage, RunStore
+
+    store = RunStore.create(tmp_path / "podcast_runs", PodcastRequest(prompt="A prompt"))
+
+    async def fake_execute(self):
+        raise asyncio.CancelledError()
+
+    monkeypatch.setattr(podcast_evidence_runner.EvidencePodcastRunner, "_execute", fake_execute)
+
+    runner = podcast_evidence_runner.EvidencePodcastRunner(store)
+    with pytest.raises(asyncio.CancelledError):
+        asyncio.run(runner.execute())
+
+    state = store.read_json("state.json")
+    assert state["stage"] == RunStage.CANCELLED.value

@@ -31,6 +31,17 @@ def test_request_rejects_unknown_fields_and_invalid_source_bounds():
         PodcastRequest(prompt="x", min_sources=11, max_sources=10)
 
 
+def test_request_from_dict_validates_field_types():
+    with pytest.raises(ValueError, match="JSON object"):
+        PodcastRequest.from_dict("not-a-dict")  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="prompt must be a string"):
+        PodcastRequest.from_dict({"prompt": 12345})
+    with pytest.raises(ValueError, match="min_sources must be an integer"):
+        PodcastRequest.from_dict({"prompt": "Valid", "min_sources": True})
+    with pytest.raises(ValueError, match="min_sources must be an integer"):
+        PodcastRequest.from_dict({"prompt": "Valid", "min_sources": "6"})
+
+
 def test_request_defaults_are_stable():
     request = PodcastRequest(prompt="Why do agents fail?")
 
