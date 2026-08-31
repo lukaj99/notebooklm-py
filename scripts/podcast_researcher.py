@@ -162,6 +162,7 @@ def next_queue_item(state: dict) -> tuple[dict, str] | None:
     processed_queue: dict[str, dict] = state.setdefault("processed_queue", {})
     legacy_processed: set[str] = set(state.setdefault("processed_queue_files", []))
     candidates: list[tuple[datetime, str, Path, dict]] = []
+    migrated = False
 
     for path in queue_dir.glob("*.json"):
         try:
@@ -186,9 +187,16 @@ def next_queue_item(state: dict) -> tuple[dict, str] | None:
                 "audio_format": payload.get("audio_format", "deep-dive"),
                 "migrated_from_legacy": True,
             }
+            migrated = True
             continue
 
         candidates.append((_queue_created_at(payload, path), path.name, path, payload))
+
+    if migrated:
+        # Persist immediately: every caller can return before reaching its own
+        # save_state() (pipeline failure, or all topics on cooldown), which would
+        # silently drop the migration and leave the ledger lagging the queue.
+        save_state(state)
 
     if candidates:
         _, filename, _, payload = min(candidates, key=lambda item: (item[0], item[1]))
