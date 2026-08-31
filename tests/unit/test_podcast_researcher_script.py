@@ -521,3 +521,47 @@ async def test_run_from_queue_failure_leaves_no_ledger_entry(tmp_path, monkeypat
     assert state.get("processed_queue", {}) == {}
     assert state.get("processed_queue_files", []) == []
     assert calls["failed"] == [("crp", "notebook creation failed")]
+
+
+def test_unreadable_file_does_not_clobber_existing_content_hash(tmp_path, monkeypatch):
+    """A transient read failure must not discard a processed item's hash."""
+
+    import podcast_researcher
+
+    (tmp_path / "crp-2026-08-29.json").write_text("{not json")
+    state_path = tmp_path / "state" / "state.json"
+    monkeypatch.setattr(podcast_researcher, "sync_queue_repo", lambda: tmp_path)
+    monkeypatch.setattr(podcast_researcher, "STATE_PATH", state_path)
+
+    entry = {"content_hash": "abc123", "audio_format": "deep-dive", "title": "CRP"}
+    state = {"processed_queue": {"crp-2026-08-29.json": dict(entry)}}
+
+    assert podcast_researcher.next_queue_item(state) is None
+    assert state["processed_queue"]["crp-2026-08-29.json"] == entry
+    assert not state_path.exists()
+
+
+def test_unreadable_legacy_file_is_not_recorded_and_still_migrates(tmp_path, monkeypatch):
+    """A legacy-processed file that is briefly unreadable must not be re-published."""
+
+    import podcast_researcher
+
+    queue_file = tmp_path / "legacy-2026-08-13.json"
+    queue_file.write_text("{not json")
+    monkeypatch.setattr(podcast_researcher, "sync_queue_repo", lambda: tmp_path)
+    monkeypatch.setattr(podcast_researcher, "STATE_PATH", tmp_path / "state" / "state.json")
+
+    state = {"processed_queue_files": ["legacy-2026-08-13.json"]}
+
+    # While broken: skipped, and no UNREADABLE entry masks the legacy status.
+    assert podcast_researcher.next_queue_item(state) is None
+    assert state["processed_queue"] == {}
+
+    # Once repaired it migrates as a legacy item rather than becoming a candidate.
+    payload = {"topic_id": "legacy", "title": "Legacy"}
+    queue_file.write_text(json.dumps(payload))
+
+    assert podcast_researcher.next_queue_item(state) is None
+    migrated = state["processed_queue"]["legacy-2026-08-13.json"]
+    assert migrated["migrated_from_legacy"] is True
+    assert migrated["content_hash"] == podcast_researcher.compute_payload_hash(payload)
