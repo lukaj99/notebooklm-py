@@ -1,0 +1,38 @@
+{
+  "topic_id": "ed-sepsis-bundle-controversies",
+  "title": "Sepsis Bundles on Trial: ACEP vs. EUSEM, and What ARISE FLUIDS Actually Showed — 2026-08-31",
+  "audio_format": "debate",
+  "sources": [
+    {
+      "url": "https://doi.org/10.1097/mej.0000000000001348",
+      "title": "The 2026 Surviving Sepsis Campaign guidelines: a turning point for emergency medicine (European Journal of Emergency Medicine editorial, Apr 2026)",
+      "why": "The transatlantic split just got sharper: EUSEM formally endorsed the 2026 SSC guidelines for the first time ever (a reversal of its own 2019 expression of concern), the same document ACEP refused to endorse two months earlier. Also carries the 402-ED, 28-country ISG-ED survey data (only ~50% complete the 1-hour bundle on time, two-thirds believe it drives broad-spectrum overuse) showing the gap between guideline and bedside is real on the European side too."
+    },
+    {
+      "url": "https://doi.org/10.1097/01.eem.0000000000000241",
+      "title": "The 2026 Surviving Sepsis Campaign Guidelines: A High Level of Certainty, Despite a Low Level of Confidence, Part 1 (Emergency Medicine News, Jun 2026)",
+      "why": "The sharpest current methodological attack on the bundle's centerpiece: a line-by-line takedown of the 30 mL/kg weight-based fluid mandate, arguing the observational 'benefit' data are confounded by clinicians already withholding fluid from sicker, frailer patients — a causal argument the SSC guideline itself doesn't rebut."
+    },
+    {
+      "url": "https://www.acepnow.com/article/fluids-or-pressors-in-early-septic-shock/",
+      "title": "Fluids or Pressors in Early Septic Shock? (ACEP Now, Aug 26 2026)",
+      "why": "Brand new (5 days old at research time): a case-based EM breakdown of ARISE FLUIDS (NEJM, Jun 2026, 963 patients) — restricted-fluid/early-vasopressor vs. liberal-fluid/late-vasopressor resuscitation showed no difference in days-alive-and-out-of-hospital, but significantly less pulmonary edema with early pressors. Genuine equipoise between two named, still-practiced ED resuscitation strategies, argued through an ED case rather than an abstract."
+    },
+    {
+      "url": "https://link.springer.com/article/10.1186/s13054-026-06224-1",
+      "title": "A decade of SEP-1 compliance and sepsis mortality in the United States (Critical Care, Jul 29 2026, open access)",
+      "why": "The strongest population-level ammunition against the mandate: national SEP-1 compliance rose from 50% to 64% between 2017-2024, while age-adjusted US sepsis mortality did not move at all (52.5 vs 52.4 per 100,000). Directly informs the live CMS Hospital Value-Based Purchasing decision on whether SEP-1 should carry payment penalties."
+    },
+    {
+      "url": "https://www.sccm.org/clinical-resources/guidelines/guidelines/surviving-sepsis-campaign-international-guidelines-for-management-of-sepsis-and-septic-shock-2026",
+      "title": "Surviving Sepsis Campaign: International Guidelines for Management of Sepsis and Septic Shock 2026 (SCCM/ESICM, official guideline page)",
+      "why": "Lets the pro-guideline case be heard in its own words and its own evidence grades: 129 statements, most explicitly labeled 'low' or 'very low' certainty even where the recommendation is 'strong' — the exact tension (confident-sounding recommendation, weak underlying evidence) both critical sources above are arguing about."
+    },
+    {
+      "url": "https://www.acep.org/news/acep-newsroom-articles/2-2-26-acep-will-not-endorse-new-sepsis-guidelines-from-the-surviving-sepsis-campaign",
+      "title": "ACEP Will Not Endorse New Sepsis Guidelines from the Surviving Sepsis Campaign (Feb 2 2026)",
+      "why": "Necessary anchor for a standalone episode: this is the non-endorsement decision the EUSEM editorial above is explicitly reacting against, and the reason the same 2026 guideline document landed as a rejection in the US and an endorsement in Europe."
+    }
+  ],
+  "rationale": "This show covered ACEP's non-endorsement 18 days ago; what's new is that the story has moved from a US institutional dispute to a genuine Atlantic split. EUSEM has now formally endorsed the same 2026 SSC guidelines ACEP rejected — reversing its own 2019 concern about the 1-hour bundle — while a national, decade-long US dataset (published Jul 29) shows SEP-1 compliance climbing from 50% to 64% with zero corresponding change in age-adjusted sepsis mortality, undercutting the case for keeping SEP-1 tied to CMS payment. On the resuscitation side, the ARISE FLUIDS RCT (NEJM, Jun 2026, first ED-based head-to-head of the fluid-restrictive/early-pressor vs. fluid-liberal/late-pressor approach) found no mortality or functional-outcome difference between strategies but meaningfully less pulmonary edema with early vasopressors — real equipoise between two protocols clinicians actually use, not a strawman. A three-part Emergency Medicine News critique (Jun 2026) supplies the sharpest current methodological argument against the guideline's flagship 30 mL/kg recommendation. The Consensus connector was unavailable for this run (server connection failure), so the debate-vs-deep-dive call was made from the primary and editorial sources directly rather than an aggregate consensus signal; given an RCT that found genuine equipoise, a national outcomes dataset undercutting the mandate, and two EM professional bodies reacting in opposite directions to the identical guideline document, the evidence is unambiguously still contested — debate format is kept, not downgraded. A UK/EU listener will recognise the EUSEM side as validating the bundle-skeptic instinct NICE NG253 already embodies, while the ACEP/EM-News side gives voice to why the SSC's own establishment still isn't convinced."
+}
