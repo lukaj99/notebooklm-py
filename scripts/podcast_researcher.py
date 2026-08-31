@@ -162,14 +162,25 @@ def next_queue_item(state: dict) -> tuple[dict, str] | None:
     processed_queue: dict[str, dict] = state.setdefault("processed_queue", {})
     legacy_processed: set[str] = set(state.setdefault("processed_queue_files", []))
     candidates: list[tuple[datetime, str, Path, dict]] = []
-    migrated = False
+    state_dirty = False
 
     for path in queue_dir.glob("*.json"):
         try:
             payload = json.loads(path.read_text())
         except (json.JSONDecodeError, OSError):
+            existing = processed_queue.get(path.name)
+            if isinstance(existing, dict) and existing.get("status") == "UNREADABLE":
+                # Already recorded as broken on an earlier run; stay quiet.
+                logger.debug("still-unreadable queue file %s", path.name)
+                continue
             logger.exception("skipping unreadable queue file %s", path.name)
-            legacy_processed.add(path.name)
+            # Record in the durable ledger, not a throwaway set copy. No
+            # content_hash, so repairing the file makes it a candidate again.
+            processed_queue[path.name] = {
+                "status": "UNREADABLE",
+                "recorded_at": datetime.now(timezone.utc).isoformat(),
+            }
+            state_dirty = True
             continue
 
         current_hash = compute_payload_hash(payload)
@@ -187,15 +198,15 @@ def next_queue_item(state: dict) -> tuple[dict, str] | None:
                 "audio_format": payload.get("audio_format", "deep-dive"),
                 "migrated_from_legacy": True,
             }
-            migrated = True
+            state_dirty = True
             continue
 
         candidates.append((_queue_created_at(payload, path), path.name, path, payload))
 
-    if migrated:
+    if state_dirty:
         # Persist immediately: every caller can return before reaching its own
         # save_state() (pipeline failure, or all topics on cooldown), which would
-        # silently drop the migration and leave the ledger lagging the queue.
+        # silently drop the ledger update and leave it lagging the queue.
         save_state(state)
 
     if candidates:
@@ -431,6 +442,9 @@ async def _run_from_queue(payload: dict, filename: str, state: dict) -> int:
     )
 
     resolved_format = AudioFormat.DEBATE if topic.debate else AudioFormat.DEEP_DIVE
+    # AudioFormat is an int enum, so .value is an opaque RPC code (1/4). The ledger
+    # records the payload vocabulary instead, matching what the migration path writes.
+    resolved_format_name = resolved_format.name.lower().replace("_", "-")
 
     async with NotebookLMClient.from_storage() as client:
         try:
@@ -451,7 +465,7 @@ async def _run_from_queue(payload: dict, filename: str, state: dict) -> int:
     current_hash = compute_payload_hash(payload)
     state.setdefault("processed_queue", {})[filename] = {
         "content_hash": current_hash,
-        "audio_format": resolved_format.value,
+        "audio_format": resolved_format_name,
         "processed_at": datetime.now(timezone.utc).isoformat(),
         "title": payload.get("title", topic.title),
         "output_file": str(mp3_path),
