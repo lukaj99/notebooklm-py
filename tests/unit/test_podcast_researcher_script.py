@@ -320,3 +320,204 @@ def test_next_queue_item_does_not_write_state_when_nothing_migrates(tmp_path, mo
 
     assert candidate is not None
     assert not state_path.exists()
+
+
+def test_next_queue_item_records_unreadable_file_in_durable_ledger(tmp_path, monkeypatch):
+    """A corrupt queue file must land in state, not a throwaway set copy."""
+
+    import podcast_researcher
+
+    (tmp_path / "broken-2026-08-13.json").write_text("{not json")
+    state_path = tmp_path / "state" / "state.json"
+    monkeypatch.setattr(podcast_researcher, "sync_queue_repo", lambda: tmp_path)
+    monkeypatch.setattr(podcast_researcher, "STATE_PATH", state_path)
+
+    state: dict = {}
+    assert podcast_researcher.next_queue_item(state) is None
+
+    entry = json.loads(state_path.read_text())["processed_queue"]["broken-2026-08-13.json"]
+    assert entry["status"] == "UNREADABLE"
+    assert "content_hash" not in entry
+
+
+def test_next_queue_item_does_not_rewrite_known_unreadable_file(tmp_path, monkeypatch):
+    """A file already recorded as broken must not dirty the state on every run."""
+
+    import podcast_researcher
+
+    (tmp_path / "broken-2026-08-13.json").write_text("{not json")
+    state_path = tmp_path / "state" / "state.json"
+    monkeypatch.setattr(podcast_researcher, "sync_queue_repo", lambda: tmp_path)
+    monkeypatch.setattr(podcast_researcher, "STATE_PATH", state_path)
+
+    state = {
+        "processed_queue": {
+            "broken-2026-08-13.json": {"status": "UNREADABLE", "recorded_at": "2026-08-13T00:00:00"}
+        }
+    }
+
+    assert podcast_researcher.next_queue_item(state) is None
+    assert not state_path.exists()
+
+
+def test_next_queue_item_reconsiders_repaired_file(tmp_path, monkeypatch):
+    """Fixing a corrupt queue file makes it eligible again."""
+
+    import podcast_researcher
+
+    payload = {"topic_id": "repaired", "title": "Repaired"}
+    (tmp_path / "broken-2026-08-13.json").write_text(json.dumps(payload))
+    monkeypatch.setattr(podcast_researcher, "sync_queue_repo", lambda: tmp_path)
+    monkeypatch.setattr(podcast_researcher, "STATE_PATH", tmp_path / "state" / "state.json")
+
+    state = {
+        "processed_queue": {
+            "broken-2026-08-13.json": {"status": "UNREADABLE", "recorded_at": "2026-08-13T00:00:00"}
+        }
+    }
+
+    candidate = podcast_researcher.next_queue_item(state)
+
+    assert candidate is not None
+    assert candidate[1] == "broken-2026-08-13.json"
+
+
+class _FakeClientSession:
+    async def __aenter__(self):
+        return object()
+
+    async def __aexit__(self, *exc_info):
+        return False
+
+
+class _FakeClient:
+    @staticmethod
+    def from_storage():
+        return _FakeClientSession()
+
+
+def _stub_queue_run(monkeypatch, tmp_path, *, build_podcast):
+    """Wire _run_from_queue's I/O to fakes. Returns the captured-calls dict."""
+
+    import podcast_researcher
+
+    calls: dict = {"delivered": [], "failed": []}
+    monkeypatch.setattr(podcast_researcher, "NotebookLMClient", _FakeClient)
+    monkeypatch.setattr(podcast_researcher, "build_podcast", build_podcast)
+    monkeypatch.setattr(
+        podcast_researcher,
+        "deliver",
+        lambda mp3, topic, articles: calls["delivered"].append((mp3, topic.id)),
+    )
+    monkeypatch.setattr(
+        podcast_researcher,
+        "deliver_failure",
+        lambda topic, error: calls["failed"].append((topic.id, error)),
+    )
+    monkeypatch.setattr(podcast_researcher, "STATE_PATH", tmp_path / "state" / "state.json")
+    return calls
+
+
+async def test_run_from_queue_writes_full_ledger_entry(tmp_path, monkeypatch):
+    """A completed run records hash, format, title and output path in the ledger."""
+
+    import podcast_researcher
+
+    mp3 = tmp_path / "episode.mp3"
+    captured: dict = {}
+
+    async def fake_build_podcast(client, **kwargs):
+        captured.update(kwargs)
+        return mp3
+
+    calls = _stub_queue_run(monkeypatch, tmp_path, build_podcast=fake_build_podcast)
+    payload = {
+        "topic_id": "crp",
+        "title": "CRP Norm",
+        "audio_format": "deep-dive",
+        "sources": [{"url": "https://a.example", "title": "A"}],
+    }
+    state: dict = {}
+
+    rc = await podcast_researcher._run_from_queue(payload, "crp-2026-08-29.json", state)
+
+    assert rc == 0
+    assert captured["audio_format"] is podcast_researcher.AudioFormat.DEEP_DIVE
+    entry = state["processed_queue"]["crp-2026-08-29.json"]
+    assert entry["content_hash"] == podcast_researcher.compute_payload_hash(payload)
+    assert entry["audio_format"] == "deep-dive"
+    assert entry["title"] == "CRP Norm"
+    assert entry["output_file"] == str(mp3)
+    assert entry["processed_at"]
+    assert state["processed_queue_files"] == ["crp-2026-08-29.json"]
+    assert calls["delivered"] == [(mp3, "crp")]
+    # ledger is durable, not just in-memory
+    persisted = json.loads((tmp_path / "state" / "state.json").read_text())
+    assert persisted["processed_queue"]["crp-2026-08-29.json"]["output_file"] == str(mp3)
+
+
+async def test_run_from_queue_honours_debate_format(tmp_path, monkeypatch):
+    """An explicit debate payload still resolves to the debate format."""
+
+    import podcast_researcher
+
+    captured: dict = {}
+
+    async def fake_build_podcast(client, **kwargs):
+        captured.update(kwargs)
+        return tmp_path / "episode.mp3"
+
+    _stub_queue_run(monkeypatch, tmp_path, build_podcast=fake_build_podcast)
+    payload = {
+        "topic_id": "sepsis",
+        "title": "Sepsis",
+        "audio_format": "debate",
+        "sources": [{"url": "https://a.example"}],
+    }
+    state: dict = {}
+
+    assert await podcast_researcher._run_from_queue(payload, "sepsis.json", state) == 0
+    assert captured["audio_format"] is podcast_researcher.AudioFormat.DEBATE
+    assert state["processed_queue"]["sepsis.json"]["audio_format"] == "debate"
+
+
+async def test_run_from_queue_marks_empty_sources_skipped(tmp_path, monkeypatch):
+    """A payload with no sources is recorded as skipped without running the pipeline."""
+
+    import podcast_researcher
+
+    async def unreachable_build_podcast(client, **kwargs):  # pragma: no cover - must not run
+        raise AssertionError("build_podcast must not be called for an empty payload")
+
+    calls = _stub_queue_run(monkeypatch, tmp_path, build_podcast=unreachable_build_podcast)
+    state: dict = {}
+
+    rc = await podcast_researcher._run_from_queue({"topic_id": "empty"}, "empty.json", state)
+
+    assert rc == 0
+    entry = state["processed_queue"]["empty.json"]
+    assert entry["status"] == "SKIPPED_EMPTY_SOURCES"
+    assert entry["content_hash"]
+    assert state["processed_queue_files"] == ["empty.json"]
+    assert calls["delivered"] == []
+
+
+async def test_run_from_queue_failure_leaves_no_ledger_entry(tmp_path, monkeypatch):
+    """A pipeline failure must not mark the item processed."""
+
+    import podcast_researcher
+    from podcast_pipeline import PodcastPipelineError
+
+    async def failing_build_podcast(client, **kwargs):
+        raise PodcastPipelineError("notebook creation failed")
+
+    calls = _stub_queue_run(monkeypatch, tmp_path, build_podcast=failing_build_podcast)
+    payload = {"topic_id": "crp", "title": "CRP", "sources": [{"url": "https://a.example"}]}
+    state: dict = {}
+
+    rc = await podcast_researcher._run_from_queue(payload, "crp.json", state)
+
+    assert rc == 1
+    assert state.get("processed_queue", {}) == {}
+    assert state.get("processed_queue_files", []) == []
+    assert calls["failed"] == [("crp", "notebook creation failed")]

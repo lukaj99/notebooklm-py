@@ -19,7 +19,11 @@ This document records the architectural improvements implemented on 2026-08-31 f
   - Legacy `processed_queue_files: list[str]` entries are preserved. When first seen, their current hash is recorded into `state["processed_queue"]`, preventing accidental re-runs of historical episodes while enabling automatic re-runs if any file is edited in the future.
   - The migration is persisted by `next_queue_item()` itself, via a `save_state(state)` guarded on an actual migration having occurred. This matters because every caller can return before reaching its own `save_state()` — `_run_from_queue` on pipeline failure, and `_run_from_pubmed_fallback` when all topics are on cooldown. Without the immediate write the ledger silently lagged the queue for another cycle. (The migration is idempotent, so the pre-fix behaviour was benign, not corrupting.)
 - **Detailed Execution Ledger**:
-  Completed runs now save `{ "content_hash", "audio_format", "processed_at", "title", "output_file" }` directly into `state["processed_queue"][filename]`. The empty-sources path writes a `"status": "SKIPPED_EMPTY_SOURCES"` entry instead. Both write paths are currently exercised only end-to-end, not by unit tests.
+  Completed runs now save `{ "content_hash", "audio_format", "processed_at", "title", "output_file" }` directly into `state["processed_queue"][filename]`. The empty-sources path writes a `"status": "SKIPPED_EMPTY_SOURCES"` entry instead, and a pipeline failure writes nothing at all, so a failed episode stays eligible for the next run.
+
+  `audio_format` records the payload vocabulary (`"deep-dive"` / `"debate"`). `AudioFormat` is an *int* enum, so the original `resolved_format.value` wrote the opaque RPC code (`1` / `4`) here while the migration path wrote the string — the same field carried two types depending on which branch produced it. It is normalised to the string form on both paths.
+- **Unreadable Queue Files**:
+  A corrupt or unreadable queue file is recorded in the durable ledger as `{"status": "UNREADABLE", "recorded_at": ...}` rather than added to a local `set` copy that never reached `state`. It carries no `content_hash`, so repairing the file makes it an eligible candidate again; while it stays broken it is logged once and then skipped quietly, instead of raising a fresh exception trace on every run.
 
 ### B. User Preference First-Class Defaults
 - **Workflow & Request Contracts (`scripts/podcast_workflow.py` & `scripts/podcast_request.py`)**:
@@ -45,10 +49,12 @@ This document records the architectural improvements implemented on 2026-08-31 f
 - Tested `next_queue_item` re-processing modified content hashes.
 - Tested seamless migration of legacy `processed_queue_files`.
 - Tested that the migration is written through to the state file, and that a queue with nothing to migrate leaves the state file untouched.
+- Tested unreadable-file handling: first sighting is recorded durably, a known-broken file does not re-dirty the state, and a repaired file becomes a candidate again.
+- Tested the ledger write paths directly: a completed run records hash/format/title/output path and delivers; an explicit `debate` payload resolves to `AudioFormat.DEBATE`; an empty-sources payload is marked `SKIPPED_EMPTY_SOURCES` without invoking the pipeline; and a `PodcastPipelineError` leaves no ledger entry.
 
 ```bash
 uv run pytest tests/unit/test_podcast_*.py
-# Result: 106 passed
+# Result: 113 passed
 ```
 
 ### Live State Dry Run
@@ -77,6 +83,6 @@ The unit-only run above is **not** the merge gate. Per `CLAUDE.md`, a narrow ins
 ```bash
 uv run pytest -n auto --dist loadgroup --cov=src/notebooklm \
   --cov-report=term-missing --cov-fail-under=90
-# Result: 16829 passed, 64 skipped, 1 xfailed in 105.83s
-# Required test coverage of 90% reached. Total coverage: 96.69%
+# Result: 16836 passed, 64 skipped, 1 xfailed in 84.04s
+# Required test coverage of 90% reached. Total coverage: 96.70%
 ```
