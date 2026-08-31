@@ -455,9 +455,7 @@ Produce the episode brief:
   controversy (use the stance fields) so the hosts have something real to
   argue about. Rewrite each "why" as one crisp line: why this source, what
   is new.
-- audio_format: keep "debate" only if there is live, citable controversy in
-  the verified sources; downgrade to "deep-dive" if the evidence has
-  genuinely converged (and say so in the rationale). Upgrade likewise.
+- audio_format: default to "deep-dive" (the listener strongly prefers investigative deep dives over adversarial debates). Only select "debate" if the topic definition specifically requests an adversarial dispute and there is live, citable controversy in the verified sources.
 - title: "${topic.title} — ${date}" or a sharper variant ending in "— ${date}".
 - topic_id: exactly "${topic.id}".
 - rationale: one paragraph — what is new, why these sources, why this

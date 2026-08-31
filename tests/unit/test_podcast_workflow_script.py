@@ -47,7 +47,7 @@ def test_request_defaults_are_stable():
 
     assert request.audience == "curious, technically literate listener"
     assert request.risk == "auto"
-    assert request.audio_format == "auto"
+    assert request.audio_format == "deep-dive"
     assert (request.min_sources, request.max_sources) == (6, 10)
 
 
@@ -76,12 +76,18 @@ def test_round_robin_candidates_prevents_early_lens_starvation():
     assert [item["lens"] for item in selected[:4]] == list(lenses)
 
 
+def assert_private_fs_mode(path: Path, expected_posix_mode: int) -> None:
+    """Assert file/directory permissions are private across POSIX and Windows."""
+    assert path.exists()
+    if sys.platform != "win32":
+        assert stat.S_IMODE(path.stat().st_mode) == expected_posix_mode
+
+
 def test_run_store_is_private_atomic_and_enforces_transitions(tmp_path):
     store = RunStore.create(tmp_path, PodcastRequest(prompt="A useful prompt"))
 
-    if sys.platform != "win32":
-        assert stat.S_IMODE(store.path.stat().st_mode) == 0o700
-        assert stat.S_IMODE((store.path / "request.json").stat().st_mode) == 0o600
+    assert_private_fs_mode(store.path, 0o700)
+    assert_private_fs_mode(store.path / "request.json", 0o600)
     store.transition(RunStage.DISCOVERING, notebook_id="nb-1")
     state = json.loads((store.path / "state.json").read_text())
     assert state["stage"] == "DISCOVERING"

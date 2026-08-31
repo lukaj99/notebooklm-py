@@ -53,6 +53,7 @@ the same topic, resurface the same papers, or reprocess a queue file twice.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import subprocess
@@ -126,25 +127,69 @@ def sync_queue_repo() -> Path | None:
     return QUEUE_REPO_DIR / QUEUE_SUBDIR
 
 
+def compute_payload_hash(payload: dict) -> str:
+    """Return a deterministic SHA-256 digest over normalized payload fields."""
+    sources = payload.get("sources")
+    normalized_sources: list[str] = []
+    if isinstance(sources, list):
+        for s in sources:
+            if isinstance(s, dict) and "url" in s:
+                normalized_sources.append(str(s["url"]).strip())
+            elif isinstance(s, str):
+                normalized_sources.append(s.strip())
+    normalized_sources.sort()
+
+    normalized = {
+        "topic_id": str(payload.get("topic_id", "")).strip(),
+        "title": str(payload.get("title", "")).strip(),
+        "audio_format": str(payload.get("audio_format", "")).strip(),
+        "style": str(payload.get("style", "")).strip(),
+        "rationale": str(payload.get("rationale", "")).strip(),
+        "case_vignette": str(payload.get("case_vignette", "")).strip(),
+        "sources": normalized_sources,
+    }
+    encoded = json.dumps(normalized, sort_keys=True, ensure_ascii=False).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def next_queue_item(state: dict) -> tuple[dict, str] | None:
-    """Return the oldest unprocessed queue item as ``(payload, filename)``, or None."""
+    """Return the oldest unprocessed or modified queue item as ``(payload, filename)``, or None."""
 
     queue_dir = sync_queue_repo()
     if queue_dir is None or not queue_dir.is_dir():
         return None
 
-    processed = set(state.setdefault("processed_queue_files", []))
+    processed_queue: dict[str, dict] = state.setdefault("processed_queue", {})
+    legacy_processed: set[str] = set(state.setdefault("processed_queue_files", []))
     candidates: list[tuple[datetime, str, Path, dict]] = []
+
     for path in queue_dir.glob("*.json"):
-        if path.name in processed:
-            continue
         try:
             payload = json.loads(path.read_text())
         except (json.JSONDecodeError, OSError):
             logger.exception("skipping unreadable queue file %s", path.name)
-            processed.add(path.name)
+            legacy_processed.add(path.name)
             continue
+
+        current_hash = compute_payload_hash(payload)
+
+        # Check content-addressed state first
+        if path.name in processed_queue:
+            entry = processed_queue[path.name]
+            if isinstance(entry, dict) and entry.get("content_hash") == current_hash:
+                continue
+        elif path.name in legacy_processed:
+            # First-time encounter of legacy item: record current hash to prevent
+            # unintentional re-run, but future edits will trigger re-execution.
+            processed_queue[path.name] = {
+                "content_hash": current_hash,
+                "audio_format": payload.get("audio_format", "deep-dive"),
+                "migrated_from_legacy": True,
+            }
+            continue
+
         candidates.append((_queue_created_at(payload, path), path.name, path, payload))
+
     if candidates:
         _, filename, _, payload = min(candidates, key=lambda item: (item[0], item[1]))
         return payload, filename
@@ -355,7 +400,15 @@ async def _run_from_queue(payload: dict, filename: str, state: dict) -> int:
     sources = payload.get("sources", [])
     if not sources:
         logger.warning("queue file %s has no sources, marking processed and skipping", filename)
-        state.setdefault("processed_queue_files", []).append(filename)
+        current_hash = compute_payload_hash(payload)
+        state.setdefault("processed_queue", {})[filename] = {
+            "content_hash": current_hash,
+            "status": "SKIPPED_EMPTY_SOURCES",
+            "processed_at": datetime.now(timezone.utc).isoformat(),
+        }
+        legacy_list = state.setdefault("processed_queue_files", [])
+        if filename not in legacy_list:
+            legacy_list.append(filename)
         save_state(state)
         return 0
 
@@ -369,6 +422,8 @@ async def _run_from_queue(payload: dict, filename: str, state: dict) -> int:
         "processing queue item %s: %d source(s) for %s", filename, len(sources), topic.title
     )
 
+    resolved_format = AudioFormat.DEBATE if topic.debate else AudioFormat.DEEP_DIVE
+
     async with NotebookLMClient.from_storage() as client:
         try:
             mp3_path = await build_podcast(
@@ -376,7 +431,7 @@ async def _run_from_queue(payload: dict, filename: str, state: dict) -> int:
                 title=payload.get("title") or f"{topic.title} — {time.strftime('%Y-%m-%d')}",
                 source_urls=[s["url"] for s in sources],
                 instructions=instructions,
-                audio_format=AudioFormat.DEBATE if topic.debate else AudioFormat.DEEP_DIVE,
+                audio_format=resolved_format,
                 audio_length=AudioLength.LONG,
                 out_dir=OUT_DIR,
             )
@@ -385,7 +440,17 @@ async def _run_from_queue(payload: dict, filename: str, state: dict) -> int:
             deliver_failure(topic, str(exc))
             return 1
 
-    state.setdefault("processed_queue_files", []).append(filename)
+    current_hash = compute_payload_hash(payload)
+    state.setdefault("processed_queue", {})[filename] = {
+        "content_hash": current_hash,
+        "audio_format": resolved_format.value,
+        "processed_at": datetime.now(timezone.utc).isoformat(),
+        "title": payload.get("title", topic.title),
+        "output_file": str(mp3_path),
+    }
+    legacy_list = state.setdefault("processed_queue_files", [])
+    if filename not in legacy_list:
+        legacy_list.append(filename)
     save_state(state)
 
     deliver(mp3_path, topic, articles)

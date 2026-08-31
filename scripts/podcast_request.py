@@ -43,7 +43,10 @@ def _add_request_arguments(parser: argparse.ArgumentParser, *, dry_run: bool = F
     parser.add_argument("--angle", default="")
     parser.add_argument("--risk", choices=("auto", "ordinary", "high"), default="auto")
     parser.add_argument(
-        "--format", dest="audio_format", choices=("auto", "deep-dive", "debate"), default="auto"
+        "--format",
+        dest="audio_format",
+        choices=("auto", "deep-dive", "debate"),
+        default="deep-dive",
     )
     parser.add_argument("--language", default="en")
     parser.add_argument("--length", default="long")

@@ -25,6 +25,7 @@ def test_enqueue_writes_private_versioned_request(tmp_path, capsys):
     assert payload["schema_version"] == 2
     assert payload["prompt"] == "Why do coding agents fail?"
     assert payload["risk"] == "ordinary"
+    assert payload["audio_format"] == "deep-dive"
     assert capsys.readouterr().out.strip() == queued[0].stem
 
 

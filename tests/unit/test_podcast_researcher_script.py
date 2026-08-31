@@ -209,3 +209,78 @@ def test_queue_created_at_defaults_naive_timestamp_to_utc(tmp_path):
     dt = podcast_researcher._queue_created_at(naive_payload, tmp_path / "test.json")
     assert dt.tzinfo == timezone.utc
     assert dt == datetime(2026, 8, 30, 17, 0, 0, tzinfo=timezone.utc)
+
+
+def test_compute_payload_hash_is_deterministic():
+    import podcast_researcher
+
+    payload1 = {
+        "topic_id": "crp",
+        "title": "CRP Norm",
+        "audio_format": "deep-dive",
+        "sources": [{"url": "https://b.com"}, {"url": "https://a.com"}],
+    }
+    payload2 = {
+        "title": "CRP Norm",
+        "audio_format": "deep-dive",
+        "topic_id": "crp",
+        "sources": [{"url": "https://a.com"}, {"url": "https://b.com"}],
+    }
+
+    assert (
+        podcast_researcher.compute_payload_hash(payload1)
+        == podcast_researcher.compute_payload_hash(payload2)
+    )
+
+
+def test_next_queue_item_skips_matching_content_hash(tmp_path, monkeypatch):
+    import podcast_researcher
+
+    payload = {"topic_id": "crp", "title": "CRP", "audio_format": "deep-dive"}
+    (tmp_path / "crp-2026-08-29.json").write_text(json.dumps(payload))
+    monkeypatch.setattr(podcast_researcher, "sync_queue_repo", lambda: tmp_path)
+
+    chash = podcast_researcher.compute_payload_hash(payload)
+    state = {
+        "processed_queue": {
+            "crp-2026-08-29.json": {"content_hash": chash, "audio_format": "deep-dive"}
+        }
+    }
+
+    assert podcast_researcher.next_queue_item(state) is None
+
+
+def test_next_queue_item_reprocesses_when_content_hash_changes(tmp_path, monkeypatch):
+    import podcast_researcher
+
+    modified_payload = {"topic_id": "crp", "title": "CRP", "audio_format": "deep-dive"}
+    (tmp_path / "crp-2026-08-29.json").write_text(json.dumps(modified_payload))
+    monkeypatch.setattr(podcast_researcher, "sync_queue_repo", lambda: tmp_path)
+
+    old_hash = "old_stale_hash_from_debate_run"
+    state = {
+        "processed_queue": {
+            "crp-2026-08-29.json": {"content_hash": old_hash, "audio_format": "debate"}
+        }
+    }
+
+    candidate = podcast_researcher.next_queue_item(state)
+    assert candidate is not None
+    res_payload, res_filename = candidate
+    assert res_filename == "crp-2026-08-29.json"
+    assert res_payload["audio_format"] == "deep-dive"
+
+
+def test_next_queue_item_migrates_legacy_processed_queue_files(tmp_path, monkeypatch):
+    import podcast_researcher
+
+    payload = {"topic_id": "legacy", "title": "Legacy"}
+    (tmp_path / "legacy-2026-08-13.json").write_text(json.dumps(payload))
+    monkeypatch.setattr(podcast_researcher, "sync_queue_repo", lambda: tmp_path)
+
+    state = {"processed_queue_files": ["legacy-2026-08-13.json"]}
+    # First check: recognizes legacy entry, records hash in processed_queue, skips execution
+    assert podcast_researcher.next_queue_item(state) is None
+    assert "legacy-2026-08-13.json" in state["processed_queue"]
+    assert state["processed_queue"]["legacy-2026-08-13.json"]["migrated_from_legacy"] is True
+

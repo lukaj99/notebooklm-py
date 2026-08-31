@@ -86,13 +86,16 @@ TRANSITIONS = {
 }
 
 
+DEFAULT_AUDIO_FORMAT = "deep-dive"
+
+
 @dataclass(frozen=True)
 class PodcastRequest:
     prompt: str
     audience: str = "curious, technically literate listener"
     angle: str = ""
     risk: str = "auto"
-    audio_format: str = "auto"
+    audio_format: str = DEFAULT_AUDIO_FORMAT
     language: str = "en"
     length: str = "long"
     min_sources: int = 6
