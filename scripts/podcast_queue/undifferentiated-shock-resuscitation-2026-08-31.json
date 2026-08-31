@@ -1,0 +1,34 @@
+{
+  "topic_id": "undifferentiated-shock-resuscitation",
+  "title": "How Much Fluid, How Low a Pressure: Undifferentiated Shock Resuscitation Pearls — 2026-08-31",
+  "audio_format": "debate",
+  "rationale": "This episode is built around a genuine, current fault line rather than a manufactured one: the March-2026 Surviving Sepsis Campaign guidelines (30 mL/kg as a floor, a new 60-65 mmHg permissive-hypotension band for over-65s, peripheral vasopressor starts, fluid-then-pressor sequencing) sit in direct operational tension with the UK's own NICE NG253 rewrite, which mandates small titrated 250 mL boluses with senior review rather than a bundle target -- the same \"how much fluid\" question that ARISE-FLUIDS (St Emlyn's) and the ANDROMEDA-SHOCK-2 capillary-refill-vs-lactate trial (EMCrit) attack from two more angles, and that EMCrit's own cross-examination of the SSC 2026 lead author shows is contested even among the guideline's authors. Because every one of the five verified sources stakes out a citable, non-strawman position on live, currently-unresolved practice questions (fluid volume philosophy, permissive hypotension in the elderly, resuscitation endpoint), this is upgraded from the requested default deep-dive to a debate: the hosts have real, sourced disagreements to argue -- international bundle vs UK titration, capillary refill vs lactate -- not just a guideline to summarize. The mix of one international authority guideline, one UK authority guideline, and three community/FOAMed critiques gives the debate both an institutional anchor and sharp, practising-clinician pushback, which is exactly the tension a UK EM doctor navigates on shift.",
+  "case_vignette": "A 68-year-old care-home resident is wheeled into resus with urosepsis: BP 78/40, lactate 4.2 mmol/L, and cool, mottled skin to the knees. The FY2 reaches for a 30 mL/kg crystalloid bolus out of habit -- but NICE NG253 says stop and reassess after 250 mL, the fresh SSC 2026 guidance suggests a 65 mmHg MAP target might be too tight for a patient this age, and the consultant on shift wants to titrate off capillary refill time rather than wait for the next lactate. Fluid, pressor, both, and guided by which number -- the room can't agree, and neither can the guidelines.",
+  "sources": [
+    {
+      "url": "https://www.sccm.org/clinical-resources/guidelines/guidelines/surviving-sepsis-campaign-international-guidelines-for-management-of-sepsis-and-septic-shock-2026",
+      "title": "Surviving Sepsis Campaign: International Guidelines for Management of Sepsis and Septic Shock 2026 (SCCM/ESICM)",
+      "why": "The freshest global anchor (March 2026): 46 new statements bring a strong 65 mmHg MAP target, a NEW 60-65 mmHg permissive-hypotension band for patients ≥65y, peripheral-first vasopressor starts, and 'fluid bolus, then vasopressor if hypotension persists' as the default sequencing -- the framework the rest of the episode's sources push against."
+    },
+    {
+      "url": "https://www.nice.org.uk/guidance/ng253/chapter/Managing-suspected-sepsis",
+      "title": "NICE NG253: Suspected sepsis in people aged 16 or over — recognition, assessment and early management (fluid resuscitation recommendations updated 2025)",
+      "why": "The UK's own 2025 rewrite drops the 30 mL/kg bundle target for titrated 250 mL boluses (reassess each time, senior review at 1000 mL) -- a materially different bedside protocol from SSC's international default, and the one this listener is actually mandated to follow."
+    },
+    {
+      "url": "https://www.stemlynsblog.org/to-squeeze-or-not-to-squeeze-the-arise-fluids-trial/",
+      "title": "To squeeze or not to squeeze: the ARISE-FLUIDS trial (St Emlyn's)",
+      "why": "UK-voiced critical appraisal of the ARISE-FLUIDS RCT on restrictive vs liberal fluid volumes in septic shock -- stress-tests SSC's fluid-first sequencing against a fresh 2026 trial read, limitations included."
+    },
+    {
+      "url": "https://emcrit.org/emcrit/andromeda-shock-2/",
+      "title": "EMCrit 411 - You Need to Understand the Andromeda-Shock-2 RCT for Septic Shock",
+      "why": "Weingart's deep dive on capillary-refill-time-guided vs lactate-clearance-guided resuscitation targets in the 1,467-patient ANDROMEDA-SHOCK-2 RCT (win ratio 1.16, p=0.04) -- the central 'how do you know you're done resuscitating' fight."
+    },
+    {
+      "url": "https://emcrit.org/emcrit/ssc-2026-sepsis-guidelines/",
+      "title": "EMCrit 422 - SSC 2026 Sepsis Guidelines: The good, the Bad, and the UGLY -- discussion with lead author",
+      "why": "Weingart interrogates SSC 2026 lead author Hallie Prescott directly on antibiotic timing, fluid volume, and evidence-quality gaps -- turns the anchor guideline itself into a live argument instead of settled doctrine."
+    }
+  ]
+}
