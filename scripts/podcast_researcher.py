@@ -168,14 +168,15 @@ def next_queue_item(state: dict) -> tuple[dict, str] | None:
         try:
             payload = json.loads(path.read_text())
         except (json.JSONDecodeError, OSError):
-            existing = processed_queue.get(path.name)
-            if isinstance(existing, dict) and existing.get("status") == "UNREADABLE":
-                # Already recorded as broken on an earlier run; stay quiet.
-                logger.debug("still-unreadable queue file %s", path.name)
+            if path.name in processed_queue or path.name in legacy_processed:
+                # Already known. A transient read failure must never overwrite a
+                # stored content_hash or legacy status: dropping it would make the
+                # repaired file a candidate and re-publish a finished episode.
+                logger.debug("skipping unreadable but already-recorded %s", path.name)
                 continue
             logger.exception("skipping unreadable queue file %s", path.name)
             # Record in the durable ledger, not a throwaway set copy. No
-            # content_hash, so repairing the file makes it a candidate again.
+            # content_hash, so repairing a never-processed file re-queues it.
             processed_queue[path.name] = {
                 "status": "UNREADABLE",
                 "recorded_at": datetime.now(timezone.utc).isoformat(),
