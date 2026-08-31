@@ -1,31 +1,31 @@
 {
-  "_comment": "Rotation list for the proactive podcast researcher (scripts/podcast_researcher.py) and the podcast-deep-research workflow (.claude/workflows/podcast-deep-research.js). Each entry is one candidate episode topic. 'domain' defaults to 'medicine'; only medicine topics (with 'pubmed_query' feeding PubMed E-utilities) are eligible for the local PubMed fallback — non-medicine domains ('query' instead) are researched exclusively by the deep-research workflow with domain-appropriate lenses. 'debate' picks --format debate over deep-dive when the topic has genuine, citable controversy.",
+  "_comment": "Rotation list for the proactive podcast researcher (scripts/podcast_researcher.py) and the podcast-deep-research workflow (.claude/workflows/podcast-deep-research.js). Each entry is one candidate episode topic. 'domain' defaults to 'medicine'; only medicine topics (with 'pubmed_query' feeding PubMed E-utilities) are eligible for the local PubMed fallback — non-medicine domains ('query' instead) are researched exclusively by the deep-research workflow with domain-appropriate lenses. 'debate' defaults to false (deep dive preferred); set to true only when an explicit adversarial dispute is specifically requested.",
   "topics": [
     {
       "id": "ae-crisis-uk",
       "title": "The A&E Crisis — What's Happening to UK Emergency Departments",
       "domain": "health-policy",
       "query": "UK A&E crisis emergency department crowding four hour standard exit block ambulance handover delays causes solutions",
-      "debate": true,
+      "debate": false,
       "angle": "Answer four questions, in order, and let the sources rather than the hosts' priors decide each: (1) What is actually happening to UK EDs — the real numbers on four-hour performance, 12-hour DTA waits, ambulance handover delays, bed occupancy, and how they have moved over the last decade. (2) Why — the causal mechanism, distinguishing front-door demand from exit block and whole-system flow, and how much of the change each candidate cause actually accounts for. (3) How to fix it — named interventions with evidence behind them, separated clearly from interventions that are merely asserted, and who would have to act to deliver each. (4) Who is to blame — treat this as a genuine, contested question: lay out each camp's case (underfunding, social-care collapse, workforce attrition, primary-care access, trust-level flow and management, demographic demand, specific political decisions), give each its strongest advocate and its strongest critic, and be willing to conclude that the evidence points harder at some than others rather than distributing blame evenly for the sake of balance."
     },
     {
       "id": "ed-sepsis-bundle-controversies",
       "title": "ED Sepsis Bundle Controversies",
       "pubmed_query": "sepsis bundle emergency department controversy OR early goal directed therapy",
-      "debate": true
+      "debate": false
     },
     {
       "id": "high-risk-chest-pain-risk-stratification",
       "title": "High-Risk Chest Pain Risk Stratification",
       "pubmed_query": "HEART score OR high sensitivity troponin chest pain emergency department risk stratification",
-      "debate": true
+      "debate": false
     },
     {
       "id": "post-cardiac-arrest-ttm",
       "title": "Post-Cardiac Arrest Targeted Temperature Management",
       "pubmed_query": "targeted temperature management cardiac arrest randomized",
-      "debate": true
+      "debate": false
     },
     {
       "id": "pocus-undifferentiated-dyspnea",
@@ -43,7 +43,7 @@
       "id": "ed-analgesia-opioid-stewardship",
       "title": "ED Analgesia and Opioid Stewardship",
       "pubmed_query": "emergency department analgesia opioid stewardship alternatives",
-      "debate": true
+      "debate": false
     },
     {
       "id": "toxicology-novel-antidotes",
@@ -61,7 +61,7 @@
       "id": "ccb-beta-blocker-overdose-update",
       "title": "CCB/Beta-Blocker Overdose — New Reversal Literature",
       "pubmed_query": "calcium channel blocker beta blocker overdose high dose insulin therapy",
-      "debate": true
+      "debate": false
     },
     {
       "id": "undifferentiated-shock-resuscitation",
@@ -88,14 +88,14 @@
       "title": "Sport Tires, Pressures, and the Science of Grip",
       "domain": "motorcycling",
       "query": "motorcycle sport tire compound pressure grip temperature road track",
-      "debate": true
+      "debate": false
     },
     {
       "id": "moto-safety-gear-evidence",
       "title": "Motorcycle Safety Gear — What the Evidence Actually Shows",
       "domain": "motorcycling",
       "query": "motorcycle protective equipment airbag vest helmet standard ECE 22.06 injury evidence",
-      "debate": true
+      "debate": false
     },
     {
       "id": "moto-street-triple-ownership",
@@ -116,7 +116,7 @@
       "title": "RAW Workflow — Culling at Scale, AI Denoise, and Editing Ethics",
       "domain": "photography",
       "query": "RAW photo editing workflow culling AI denoise sharpening Lightroom alternatives",
-      "debate": true
+      "debate": false
     },
     {
       "id": "photo-composition-light",
@@ -130,14 +130,14 @@
       "title": "Self-Hosting and Homelab — What's Actually Worth Running",
       "domain": "tech",
       "query": "self-hosting homelab docker services worth running media server automation 2026",
-      "debate": true
+      "debate": false
     },
     {
       "id": "tech-agentic-coding",
       "title": "Agentic Coding — What Actually Makes Agents Better",
       "domain": "tech",
       "query": "AI coding agents harness design evaluation SWE-bench context management multi-agent 2026",
-      "debate": true
+      "debate": false
     },
     {
       "id": "tech-linux-workstation",
