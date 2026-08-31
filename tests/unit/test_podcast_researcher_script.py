@@ -227,10 +227,9 @@ def test_compute_payload_hash_is_deterministic():
         "sources": [{"url": "https://a.com"}, {"url": "https://b.com"}],
     }
 
-    assert (
-        podcast_researcher.compute_payload_hash(payload1)
-        == podcast_researcher.compute_payload_hash(payload2)
-    )
+    assert podcast_researcher.compute_payload_hash(
+        payload1
+    ) == podcast_researcher.compute_payload_hash(payload2)
 
 
 def test_next_queue_item_skips_matching_content_hash(tmp_path, monkeypatch):
@@ -277,6 +276,7 @@ def test_next_queue_item_migrates_legacy_processed_queue_files(tmp_path, monkeyp
     payload = {"topic_id": "legacy", "title": "Legacy"}
     (tmp_path / "legacy-2026-08-13.json").write_text(json.dumps(payload))
     monkeypatch.setattr(podcast_researcher, "sync_queue_repo", lambda: tmp_path)
+    monkeypatch.setattr(podcast_researcher, "STATE_PATH", tmp_path / "state" / "state.json")
 
     state = {"processed_queue_files": ["legacy-2026-08-13.json"]}
     # First check: recognizes legacy entry, records hash in processed_queue, skips execution
@@ -284,3 +284,39 @@ def test_next_queue_item_migrates_legacy_processed_queue_files(tmp_path, monkeyp
     assert "legacy-2026-08-13.json" in state["processed_queue"]
     assert state["processed_queue"]["legacy-2026-08-13.json"]["migrated_from_legacy"] is True
 
+
+def test_next_queue_item_persists_legacy_migration_to_disk(tmp_path, monkeypatch):
+    """Migration must survive a run that returns before any other save_state()."""
+
+    import podcast_researcher
+
+    payload = {"topic_id": "legacy", "title": "Legacy"}
+    (tmp_path / "legacy-2026-08-13.json").write_text(json.dumps(payload))
+    state_path = tmp_path / "state" / "state.json"
+    monkeypatch.setattr(podcast_researcher, "sync_queue_repo", lambda: tmp_path)
+    monkeypatch.setattr(podcast_researcher, "STATE_PATH", state_path)
+
+    state = {"processed_queue_files": ["legacy-2026-08-13.json"]}
+    assert podcast_researcher.next_queue_item(state) is None
+
+    persisted = json.loads(state_path.read_text())
+    entry = persisted["processed_queue"]["legacy-2026-08-13.json"]
+    assert entry["content_hash"] == podcast_researcher.compute_payload_hash(payload)
+    assert entry["migrated_from_legacy"] is True
+
+
+def test_next_queue_item_does_not_write_state_when_nothing_migrates(tmp_path, monkeypatch):
+    """A queue with no legacy entries must not touch the state file."""
+
+    import podcast_researcher
+
+    payload = {"topic_id": "fresh", "title": "Fresh"}
+    (tmp_path / "fresh-2026-08-29.json").write_text(json.dumps(payload))
+    state_path = tmp_path / "state" / "state.json"
+    monkeypatch.setattr(podcast_researcher, "sync_queue_repo", lambda: tmp_path)
+    monkeypatch.setattr(podcast_researcher, "STATE_PATH", state_path)
+
+    candidate = podcast_researcher.next_queue_item({})
+
+    assert candidate is not None
+    assert not state_path.exists()
