@@ -1,0 +1,39 @@
+{
+  "topic_id": "contrast-nephropathy-phantom",
+  "title": "Contrast Nephropathy — The Diagnosis That May Not Exist — 2026-09-01",
+  "audio_format": "deep-dive",
+  "rationale": "This episode uses six sources chosen to trace the full arc the brief demands rather than just restate the \"myth\" verdict: First10EM supplies the connective literature walkthrough (Newhouse's noise problem through McDonald's propensity-matched nulls to Davenport's eGFR-30 flag), while EMCrit adds a practicing nephrologist's independently more cautious read of that same eGFR<30 subgroup, so the episode preserves genuine residual uncertainty rather than flattening it into blanket reassurance. The RCR/RCEM joint statement and St Emlyn's commentary on it supply the UK-specific policy payoff and the human-factor explanation for why fear outlived evidence — clinicians fear the unknown wait more than a known-bad number. NICE's point-of-care creatinine guidance gives the concrete departmental mechanism that operationalises \"removing the creatinine gate,\" and the 2026 Sakamoto synthesis lands the closing argument that pretest probability, not creatinine, should gate the scan. A deep-dive format suits this material better than a debate: the genuine live disagreement here is a matter of degree (how much caution survives below eGFR 30) rather than two camps holding opposed verdicts, so the hosts can investigate the evidence chronologically — origin, biological-noise problem, propensity-matched era, guidance, departmental fix — and land on calibrated, honest uncertainty rather than staging an artificial argument.",
+  "case_vignette": "A 72-year-old man arrives with sudden pleuritic chest pain and breathlessness, a Wells score that puts PE at high probability, and a background of CKD stage 3 (last known eGFR 38, two years old). The FY2 orders a CTPA but the request is queried at the desk: no same-day creatinine on file, so the scan waits behind a send-away blood result while the patient's oxygen saturation drifts down in the corridor. Ninety minutes later the creatinine comes back essentially unchanged from his baseline — the diagnosis, and the delay, both hinged on a number nobody needed to wait for.",
+  "sources": [
+    {
+      "url": "https://first10em.com/cin/",
+      "title": "Does contrast cause kidney injury? The evidence (First10EM / EM Cases Journal Jam prep notes)",
+      "why": "The load-bearing literature map for the episode's middle third: walks Newhouse's 2008 biological-noise argument (unexposed patients meet the 'nephropathy' definition too), the McDonald 2013/2014 propensity-matched null results, and Davenport 2013's eGFR-30 signal, all in one narrative the hosts can trace beat-by-beat."
+    },
+    {
+      "url": "https://emcrit.org/emcrit/nephropathy-ct-contrast/",
+      "title": "EMCrit 369 – Iodinated Contrast Issues Part 1 (with nephrologist Joel Topf)",
+      "why": "The only source with a practicing nephrologist's voice; frames 2015-2020 as the field's actual 'sea change' away from CIN fear and is more cautious than First10EM about eGFR<30 — gives the episode a second, more conservative FOAMed opinion to weigh, preserving honest residual uncertainty rather than a flat 'contrast is always safe' verdict."
+    },
+    {
+      "url": "https://rcem.ac.uk/wp-content/uploads/2023/05/Emergency_CT_Scans_Requiring_IV_Iodinated_Contrast_Agent.pdf",
+      "title": "Joint Advisory Statement: RCR & RCEM on Emergency CT Scans and IV Iodinated Contrast Agents (2023)",
+      "why": "The primary-source UK policy document itself — states renal function must NOT be a pre-requisite for emergency scanning and IV fluids must NOT be a pre-requisite either, which is precisely the 'joint radiology and emergency medicine guidance' the brief's conclusion needs quoted directly."
+    },
+    {
+      "url": "https://www.stemlynsblog.org/contrast-nephropathy-sense-at-last-st-emlyns/",
+      "title": "Contrast Induced Nephropathy – sense at last (St Emlyn's)",
+      "why": "UK EM voice (Simon Carley) naming that exact RCR/RCEM statement and, crucially, diagnosing the real behavioural driver of delay: clinicians tolerate a known-bad creatinine but not the anxiety of an unknown one — the human-factor payoff line for why the fear outlived the evidence."
+    },
+    {
+      "url": "http://web.archive.org/web/20260529215442/https://www.nice.org.uk/guidance/htg530",
+      "title": "NICE HTG530: Point-of-care creatinine devices to assess kidney function before CT imaging with intravenous contrast",
+      "why": "The concrete NHS departmental fix the episode's ending points to: NICE formally recommending point-of-care creatinine devices specifically so scans aren't cancelled while awaiting a lab result — turns 'removing the creatinine gate' from rhetoric into an actual purchasable device list."
+    },
+    {
+      "url": "https://www.cureus.com/articles/454548-rethinking-contrast-ct-in-the-emergency-department-why-pretest-probability-not-creatinine-should-guide-our-decisions",
+      "title": "Rethinking Contrast CT in the Emergency Department: Why Pretest Probability, Not Creatinine, Should Guide Our Decisions (Sakamoto, Cureus 2026)",
+      "why": "The freshest (2026) primary-literature synthesis of the episode's exact thesis: creatinine-gated imaging causes diagnostically inadequate noncontrast CT and delayed diagnosis of vascular/ischemic/infectious emergencies — supplies the closing bedside argument almost verbatim."
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "topic_id": "normal-saline-not-normal",
+  "title": "Why 'Normal' Saline Is Not Normal — 2026-09-01",
+  "audio_format": "deep-dive",
+  "rationale": "Six sources trace the episode's full arc without overstating the evidence: LITFL supplies the Stewart-physiology chemistry underneath the acidosis/renal claims; the Hammond meta-analysis is the named reconciling synthesis showing how BaSICS/PLUS's null results coexist with an 89.5% posterior favouring balanced fluids; First10EM is the load-bearing skeptic, disputing trial-author Paul Young's own reading of that evidence, so the episode stays honest that this is live controversy, not solved science. EMCrit's IBCC gives saline its genuine due (TBI, raised ICP) from the same current source. The two NICE documents do double duty for the ending: CG174 (2013, unrevised) is why the bag still says normal, while NG253 (2025) shows NICE has already flipped the default in its newest guideline in miniature, setting up the order-set conclusion as already happening, not aspirational. Deep-dive fits: an investigative unspooling of history, mechanism and evidence for a clinician audience, with the Morgenstern-vs-Young controversy surfaced honestly inside the investigation rather than staged as formal debate.",
+  "case_vignette": "A 74-year-old woman arrives in resus with urosepsis - tachycardic, hypotensive, lactate 3.8 - and the SHO reaches for 0.9% saline off the trolley, as every SHO before her has done for a century. Two bays over, a 22-year-old motorcyclist with a traumatic brain injury and a GCS of 9 is getting fluid too, and here saline is actually the correct choice. The hosts open on that contradiction: one drug, two patients, opposite answers, and a bag that has said 'normal' for so long nobody stops to ask what it means.",
+  "sources": [
+    {
+      "url": "https://web.archive.org/web/20240229075033/https://litfl.com/chloride-in-critical-illness/",
+      "title": "Chloride in Critical Illness - LITFL CCC",
+      "why": "States the Stewart physiology plainly: plasma chloride ~100 mmol/L vs saline's 154, strong-ion difference zero, plus a concrete practical threshold rather than dogma."
+    },
+    {
+      "url": "https://www.thebottomline.org.uk/summaries/icm/smart/",
+      "title": "SMART trial (Semler et al., NEJM 2018) — The Bottom Line critical appraisal",
+      "why": "The 15,802-patient cluster-crossover trial of the ICU default fluid: MAKE30 14.3% versus 15.4% with balanced crystalloids — a roughly one-percentage-point absolute difference, appraised with its limitations (unblinded, composite outcome, small effect) rather than as a headline."
+    },
+    {
+      "url": "https://first10em.com/the-ongoing-saga-of-normal-saline-versus-balanced-fluids/",
+      "title": "The ongoing saga of normal saline versus balanced fluids - First10EM",
+      "why": "Morgenstern's direct rebuttal to PLUS co-author Paul Young's own 'balanced as default' reading of the same intervals - keeps this a live disagreement, not settled science."
+    },
+    {
+      "url": "https://emcrit.org/ibcc/fluid/",
+      "title": "IBCC - Fluid selection & pH-guided fluid resuscitation (EMCrit)",
+      "why": "Cites the Hammond posterior AND spells out saline's genuine indications - TBI and raised ICP - via the BaSICS subgroup signal, so saline gets its due from a citable source."
+    },
+    {
+      "url": "https://www.nice.org.uk/guidance/cg174/chapter/Recommendations",
+      "title": "NICE CG174 - IV fluid therapy in adults in hospital: Recommendations",
+      "why": "Unrevised since 2013, still sanctions any crystalloid Na 130-154 mmol/L including saline as equivalent first-line - the institutional root of why the bag still says normal."
+    },
+    {
+      "url": "https://www.nice.org.uk/guidance/ng253/chapter/Recommendations",
+      "title": "NICE NG253 — Suspected sepsis: recognition, diagnosis and early management (2025 recommendations)",
+      "why": "NICE's own 2025 sepsis guideline flips to defaulting to balanced solution over saline - the same body holding two contradictory defaults at once."
+    }
+  ]
+}

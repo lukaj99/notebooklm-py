@@ -1,0 +1,39 @@
+{
+  "topic_id": "routine-oxygen-mi-stroke",
+  "title": "Routine Oxygen — How a Drug Became a Comfort Blanket — 2026-09-01",
+  "audio_format": "deep-dive",
+  "rationale": "None of the verified sources actually argue for routine oxygen in the normoxaemic MI or stroke patient -- the physiology, the trial data (AVOID, DETO2X-SWEDEHEART, SO2S) and two independently-reached guideline bodies (AHA/ASA 2026, ESC 2023) all land in the same place, which is why this is built as an investigative deep-dive rather than a manufactured debate: there is no credible on-record clinician in this source set defending the MONA-era reflex, so pitting hosts against each other would be theatre, not signal. What the episode can genuinely do is walk the arc -- Steele's 1900 case report, the MONA mnemonic that trained a generation, the coronary-vasoconstriction and reperfusion-ROS physiology that predicted harm before anyone tested it, then the sequence of trials that actually tested it (AVOID's infarct-size MRI signal, DETO2X-SWEDEHEART's null mortality result with its exact 5.0% vs 5.1% numbers, SO2S doing the same for stroke at n=8,003) -- and close on the fact that the practice persists anyway, evidenced by a freshly-rewritten 2026 AHA/ASA stroke guideline that still has to spell out the non-routine-oxygen recommendation because clinicians keep reaching for the mask. The REBEL EM pieces give the hosts an accessible, opinionated on-ramp into each trial with the hard numbers embedded; the two guidelines anchor the current international standard of care. The controversy notes (BTS's own target-range guideline being rewritten because IOTA's liberal-oxygen mortality signal may implicate its own 94-98% range, and the physiological-harm-without-mortality-harm split between AVOID and DETO2X) are real texture for the hosts to sit with mid-episode, but they're nuances within a settled consensus, not a live two-sided fight -- which is exactly what a deep-dive is for and a debate would flatten.",
+  "case_vignette": "A 62-year-old man calls 999 with 40 minutes of crushing central chest pain radiating to his jaw. The paramedic crew, on reflex, has already strapped a non-rebreathe mask onto his face before he ever reaches hospital -- his SpO2 was 98% on air. He arrives in resus still masked, the ECG confirms an anterior STEMI, and the registrar has thirty seconds to decide, before he's wheeled to the cath lab, whether to leave the mask on, take it off, or say nothing at all -- the exact decision point where a century of reflex meets a decade of null trials.",
+  "sources": [
+    {
+      "url": "https://rebelem.com/death-mona-acs-part-ii-oxygen/",
+      "title": "The Death of MONA in ACS: Part II – Oxygen (REBEL EM)",
+      "why": "Traces the reflex back to Steele's 1900 angina paper and the MONA mnemonic, then lays out the coronary-vasoconstriction/ROS physiology and the 2016 Cochrane AMI review -- the spine of the 'how a habit became dogma' story."
+    },
+    {
+      "url": "https://rebelem.com/july-2015-rebelcast/",
+      "title": "REBEL Cast Episode 13: The AVOID Trial & The FLORALI Trial",
+      "why": "Contemporaneous FOAMed breakdown of AVOID (Circulation 2015), the first modern signal that oxygen enlarges MI infarct size on cardiac MRI rather than shrinking it."
+    },
+    {
+      "url": "https://rebelem.com/deto2x-trial-patients-ami-need-supplemental-o2/",
+      "title": "The DETO2X Trial: Do Patients with AMI Need Supplemental O2? (REBEL EM)",
+      "why": "Bedside-facing appraisal of DETO2X-SWEDEHEART's null 6,629-patient mortality result (5.0% vs 5.1%), translating the trial into the numbers a working clinician actually needs."
+    },
+    {
+      "url": "https://www.thebottomline.org.uk/summaries/icm/deto2x-ami/",
+      "title": "DETO2X-AMI trial (Hofmann et al., NEJM 2017) — The Bottom Line critical appraisal",
+      "why": "A second, UK-voiced appraisal of the 6,629-patient registry RCT: oxygen versus ambient air in suspected MI with SpO2 of 90% or above, one-year mortality 5.0% versus 5.1%, with the design caveats (open label, registry-based, low-risk population) spelled out so the null result is neither oversold nor dismissed."
+    },
+    {
+      "url": "http://web.archive.org/web/20260728173759/https://www.ahajournals.org/doi/10.1161/STR.0000000000000513",
+      "title": "2026 Guideline for the Early Management of Patients With Acute Ischemic Stroke (AHA/ASA)",
+      "why": "Published this year and replacing 2019 wholesale, it still reaffirms SpO2 >94% as the target and no routine O2 in non-hypoxic stroke -- proof the recommendation has survived a full guideline rewrite untouched."
+    },
+    {
+      "url": "https://www.thebottomline.org.uk/summaries/icm/avoid/",
+      "title": "AVOID trial (Stub et al., Circulation 2015) — The Bottom Line critical appraisal",
+      "why": "The trial that first showed harm rather than mere absence of benefit: 638 STEMI patients, larger infarcts by creatine kinase and cardiac MRI in the oxygen arm, more recurrent MI and arrhythmia — appraised with its limitations so the hosts can weigh a physiological-harm signal against DETO2X's null mortality result."
+    }
+  ]
+}

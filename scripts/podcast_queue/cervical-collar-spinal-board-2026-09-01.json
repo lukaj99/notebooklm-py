@@ -1,0 +1,34 @@
+{
+  "topic_id": "cervical-collar-spinal-board",
+  "title": "The Cervical Collar and the Spinal Board — Immobilising Without Evidence — 2026-09-01",
+  "audio_format": "deep-dive",
+  "rationale": "What's new for this episode is less a single study than a convergence: NAEMSP's own 2025 comprehensive review finally says in writing what Hauswald implied in 1998 and REBEL EM catalogued for a decade — that spinal immobilisation has an evidence base built entirely of harm signals and zero benefit signals — while the UK's own NICE guidance and the Faculty of Pre-Hospital Care's still-unresolved 2024 statement show how slowly institutional practice actually moves once a ritual is standard of care. The source set walks the whole arc in order: Hauswald as the founding anomaly, REBEL EM as the harms ledger, NAEMSP 2025 as the abolitionist verdict from the body that used to defend the practice, St Emlyn's as the EXIT-project evidence that movement minimisation itself doesn't work as claimed, and NICE NG41 plus the FPHC statement as the honest, still-live UK institutional position the hosts' own listener works under tomorrow morning. Deep-dive format fits because the throughline here is investigative — tracing forty years of unexamined doctrine to its origin and asking why it took so long to loosen — rather than a two-sided shouting match; even NAEMSP's 'harms are indisputable, stop now' versus NICE's continued endorsement is best explored as a thread within a single narrative of institutional lag, since the underlying facts aren't in dispute, only how fast a standard of care should move once its evidence collapses.",
+  "case_vignette": "A 34-year-old cyclist is upright and walking around the scene after a low-speed side-impact collision, mildly tender in the midline neck but neurologically intact and GCS 15 — textbook Canadian C-spine rule territory. The paramedic crew, following current UK protocol, collars and boards him anyway; twenty minutes later in the ED he's grimacing from the board itself, an X-ray gets ordered partly to explain the pain the board just caused, and the registrar has to decide whether continuing 'spinal precautions' is protecting his cord or performing a ritual with no trial behind it.",
+  "sources": [
+    {
+      "url": "https://rebelem.com/spinal-immobilization-in-trauma-patients/",
+      "title": "REBEL EM — Spinal Immobilization in Trauma Patients",
+      "why": "The itemised biology case against the doctrine — raised ICP, pressure sores, worse laryngoscopic view, altered exam, plus the RCT showing a backboard doesn't even reduce lateral motion — the harms ledger the episode needs before it can ask why nobody added it up sooner."
+    },
+    {
+      "url": "https://emergencymed.org.il/wp-content/uploads/1970/01/Prehospital-Trauma-Compendium-Prehospital-Management-of-Spinal-Cord-Injuries-A-NAEMSP-Comprehensive-Review-and-Analysis-of-the-Literature.pdf",
+      "title": "Millin et al. — NAEMSP Comprehensive Review of Prehospital Spinal Cord Injury Management (2025)",
+      "why": "115 studies, 55 showing harm, zero showing benefit — NAEMSP's own 2025 review repudiates its own 2013 policy and says immobilisation should not continue as standard of care, the abolitionist end of the argument stated by the body that used to defend it."
+    },
+    {
+      "url": "https://www.stemlynsblog.org/the-exit-study-extrication-consensus-statements-st-emlyns/",
+      "title": "St Emlyn's — The EXIT Study Extrication Consensus Statements",
+      "why": "Simon Carley unpacks Nutbeam's actual Delphi consensus: self-extrication moves the spine equally or less than clinician-controlled extrication, and cord injury has usually already happened at impact — the mechanistic case that movement minimisation itself was theatre."
+    },
+    {
+      "url": "http://web.archive.org/web/20260122021735/https://www.nice.org.uk/guidance/ng41/chapter/Recommendations",
+      "title": "NICE NG41 — Spinal injury: assessment and initial management (Recommendations)",
+      "why": "The live UK standard of care patients still get: Canadian C-spine rule plus semi-rigid collar and scoop as default — the baseline every other source in this episode is arguing against, still current in 2025."
+    },
+    {
+      "url": "https://fphc.rcsed.ac.uk/the-faculty/about-us/news/2024/march/interim-statement-on-the-use-of-cervical-collars-for-pre-hospital-spinal-immobilisation",
+      "title": "Faculty of Pre-Hospital Care — Interim statement on cervical collars (March 2024)",
+      "why": "Eleven years after its 2013 consensus pushed toward selective immobilisation, the UK's own pre-hospital body still can't issue a firm rule and falls back on 'more evidence is needed' — proof the retreat from doctrine remains unfinished even inside the institution leading it."
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "topic_id": "adrenaline-cardiac-arrest-origins",
+  "title": "Adrenaline in Cardiac Arrest — Sixty Years on a Dog Study — 2026-09-01",
+  "audio_format": "deep-dive",
+  "rationale": "What's new for this episode is the size of the gap between what the guidelines say and what they show: ILCOR's 2025 COSTR and the RCUK 2025 guidelines both reaffirm epinephrine at full strength while conceding, in their own text, that it has never been shown to improve neurologically-intact survival -- and RCUK has just cracked open, for the first time in sixty years, an optional titrated alternative to the fixed 1mg bolus that traces straight back to a dose scaled from dogs and packaged to an ampoule size. The source set lets listeners hear that gap for themselves: Jacobs 2011 shows the underpowered early promise that justified a much larger trial; the NIHR HTA report gives the actual PARAMEDIC2 numbers, including the prespecified rhythm-subgroup analysis that found no interaction; First10EM translates those numbers into a bedside NNT/NNH comparison; and Gavin Perkins -- the trial's own PI and an ILCOR co-chair -- explains, credibly and without spin, why a null-neuro-outcome result didn't kill the drug. A deep-dive format fits because the disagreement here isn't between camps shouting past each other -- ILCOR, RCUK, and the FOAMed appraisal all read the same data and land on a weak recommendation with an openly acknowledged neuro-outcome gap; the tension lives inside the evidence itself, between a drug that reliably restarts hearts and one that has never been shown to send patients home neurologically intact, which rewards patient investigation over adversarial debate.",
+  "case_vignette": "A 58-year-old man collapses in front of his family at home in witnessed asystolic arrest; CPR has been running for six minutes by the time the ambulance crew arrives, and they push the first of what becomes four milligrams of adrenaline at 1mg every three to five minutes per protocol, achieving ROSC on the third dose. Three days later, on the neuro ICU, his family are asked whether to withdraw care after a devastating hypoxic brain injury -- and the paramedic who ran the arrest is left wondering whether the drug that restarted his heart is the reason he never woke up.",
+  "sources": [
+    {
+      "url": "https://ilcor.org/uploads/ALS-2025-COSTR-Full-Chapter.pdf",
+      "title": "2025 ILCOR Advanced Life Support Consensus on Science with Treatment Recommendations",
+      "why": "The primary text of the paradox itself: ILCOR's own PARAMEDIC2 substudy shows 6- and 12-month survival benefit but explicitly NO improvement in favourable neuro outcome, graded a 'strong' recommendation on 'low-certainty' evidence -- the spine of the episode's central tension."
+    },
+    {
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK569524/",
+      "title": "Adrenaline to improve survival in out-of-hospital cardiac arrest: the PARAMEDIC2 RCT (NIHR HTA full report)",
+      "why": "The open-access primary numbers everyone else in this episode argues over: 3.2% vs 2.4% 30-day survival, the flat favourable-neuro-outcome result, and the prespecified rhythm-subgroup analysis that found no significant interaction -- ground truth before the commentary."
+    },
+    {
+      "url": "https://www.thebottomline.org.uk/summaries/icm/jacobs/",
+      "title": "Jacobs et al. 2011 — Effect of adrenaline on survival in out-of-hospital cardiac arrest (The Bottom Line appraisal)",
+      "why": "Stopped early at 534 of a planned 5,000 patients: a large ROSC signal (23.5% vs 8.4%) with too little power to answer survival -- the underpowered early warning that made the case for a trial eight times bigger."
+    },
+    {
+      "url": "https://first10em.com/paramedic2/",
+      "title": "Paramedic 2: Epinephrine harms/helps in out of hospital cardiac arrest (First10EM)",
+      "why": "Morgenstern's line-by-line FOAMed appraisal walks a UK clinician through the number needed to treat for survival against the near-doubling of severe neurological impairment among survivors -- the bedside translation of the NEJM trial."
+    },
+    {
+      "url": "https://www.stemlynsblog.org/jc-does-epinephrine-work-in-cardiac-arrest-st-emlyns/",
+      "title": "PARAMEDIC2 — critical appraisal (St Emlyn's / The Bottom Line)",
+      "why": "A UK critical appraisal of PARAMEDIC2 that does the arithmetic on air: NNT 112 for survival, favourable neurological outcome 2.2% versus 1.9% and not significant, severe impairment among survivors 31.0% versus 17.8% — and lays out the pros and cons a clinician has to weigh once the drug's effect is stated plainly."
+    },
+    {
+      "url": "https://www.resus.org.uk/professional-library/2025-resuscitation-guidelines/adult-advanced-life-support-guidelines",
+      "title": "Resuscitation Council UK -- 2025 Adult Advanced Life Support Guidelines",
+      "why": "The listener's own practice standard from January 2026: keeps the unchanged 1mg/3-5min bolus, but for the first time offers arterial-line-monitored patients a 50-100 microgram titration option -- a live first crack in sixty years of fixed, un-titrated dosing to close the episode on."
+    }
+  ]
+}
