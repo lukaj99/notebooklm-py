@@ -1,0 +1,34 @@
+{
+  "topic_id": "finish-the-course-antibiotic-duration",
+  "title": "'Finish the Course' — Where Antibiotic Durations Actually Came From — 2026-09-01",
+  "audio_format": "deep-dive",
+  "rationale": "This episode reconstructs a piece of medical folklore that most clinicians inherited rather than learned — the seven/ten/fourteen-day course — and shows it has almost no pharmacological basis: Fleming's 1945 Nobel parable was about under-dosing, not under-duration; the ten-day figure came from 1950s rheumatic-fever prophylaxis and got generalised wholesale; and Llewelyn's 2017 BMJ observation that durations cluster on multiples of seven points to a calendar convenience, not a biological threshold. First10EM and the EMCrit IBCC chapter do the myth-debunking and evidence-mapping work in one place, directly refuting the idea that stopping early breeds resistance in the treated pathogen (resistance selection happens mainly in commensal flora and scales with total exposure) and cataloguing the syndrome-by-syndrome RCTs — CAP, pyelonephritis, cellulitis, VAP, Gram-negative bacteraemia — that now support shorter courses. NICE NG111 supplies a live, concrete UK artefact of the incoherence: the same infection prescribed for anywhere from 7 to 14 days depending on which drug happens to lack a shorter-course trial. REBEL EM's appraisal of BALANCE anchors the headline trial with its caveats intact rather than as a triumphant soundbite, while the iDIAPASON Pseudomonas VAP trial and the SAPS procalcitonin trial supply the episode's honest complications: a case where 8 days measurably underperformed, and a case where biomarker-guided, patient-responsive stopping — not a fixed short number — is the more defensible fix. Deep-dive rather than debate fits because the real tension here is evidentiary nuance and unresolved edge cases (bacteraemia source, immunosuppression, non-fermenting Gram-negatives, endpoint choice) rather than two camps with opposing convictions — the hosts need room to walk through mechanism and trial-by-trial evidence, not stage a fight.",
+  "case_vignette": "A 74-year-old woman is admitted from the ED with fever, rigors and flank pain; blood and urine cultures both grow E. coli, and by day three on IV antibiotics she's afebrile, eating, and ready for discharge on an oral switch. The discharge summary needs a stop date — the pharmacy label defaults to \"complete the course,\" NICE NG111 would give three different durations depending on which oral agent is chosen, and the registrar writing the prescription knows BALANCE enrolled exactly this kind of patient and found seven days non-inferior to fourteen. Do they write for seven days, ten, or fourteen — and can they explain why to the patient who's been told her whole life to always finish the course?",
+  "sources": [
+    {
+      "url": "https://first10em.com/antibiotics-less-is-more/",
+      "title": "Antibiotics: less is more? — First10EM",
+      "why": "Opens with the arbitrariness of the 7/10/14-day reflex and directly dismantles the 'stopping early breeds resistance' folk theory with modelling data showing resistant-carriage risk actually rises with each extra day — the episode's central mechanistic pivot from folklore to biology."
+    },
+    {
+      "url": "https://emcrit.org/ibcc/ams/",
+      "title": "Antimicrobial stewardship & tests for bacterial infections — EMCrit IBCC",
+      "why": "A single living reference that walks the shorter-course RCT evidence syndrome-by-syndrome (CAP, VAP, pyelonephritis, bacteraemia, cellulitis, intra-abdominal infection) with citations, giving the episode its evidence backbone and its 'humans are not petri dishes' framing for why exceptions like TB and endocarditis are different."
+    },
+    {
+      "url": "https://www.nice.org.uk/guidance/ng111/chapter/Recommendations",
+      "title": "NICE NG111 — Pyelonephritis (acute): antimicrobial prescribing, Recommendations",
+      "why": "Live UK prescribing artefact: the same syndrome gets 7, 7-10, or 14 days purely by drug class, with the guideline's own reasoning tracing straight back to Llewelyn's point that longer durations often just reflect absent trial data, not evidence for length — the concrete hook for a UK EM audience."
+    },
+    {
+      "url": "https://rebelem.com/the-balance-trial-rethinking-antibiotic-duration-in-sepsis/",
+      "title": "Is 7 Days Enough? Rethinking Antibiotic Duration in Sepsis — The BALANCE Trial — REBEL EM",
+      "why": "Critical appraisal (not just the abstract) of BALANCE's 3,608-patient non-inferiority result for 7 vs 14 days in Gram-negative bacteraemia, including the external-validity caveats — the episode's flagship 'shorter is non-inferior' trial, examined rather than cited blind."
+    },
+    {
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=26947523&rettype=abstract&retmode=text",
+      "title": "Efficacy and safety of procalcitonin guidance in reducing duration of antibiotic treatment in critically ill patients (de Jong, SAPS trial, Lancet Infect Dis 2016)",
+      "why": "Shows the alternative fix to fixed-duration thinking — biomarker-guided stopping shortened courses by ~2 days with a mortality signal in the right direction — giving the closing 'how do we actually move past fixed durations' segment a real mechanism, not just an aspiration."
+    }
+  ]
+}

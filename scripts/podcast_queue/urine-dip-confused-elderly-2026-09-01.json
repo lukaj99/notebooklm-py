@@ -1,0 +1,39 @@
+{
+  "topic_id": "urine-dip-confused-elderly",
+  "title": "The Urine Dip in the Confused Older Patient — 2026-09-01",
+  "audio_format": "deep-dive",
+  "rationale": "What's new here is the closing of a loop: England now has a December-2024, government-published algorithm that formally tells clinicians not to dip over 65 and to reach for PINCH ME instead, which turns \"stop reflex UTI diagnosis\" from a FOAMed talking point into official guidance the hosts can hold up as already-existing practice, not a proposal. The six sources are chosen to earn that claim rather than assert it: UKHSA, SIGN 160, and IDSA 2019 supply the guideline architecture named directly in the brief — the current UK algorithm, the Scottish quick-reference differential, and the US infectious-disease society's strong recommendation against treating bacteriuria-plus-delirium, explicitly graded strong despite very-low-quality evidence, which is worth flagging as a harm-certainty argument rather than a link-disproven one. Mayne 2019 is the delirium-link systematic review the brief names outright; its \"still confusing\" verdict should be delivered with the honest caveat that later work (Krinitski 2021) found a significant UTI-delirium association even while confirming no such link for asymptomatic bacteriuria specifically — a distinction the hosts should state precisely on air rather than collapse. Joo 2022 supplies the sting that closes the loop on treatment: most clinicians already act on the presumed link, 86% treated including two-thirds with no urinary symptoms, and it buys nothing measurable by day seven. The EMCrit urosepsis chapter is the deliberate counterweight, so the episode never drifts into implying sepsis itself is a myth — it gives the concrete red flags that separate genuine urosepsis from bystander bacteriuria. Deep-dive is the right format because the real controversy here is a matter of precision (UTI versus ASB, guideline confidence versus evidence quality), not a genuine two-sided fight — every source converges on the same practical conclusion, and the most useful thing the hosts can do is walk that convergence carefully.",
+  "case_vignette": "An 84-year-old care-home resident is brought to the ED \"confused, query UTI\" — she's more drowsy than usual, hasn't been herself for two days, and the triage nurse has already sent a dipstick that comes back leucocytes 2+, nitrites positive. Trimethoprim is drawn up before anyone has asked about her constipation, her new amlodipine dose, or her oxygen saturations, or done observations that would flag early sepsis from somewhere else entirely. By the time someone finally examines her abdomen, the real question — what actually caused this delirium — hasn't been asked, because the dipstick already answered it wrong.",
+  "sources": [
+    {
+      "url": "https://www.gov.uk/government/publications/urinary-tract-infection-diagnosis/diagnosis-of-urinary-tract-infections-quick-reference-tools-for-primary-care",
+      "title": "UKHSA/NICE quick reference: UTI diagnosis in adults over 65 (Dec 2024)",
+      "why": "The current, government-endorsed algorithm that already says 'do not dip over 65', cites ~50% asymptomatic bacteriuria in care-home residents, and hands clinicians the PINCH ME mnemonic as the actual replacement for the dipstick — proof the alternative pathway this episode argues for is not hypothetical, it's published."
+    },
+    {
+      "url": "https://www.sign.ac.uk/media/1765/sign-160-qrg-uti_web-version.pdf",
+      "title": "SIGN 160: Suspected lower UTI in adult women — Quick Reference Guide",
+      "why": "The Scottish national guideline named in the brief: bans dipstick use outright in catheterised patients and, for unwell older adults, explicitly directs clinicians to rule out dehydration, constipation, polypharmacy and pain before blaming the urine — the differential the episode wants on air, in guideline form."
+    },
+    {
+      "url": "https://www.idsociety.org/practice-guideline/asymptomatic-bacteriuria/",
+      "title": "IDSA 2019 Clinical Practice Guideline for the Management of Asymptomatic Bacteriuria",
+      "why": "The guideline the angle is built around: a strong recommendation against treating delirium-plus-bacteriuria without local signs, graded strong despite conceding the underlying evidence is very low quality — a detail worth stating precisely, since the guideline's confidence rests on certainty of antibiotic harm, not proof of no causal link."
+    },
+    {
+      "url": "http://web.archive.org/web/20250622030006/https://bmcgeriatr.biomedcentral.com/articles/10.1186/s12877-019-1049-7",
+      "title": "Mayne et al. 2019 — systematic review, confusion and UTI in the elderly",
+      "why": "The landmark review named in the brief: 1,702 records screened down to 22 studies, and the honest verdict is 'still confusing' — no robust evidence bacteriuria causes acute confusion. The episode's central evidentiary anchor for calling the delirium link unproven, though later meta-analyses (Krinitski 2021) complicate 'UTI' versus 'asymptomatic bacteriuria' specifically — a nuance worth stating on air rather than flattening."
+    },
+    {
+      "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9706880/",
+      "title": "Joo et al. 2022 — antibiotics for delirium with positive urinalysis, BMC Geriatrics",
+      "why": "Real-world payoff check: 86% of older inpatients with delirium and a positive dip got antibiotics anyway, including two-thirds with zero urinary symptoms — and delirium resolution by day 7 was statistically identical treated versus untreated. The clinical case for reflex treatment, tested and found empty."
+    },
+    {
+      "url": "https://emcrit.org/ibcc/urosepsis/",
+      "title": "Community acquired urosepsis — EMCrit IBCC",
+      "why": "The counterweight the episode needs so 'don't dip' doesn't read as 'ignore sepsis': concrete red flags — fever, rigors, hemodynamic instability, CVA tenderness — for what genuine urosepsis actually looks like, so the hosts can draw the line clearly."
+    }
+  ]
+}

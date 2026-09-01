@@ -1,0 +1,39 @@
+{
+  "topic_id": "nil-by-mouth-from-midnight",
+  "title": "Nil by Mouth from Midnight — The Fasting Ritual — 2026-09-01",
+  "audio_format": "deep-dive",
+  "rationale": "This episode's power is in the contrast between a traceable historical accident and a physiological reality that has been known for decades: Mendelson's 1946 obstetric series and the single-rhesus-monkey 25 mL/pH 2.5 threshold (Roberts and Shirley 1974) hardened into \"nil by mouth from midnight,\" while gastric-emptying physiology — a 10-20 minute half-time for clear fluids, gone within two hours — has supported a 2-hour (now 1-hour paediatric) clear-fluid standard since 1999. The First10EM pieces (2018, 2025) do the origin-story and evidence-synthesis work no primary paper does on its own, connecting Mendelson through ASA/ESAIC guideline evolution to the Sip Til Send outcome data (Checketts, Wiles) that shows liberalising the clock costs nothing in safety. The ACEP clinical policy and its 2026 FAQ update carry the episode into the ED itself, where the same physiology yields a Level B \"do not delay sedation for fasting time\" recommendation that most UK order sets still ignore — the live evidence-practice gap the episode names as its target. The ESAIC guideline supplies the paediatric real-world-fasting-gap data straight from a guideline body's own mouth, while LITFL's gastric POCUS piece gives the episode its proposed way forward with genuine technique and accuracy detail, not just a slogan. A deep-dive format suits this material: the controversy notes confirm there is no live dispute among evidence-literate clinicians that ED fasting time doesn't predict aspiration risk — the interesting tension is institutional (order-set defaults and nursing culture versus what the guidelines already say), which rewards patient unpacking over adversarial staging. The hosts should still give real weight to the genuine full-stomach cohort (trauma, opioids, obstruction, gastroparesis, pregnancy) so the episode argues for judgement and POCUS, not for abolishing caution.",
+  "case_vignette": "A 34-year-old rugby player arrives in resus at 14:40 with a first-time anterior shoulder dislocation, in obvious pain, having eaten a sandwich at 12:30. The on-call registrar wants to proceed straight to procedural sedation with ketamine and propofol; the nurse coordinator flags the department's six-hour fasting policy and wants to hold him until 18:30. The bay is needed, the patient is begging for relief, and the registrar has to decide whether to follow the order set on the wall or the evidence in the literature.",
+  "sources": [
+    {
+      "url": "https://first10em.com/let-them-eat/",
+      "title": "Let them eat: Emergency department patients should be encouraged to eat and drink — First10EM (Morgenstern, 2025)",
+      "why": "Traces the ritual to its actual origin — Mendelson's 1946 obstetric aspiration series (44,016 women, 0.15% aspiration, no harm/benefit analysis) — then walks the guideline convergence (ASA, ESAIC/Frykholm, Canadian Anesthesiologists) on 1-2h clear-fluid limits, and supplies the hard Sip Til Send outcome data: Checketts 2022 (12,000 patients, fasting cut from 6h to a median of 17 minutes, no adverse-event change) and Wiles 2024 (zero aspirations, less thirst, higher satisfaction)."
+    },
+    {
+      "url": "https://www.acep.org/siteassets/uploads/uploaded-files/acep/clinical-and-practice-management/clinical-policies/clinical-policy-procedural-sedation-and-analgesia-in-the-emergency-department.pdf",
+      "title": "ACEP Clinical Policy: Procedural Sedation and Analgesia in the Emergency Department (2014)",
+      "why": "The primary document behind the episode's central claim: Level B — 'do not delay procedural sedation... based on fasting time' — with the full evidence table (Roback, Treston, Babl, Bell) and an explicit statement that OR-derived NPO rules 'are not directly applicable in the ED.'"
+    },
+    {
+      "url": "https://first10em.com/npo-for-sedation/",
+      "title": "NPO for sedation? Don't swallow the myth — First10EM (Morgenstern, 2018)",
+      "why": "The ED-specific companion piece: unpacks the ACEP systematic review (thousands of patients, no fasting/aspiration link) alongside the Cochrane paediatric preoperative-fasting review (23 RCTs, 2,350 children, the one aspiration traced to airway management, not NPO status) — the exact evidentiary gap the episode is built on."
+    },
+    {
+      "url": "https://esaic.org/wp-content/uploads/2023/12/pre_operative_fasting_in_children__a_guidelin.pdf",
+      "title": "Pre-operative fasting in children — ESAIC guideline (2023)",
+      "why": "The society source for the episode's paediatric 1-hour claim: a GRADE 1C recommendation for clear fluids up to induction, written explicitly because the '2-hour rule' in practice translates into a real-world median fasting time of 9-13 hours — the guideline body naming its own implementation gap."
+    },
+    {
+      "url": "http://web.archive.org/web/20260614222248/https://litfl.com/gastric-pocus-point-of-care-ultrasound/",
+      "title": "Gastric Point-of-care Ultrasound (POCUS) — LITFL CCC (Ure & Nickson, 2020)",
+      "why": "Gives the episode's proposed replacement for the clock concrete substance: NAP4 data (aspiration caused 50% of anaesthesia-related deaths), the Perlas volume formula, and Kruisselbrink's diagnostic-accuracy figures (100% sensitivity / 98% specificity for a 'full stomach') — moves the argument from 'the clock is wrong' to 'here is what should replace it.'"
+    },
+    {
+      "url": "https://www.acep.org/by-medical-focus/procedural-sedation/faqs-unscheduled-sedation-guidelines",
+      "title": "FAQs: Unscheduled Sedation Guidelines — ACEP (2026)",
+      "why": "Board-approved April 2026, replacing the 2018 statement: shows ED specialty guidance is still actively moving toward risk-based, non-fasting-gated sedation rather than settling — the freshest evidence that the evidence-practice gap persists by choice, not by ignorance."
+    }
+  ]
+}

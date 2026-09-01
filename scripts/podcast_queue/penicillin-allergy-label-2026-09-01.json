@@ -1,0 +1,34 @@
+{
+  "topic_id": "penicillin-allergy-label",
+  "title": "The Penicillin Allergy Label — A Diagnosis Nobody Made — 2026-09-01",
+  "audio_format": "deep-dive",
+  "rationale": "This deep-dive traces the penicillin-allergy label from its accidental origin — a childhood viral rash, a relative's story, nausea misfiled as allergy — through the immunology that makes most labels obsolete (IgE sensitisation waning in ~80% of truly allergic patients within a decade), to the historical accident behind the still-taught 10% cephalosporin cross-reactivity figure, which EMCrit's IBCC page dismantles by tracing it to trace-penicillin-contaminated 1960s cephalosporin manufacturing rather than shared biology. The harm case rests on Blumenthal's BMJ 2018 cohort work (already established in the brief) and the fix rests on two pieces of live evidence: PEN-FAST (Trubiano, JAMA Intern Med 2020), the risk score that lets any clinician — not just an allergist — separate the label from the truly allergic, and PALACE (via REBEL EM's Rezaie), which shows direct oral challenge is non-inferior to skin testing for low-risk patients, cutting out the specialist bottleneck entirely. BSACI's 2022 guideline grounds the \"how do I actually do this on shift\" question for a UK EM audience specifically. The Frontiers 2026 PEN-FAST+ paper is included deliberately as a check on triumphalism: it shows the flagship risk score performing far worse (AUC 0.639, missing a third of immediate-type reactions) outside its derivation cohort, which keeps the story honest rather than a solved-problem victory lap — the exceptions (SCARs, recent anaphylaxis, organ involvement) get their due weight here rather than being waved past. Deep-dive format fits because this is a single coherent causal chain — mislabelling, immunology, harm, evidence, structural fix — better served by unpacking it in sequence than staging opposing camps; the one live tension (PEN-FAST's real-world calibration) is folded in as investigative nuance rather than manufactured into a debate.",
+  "case_vignette": "A 34-year-old woman presents to the ED with a febrile UTI and sepsis criteria. Her chart carries \"penicillin allergy — rash\" from a course of amoxicillin for tonsillitis at age four, so the on-call team reaches for a second-line agent instead of a narrow-spectrum beta-lactam, adding hours to source-control-appropriate antibiotic delivery. She has never had a reaction since, never been tested, and can't describe what the rash looked like — the exact low-risk profile PEN-FAST was built to catch, and the exact moment where the label, not the drug, becomes the clinical risk.",
+  "sources": [
+    {
+      "url": "https://emcrit.org/ibcc/penicillin/",
+      "title": "Approach to Beta-Lactam Allergy in Critical Care — EMCrit IBCC",
+      "why": "The episode's clinical spine: lays out real history-taking, PEN-FAST scoring, and the actual cross-reactive drug groupings in place of the flat '10%' myth — gives hosts a working algorithm to narrate against."
+    },
+    {
+      "url": "https://www.aafp.org/afp/2020/1201/p692a",
+      "title": "PEN-FAST penicillin allergy clinical decision rule (Trubiano et al., JAMA Intern Med 2020) — summary",
+      "why": "The PEN-FAST rule itself — five years or less, anaphylaxis/angioedema or severe cutaneous reaction, treatment required — with its 96.3% negative predictive value below 3 points, so a non-allergist can stratify risk at the bedside without a referral."
+    },
+    {
+      "url": "https://rebelem.com/the-palace-trial-direct-oral-pcn-challenge-in-patients-with-low-risk-pcn-allergy/",
+      "title": "The PALACE Trial: Direct Oral PCN Challenge in Patients with Low-Risk PCN Allergy? — REBEL EM",
+      "why": "Rezaie's EM-native breakdown of Copaescu 2023: direct oral challenge non-inferior to skin testing in low-risk patients, with the ED-adoption caveats the raw trial paper won't spell out."
+    },
+    {
+      "url": "https://www.bsaci.org/guidelines-and-standards/bsaci-guidelines/set-up-of-penicillin-allergy-de-labelling-services-by-non-allergists-working-in-a-hospital-setting/",
+      "title": "BSACI Guideline: Set-up of Penicillin Allergy De-labelling Services by Non-Allergists (2022)",
+      "why": "The UK society guidance written for this exact listener — a non-allergist hospital clinician — with the low-risk checklist and provocation framework that anchors the 'structural fix' segment."
+    },
+    {
+      "url": "https://www.frontiersin.org/journals/pharmacology/articles/10.3389/fphar.2026.1788547/pdf",
+      "title": "PEN-FAST versus PEN-FAST+ in an Italian cohort (Sambugaro et al., Front Pharmacol, 2026)",
+      "why": "The honest wrinkle: PEN-FAST scored only AUC 0.639 and misclassified 31% of immediate-type reactions as low-risk outside its derivation cohort — keeps the episode from overselling the score as solved."
+    }
+  ]
+}

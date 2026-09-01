@@ -1,0 +1,39 @@
+{
+  "topic_id": "blood-cultures-before-antibiotics",
+  "title": "Two Sets of Blood Cultures for Everyone — 2026-09-01",
+  "audio_format": "deep-dive",
+  "rationale": "This is an investigative deep-dive, not a debate, because the strongest tension in the verified sources isn't a clean two-sided fight — it's a single reflex (draw two sets before antibiotics) traced from a legitimate origin in septic shock through a quality-metric mechanism (SEP-1/Surviving Sepsis bundles) into syndromes where the evidence never supported it, with genuine indications (endocarditis, S. aureus, neutropenia, undifferentiated sepsis) that deserve full weight rather than a strawman opposing side. The six sources form a complete arc: Fabre's scoping review and the ALiEM/Coburn-Shapiro piece supply the yield and decision-rule data; the IDSA/ATS guideline gives the pneumonia-specific counter-evidence to the bundle's broad language; REBEL EM's FABLED writeup supplies the sensitivity argument for why genuinely indicated cultures must precede antibiotics; Woods-Hill is the stewardship proof-of-concept: a hard-coded algorithm beats taught judgment; and St Emlyn's closes the loop from inside UK practice, showing how the metric itself manufactures overtreatment in patients later found to have no bacterial infection at all. Together they let the hosts build the case chronologically — bundle origin, metric spread, yield data, contamination cost, genuine indications, stewardship fix — without needing to manufacture a false balance.",
+  "case_vignette": "A 68-year-old with three days of a red, warm, non-purulent lower-leg cellulitis is triaged with a heart rate of 104 and a temperature of 38.1°C — meeting SIRS on the departmental sepsis screening tool. The order set auto-populates two sets of blood cultures alongside IV flucloxacillin, the same reflex that would fire for septic shock. The decision point the hosts open on: with bacteraemia in roughly 2% of cellulitis and contamination running 2-3%, is a positive result here more likely to represent true infection or a coagulase-negative staph that triggers an unnecessary vancomycin course and an extra hospital day?",
+  "sources": [
+    {
+      "url": "https://www.unmc.edu/intmed/_documents/id/asp/asp_blood_culture_utilization_guidance_final.pdf",
+      "title": "UNMC Antimicrobial Stewardship — Blood Culture Guidance in Non-Severely Immunocompromised Adult Inpatients (built on Fabre et al., CID 2020)",
+      "why": "The syndrome-by-syndrome pretest-probability table from Fabre's 2020 CID scoping review, turned into a working institutional algorithm: low-probability syndromes (non-severe cellulitis, non-severe CAP, cystitis) where cultures are not recommended, and the high-probability ones where they are — the evidence base diagnostic-stewardship programmes cite to strip cultures out of order sets."
+    },
+    {
+      "url": "https://jacobiem.org/wp-content/uploads/2012/12/Blood-Cultures-Bacteremia-JAMA-2012.pdf",
+      "title": "Coburn et al., Does This Adult Patient With Suspected Bacteremia Require Blood Cultures? (JAMA Rational Clinical Examination, 2012)",
+      "why": "The primary paper: pretest probability from 2% in cellulitis to 69% in septic shock, fever and leukocytosis alone barely moving the needle, and the SIRS and Shapiro rules as sensitive rule-outs — with two worked cases that give the hosts a concrete 'who actually needs cultures' calculation."
+    },
+    {
+      "url": "https://www.idsociety.org/globalassets/idsa/practice-guidelines/community-acquired-pneumonia-in-adults/executive_summary.pdf",
+      "title": "IDSA/ATS 2019 CAP Guideline (Executive Summary)",
+      "why": "The primary-source guideline text recommending against routine blood cultures in non-severe CAP, with the exact rationale (2-9% yield, rare therapy change, false-positive-driven vancomycin and length-of-stay) the episode needs to quantify harm."
+    },
+    {
+      "url": "https://rebelem.com/the-fabled-trial-blood-cultures-1st-then-antibiotics-in-sepsis/",
+      "title": "REBEL EM: The FABLED Trial",
+      "why": "Delivers the Cheng 2019 sensitivity collapse (52.9% post-antibiotic, 1-in-6.7 false-negative) that justifies the episode's 'if it matters, draw it first' rule for genuinely indicated cultures."
+    },
+    {
+      "url": "https://www.cambridge.org/core/journals/antimicrobial-stewardship-and-healthcare-epidemiology/article/diagnostic-stewardship-for-blood-cultures-in-the-pediatric-intensive-care-unit-lessons-in-implementation-from-the-bright-star-collaborative/34E116CD0CDBB74740BC5602106632FE",
+      "title": "Woods-Hill et al., Diagnostic stewardship for blood cultures in the pediatric ICU: lessons in implementation from the Bright STAR Collaborative (ASHE 2024, open access)",
+      "why": "The proof-of-concept the episode's closing argument leans on: across 14 paediatric ICUs a structured algorithm, not more education, cut culture rates by a third and broad-spectrum antibiotic use by 13% with no change in mortality or sepsis — and this paper spells out which implementation tasks actually did the work."
+    },
+    {
+      "url": "https://www.stemlynsblog.org/jc-antibiotic-overtreating-sepsis/",
+      "title": "St Emlyn's: JC — Are We Overtreating Suspected Sepsis?",
+      "why": "Gives the UK-doctor listener home-turf stakes: a 2025 cohort showing SEP-1-style quality metrics drove broad-spectrum overtreatment in patients later found to have no bacterial infection, tying the US metric story to NHS practice."
+    }
+  ]
+}
