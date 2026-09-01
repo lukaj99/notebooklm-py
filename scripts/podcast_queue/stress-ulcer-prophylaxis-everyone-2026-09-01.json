@@ -1,0 +1,39 @@
+{
+  "topic_id": "stress-ulcer-prophylaxis-everyone",
+  "title": "A PPI on Every Drug Chart — Stress Ulcer Prophylaxis Beyond the ICU — 2026-09-01",
+  "audio_format": "deep-dive",
+  "rationale": "This episode's job is to make an origin story land as a live clinical problem, so the picks are built as a chain rather than a pile: two PubMed primary sources (SUP-ICU, REVISE) anchor the pivotal trial data, the JAMA PEPTIC PDF supplies the genuine unresolved PPI-vs-H2RA mortality dilemma, EMCrit's PulmCrit post is the connective tissue that reads the three trials as one deliberate narrowing of the target population, St Emlyn's supplies UK-flavoured methodological pushback on PEPTIC so the hosts aren't simply reciting a \"trial says stop\" narrative, and the SCCM/ASHP 2024 guideline closes the loop by showing that even the current society standard puts mechanical ventilation itself in doubt as a risk factor -- which is the detail that turns \"Cook 1994 identified the risk factors\" into \"and yet even that has been revised since.\" Deep-dive rather than debate because the live tension here (PEPTIC's mortality trend, REVISE's subgroup uncertainty) is real but secondary to the episode's actual argument, which is investigative and sequential: trace the indication's drift from a 1969/1994 ICU-specific finding to a ward-wide default, quantify what that drift costs (Heidelbaugh's ~70% inappropriate use, Herzig's pneumonia signal, C. diff, fractures, dependence), and land on the operational fix -- order-set defaults and discharge reconciliation, not more prescriber education -- which needs unhurried explanation, not adversarial framing.",
+  "case_vignette": "A 74-year-old is admitted to the medical take with community-acquired pneumonia -- alert, off oxygen by day two, no coagulopathy, no shock, walking to the bathroom unaided. The admission order-set defaults to IV pantoprazole \"for stress ulcer prophylaxis,\" nobody on the post-take round asks why, and by day five it has become an oral tablet on the regular chart. At discharge, medicines reconciliation copies the drug list forward unchanged, and this patient -- who was never mechanically ventilated, never coagulopathic, never in shock -- goes home on a PPI he will likely still be taking at his GP review in six months, for an indication that was never his.",
+  "sources": [
+    {
+      "url": "https://www.sccm.org/clinical-resources/guidelines/guidelines/sccm-ashp-guideline-prevention-of-ugib",
+      "title": "SCCM and ASHP Guideline for the Prevention of Stress-Related Gastrointestinal Bleeding in Critically Ill Adults (2024)",
+      "why": "The anchor guideline: it narrows real risk factors to coagulopathy, shock, and chronic liver disease and states plainly there is 'no firm evidence for mechanical ventilation alone' as a risk factor -- undercutting the Cook 1994 teaching this whole practice was built on, and it makes ICU-discharge cessation a formal 'good practice statement,' which is the episode's pivot to the order-set/reconciliation failure."
+    },
+    {
+      "url": "https://emcrit.org/pulmcrit/revise/",
+      "title": "PulmCrit: PPIs are safe and effective for GI prophylaxis... the end.",
+      "why": "The single best synthesis of the evidence arc the episode needs to walk -- SUP-ICU to PEPTIC to REVISE as one deliberate trilogy -- with Farkas's own expert read on why REVISE's bleeding-reduction result validates only the narrow ventilated population it enrolled, not the ward."
+    },
+    {
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7029750/",
+      "title": "PEPTIC Trial (Young et al., JAMA 2020) — PPI vs H2RA Stress Ulcer Prophylaxis in Ventilated ICU Patients (PMC full text)",
+      "why": "The 26,982-patient trial that supplies the episode's live agent-choice dilemma: PPI cut clinically important bleeding (RR 0.73) but trended toward higher 90-day mortality (RR 1.05, p=0.054) -- a genuine, still-unresolved net-benefit question, not a settled call."
+    },
+    {
+      "url": "https://www.stemlynsblog.org/jc-the-peptic-study-ppi-vs-h2rbs-on-the-icu-st-emlyns/",
+      "title": "St Emlyn's JC: The PEPTIC Study -- PPI vs H2RBs on the ICU?",
+      "why": "A UK-voiced, methodologically sharp dissection of PEPTIC's cluster-crossover design and mortality signal -- gives the target listener (a UK EM doctor) a familiar critical-appraisal register on the trial most likely to be quoted back at them on a ward round."
+    },
+    {
+      "url": "https://www.thebottomline.org.uk/summaries/icm/revise/",
+      "title": "REVISE Trial (Cook et al., NEJM 2024) — The Bottom Line critical appraisal",
+      "why": "The primary-source citation for the episode's 'honest exception': 4,821 ventilated patients, pantoprazole cutting clinically important UGIB from 3.5% to 1.0% -- proof SUP works, precisely and only in the population it was built for."
+    },
+    {
+      "url": "https://www.thebottomline.org.uk/summaries/icm/sup-icu/",
+      "title": "SUP-ICU Trial (Krag et al., NEJM 2018) — The Bottom Line critical appraisal",
+      "why": "The primary-source citation for the trial that first cracked the 'SUP saves lives' assumption -- 3,298 patients, no 90-day mortality difference in a less rigidly selected ICU population -- the baseline the REVISE re-test had to answer."
+    }
+  ]
+}
