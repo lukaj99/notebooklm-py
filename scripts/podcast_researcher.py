@@ -14,7 +14,7 @@ Run unattended (systemd timer) with no arguments. Each run:
    a previous run (state file).
 2. Either way, hands the curated sources off to
    ``podcast_pipeline.build_podcast`` (the orchestrator) to create the
-   notebook, ingest sources, generate the EM-Cases-style audio overview, and
+   notebook, ingest sources, generate the Deranged-Physiology-style audio overview, and
    download it.
 3. Delivers: uploads the finished mp3 to Google Drive (rclone) and sends an
    ntfy notification with a short curator blurb explaining what's new and why
@@ -69,7 +69,11 @@ from notebooklm import NotebookLMClient
 from notebooklm.rpc import AudioFormat, AudioLength
 
 sys.path.insert(0, str(Path(__file__).parent))
-from podcast_pipeline import EM_CASES_STYLE, PodcastPipelineError, build_podcast  # noqa: E402
+from podcast_pipeline import (  # noqa: E402
+    DERANGED_PHYSIOLOGY_STYLE,
+    PodcastPipelineError,
+    build_podcast,
+)
 
 logger = logging.getLogger("podcast_researcher")
 
@@ -389,13 +393,13 @@ def build_queue_instructions(payload: dict) -> str:
     """Build audio-overview instructions from a queue payload.
 
     Starts from the payload's own ``style`` when present (non-medical domains
-    supply their own host framing), else the base EM-Cases style; appends the
+    supply their own host framing), else the base Deranged Physiology style; appends the
     curator's ``rationale`` as editorial context and, when present, an
     optional ``case_vignette`` for the hosts to open the episode with (both
     produced by the deep-research workflow's curator stage).
     """
 
-    instructions = payload.get("style") or EM_CASES_STYLE
+    instructions = payload.get("style") or DERANGED_PHYSIOLOGY_STYLE
     rationale = payload.get("rationale")
     if rationale:
         instructions += f"\n\nEditorial context for this episode: {rationale}"
@@ -505,7 +509,7 @@ async def _run_from_pubmed_fallback(state: dict, cooldown_days: float) -> int:
                 client,
                 title=f"{topic.title} — {time.strftime('%Y-%m-%d')}",
                 source_urls=[a["url"] for a in articles],
-                instructions=EM_CASES_STYLE,
+                instructions=DERANGED_PHYSIOLOGY_STYLE,
                 audio_format=AudioFormat.DEBATE if topic.debate else AudioFormat.DEEP_DIVE,
                 audio_length=AudioLength.LONG,
                 out_dir=OUT_DIR,
