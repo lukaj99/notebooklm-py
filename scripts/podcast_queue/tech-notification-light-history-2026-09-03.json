@@ -1,0 +1,40 @@
+{
+  "topic_id": "tech-notification-light-history",
+  "title": "The Notification Light — Rise, Death, and Return on the Pixel 11 Pro — 2026-09-03",
+  "audio_format": "deep-dive",
+  "rationale": "What's new here is the Pixel 11 Pro's HiLight itself — Google's first notification LED in nearly a decade, announced days before this episode airs — so the episode is built around getting its actual specifics right (rear camera-bar placement, face-down-only operation, Gemini status colors, calls-only at launch) rather than assuming it works like the old BlackBerry/Android LED. The six sources triangulate that: Google's own announcement and Android 8 Oreo API post give the primary-source floor for what shipped and why the old API died, Android Authority's hands-on and OnePlus's own 2018 AMA supply ground-truth evidence and manufacturer-stated motive on the death side, DXOMARK's lab benchmark tests the \"AOD made it redundant\" claim with real numbers instead of taking it on faith, and Android Police's retrospective ties the Flip to Shhh lineage and Nothing's Glyph revival together into the nostalgia-vs-genuine-win question the episode closes on. Deep-dive fits better than debate: the strongest tension here (was killing the LED a real UX improvement or a cost-dressed-as-progress call, and is HiLight's revival substance or gimmick) runs through nearly every source as an internal complication rather than a clean two-sides fight, and a chronological rise-death-return investigation lets the hosts actually verify Google's claims against the review evidence instead of staging artificial opposition.",
+  "case_vignette": "A phone lies face-down on a conference table, screen dark, ringer off, in the middle of a meeting. No one glances at it — until a faint amber glow pulses once from the camera bar, and its owner already knows, without touching it, that it's the babysitter calling and not a work email. That's the bet Google just made with the Pixel 11 Pro's HiLight: bringing back a piece of hardware the entire industry spent a decade agreeing to delete.",
+  "style": "Frame this as a scenario-based conversation between two opinionated tech enthusiasts who have owned and lived with these phones: a consumer-technology history told through concrete moments ('what did that blink actually tell you, what did you lose when it went') rather than a spec-sheet read-through. Move chronologically through rise, death, and return, and check each manufacturer's claim against the hands-on reviews and benchmark sources rather than taking it on faith. Include moments of genuine disagreement that get resolved by citing the sources. Keep it conversational and energetic, and land on a clear verdict: was killing the LED a real design improvement, and is the Pixel 11 Pro's HiLight substance or gimmick.",
+  "sources": [
+    {
+      "url": "https://blog.google/products-and-platforms/devices/pixel/pixel-11-pro-hilight/",
+      "title": "Pixel 11 Pro HiLight: Stay updated, screen-free",
+      "why": "Google's own primary announcement — names HiLight, confirms which Pixel 11 Pro models get it, describes the Gemini listening/thinking/responding light language and per-contact call colors, and states the company's own 'stay present, minimize distraction' rationale for bringing the light back."
+    },
+    {
+      "url": "https://www.androidauthority.com/pixel-11-pro-hilight-notification-led-problem-3696162/",
+      "title": "The Pixel 11 Pro's glowing LEDs look great — there's just one problem with them",
+      "why": "The hands-on reality check: the LED array sits in the rear camera bar and only works face-down, so the reviewer found it defeats its own ambient-glanceability purpose the moment the phone sits screen-up or on a Pixelsnap dock."
+    },
+    {
+      "url": "https://android-developers.googleblog.com/2017/08/introducing-android-8-oreo.html",
+      "title": "Android Developers Blog: Introducing Android 8.0 Oreo",
+      "why": "Google's own 2017 announcement of NotificationChannel.enableLights/setLightColor superseding the old ledARGB/FLAG_SHOW_LIGHTS API — the platform-level pivot point right as OEMs began stripping physical LEDs, anchoring the API history and the start of the 'death' era in Google's own words."
+    },
+    {
+      "url": "https://www.androidauthority.com/oneplus-6t-ama-november-2018-921003/",
+      "title": "OnePlus talks OnePlus 6T notification light, AOD, and more in today's AMA",
+      "why": "A manufacturer saying the quiet part out loud: Carl Pei's own 2018 rationale for cutting the LED — maximizing screen real estate and betting lift-up/AOD made it 'redundant' — the primary-source case that removal was a deliberate tradeoff, not an accident."
+    },
+    {
+      "url": "https://www.dxomark.com/always-on-display-how-does-it-affect-battery-life/",
+      "title": "Always-on Display: How does it affect battery life? — DXOMARK",
+      "why": "The controlled lab benchmark that actually tests the industry's 'AOD makes the LED redundant' claim — finds AOD can cut idle battery life 3-4x versus the near-zero cost of a blinking LED, undercutting the argument used to justify removal."
+    },
+    {
+      "url": "https://www.androidpolice.com/pixel-11-face-down-mode/",
+      "title": "I finally understand why Google brought back the notification light on the Pixel 11 Pro",
+      "why": "Makes the sympathetic case for HiLight as a deliberate descendant of Pixel 3's Flip to Shhh and a response to Nothing's Glyph-driven proof of demand, while honestly weighing the 'brain drain' research that complicates the anxiety-reduction pitch — the piece that lets the episode argue nostalgia-vs-real-win from inside a single well-reported source."
+    }
+  ]
+}
