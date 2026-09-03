@@ -28,14 +28,14 @@ Each file is `<topic-id>-<YYYY-MM-DD>.json`, shaped as:
   ],
   "rationale": "one paragraph: what's new, why these sources, why this format",
   "case_vignette": "OPTIONAL: 2-3 sentence opening case/scenario for the hosts to work through",
-  "style": "OPTIONAL: full host-style instructions overriding the default EM-Cases framing"
+  "style": "OPTIONAL: full host-style instructions overriding the default Deranged Physiology framing"
 }
 ```
 
 `case_vignette` and `style` are optional and come from the deep-research
 workflow rather than the cloud routine. When present, `case_vignette` is
 appended to the audio instructions so the episode opens with a concrete
-case/scenario, and `style` replaces the default EM-Cases host framing —
+case/scenario, and `style` replaces the default Deranged Physiology host framing —
 that's what lets a motorcycling or photography episode sound like its own
 show instead of a medical one.
 
