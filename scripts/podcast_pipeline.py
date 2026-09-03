@@ -13,7 +13,7 @@ Usage:
         --title "CCB/Beta-Blocker Overdose — What's New" \\
         --source https://example.com/paper1 \\
         --source https://example.com/paper2 \\
-        --style em-cases \\
+        --style deranged-physiology \\
         --format debate \\
         --length long \\
         --out-dir ~/podcasts
@@ -41,8 +41,32 @@ EM_CASES_STYLE = (
     "actionable pearls."
 )
 
+DERANGED_PHYSIOLOGY_STYLE = (
+    "Adopt the voice of Deranged Physiology: two hosts who treat received clinical "
+    "wisdom as a claim to be audited rather than a fact to be taught. "
+    "Reason from mechanism first — the physiology, the pharmacology, the actual "
+    "numbers — and only then ask what the trials showed. "
+    "Trace where each practice, threshold or number came from: name the original "
+    "paper, its year, its size and its population, and say plainly when the trail "
+    "ends in a small, old or badly designed study. "
+    "Appraise the evidence out loud and without deference. Distinguish what is "
+    "proven from what is merely conventional, and say 'nobody actually knows' when "
+    "that is the honest answer, rather than manufacturing a recommendation to fill "
+    "the silence. "
+    "Be dry, deadpan and lightly sardonic about dogma, ritual and "
+    "guideline-by-committee — never sneering at patients or at clinicians, only at "
+    "weak reasoning. "
+    "Prefer specifics to hedging: no 'some authors recommend', no padding, no false "
+    "balance between a good trial and a bad one. Enumerate when a list is the "
+    "clearest form. Digress into the underlying physiology whenever it genuinely "
+    "illuminates, then come back. "
+    "Close by separating three things explicitly: what the evidence actually "
+    "supports, what is defensible habit, and what is pure ritual."
+)
+
 STYLE_PRESETS: dict[str, str | None] = {
     "em-cases": EM_CASES_STYLE,
+    "deranged-physiology": DERANGED_PHYSIOLOGY_STYLE,
     "plain": None,
 }
 
@@ -166,8 +190,8 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--style",
         choices=sorted(STYLE_PRESETS),
-        default="em-cases",
-        help="Named instructions preset (default: em-cases). Use --instructions to override freely.",
+        default="deranged-physiology",
+        help="Named instructions preset (default: deranged-physiology). Use --instructions to override freely.",
     )
     parser.add_argument(
         "--instructions", default=None, help="Raw instructions text, overrides --style"

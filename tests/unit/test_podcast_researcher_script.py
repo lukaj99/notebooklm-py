@@ -19,7 +19,7 @@ SCRIPTS_DIR = Path(__file__).resolve().parents[2] / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from podcast_pipeline import EM_CASES_STYLE  # noqa: E402
+from podcast_pipeline import DERANGED_PHYSIOLOGY_STYLE  # noqa: E402
 from podcast_researcher import (  # noqa: E402
     Topic,
     build_queue_instructions,
@@ -98,13 +98,13 @@ def test_pick_topic_never_raises_on_empty_topic_history(cooldown_days):
 
 
 def test_build_queue_instructions_bare_payload_is_base_style():
-    assert build_queue_instructions({}) == EM_CASES_STYLE
+    assert build_queue_instructions({}) == DERANGED_PHYSIOLOGY_STYLE
 
 
 def test_build_queue_instructions_appends_rationale():
     result = build_queue_instructions({"rationale": "big new trial dropped"})
 
-    assert result.startswith(EM_CASES_STYLE)
+    assert result.startswith(DERANGED_PHYSIOLOGY_STYLE)
     assert "Editorial context for this episode: big new trial dropped" in result
 
 
@@ -113,7 +113,7 @@ def test_build_queue_instructions_appends_case_vignette():
         {"case_vignette": "54M, bradycardic, amlodipine bottle empty"}
     )
 
-    assert result.startswith(EM_CASES_STYLE)
+    assert result.startswith(DERANGED_PHYSIOLOGY_STYLE)
     assert "54M, bradycardic, amlodipine bottle empty" in result
     assert "case vignette" in result
 
@@ -130,7 +130,7 @@ def test_build_queue_instructions_style_overrides_base():
     )
 
     assert result.startswith("Two riders talking wrenching.")
-    assert EM_CASES_STYLE not in result
+    assert DERANGED_PHYSIOLOGY_STYLE not in result
     assert "new tire data" in result
 
 
