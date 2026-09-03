@@ -1,0 +1,39 @@
+{
+  "topic_id": "ccb-beta-blocker-overdose-update",
+  "title": "CCB/Beta-Blocker Overdose — Beyond High-Dose Insulin: The Rescue Ladder — 2026-09-03",
+  "audio_format": "deep-dive",
+  "sources": [
+    {
+      "url": "https://pubmed.ncbi.nlm.nih.gov/41856687/",
+      "title": "High-dose insulin euglycaemic therapy for a severe calcium channel blocker overdose (Catarinella & Endeman, BMJ Case Reports, 2026 Mar)",
+      "why": "The freshest data point in the literature: a March 2026 case concluding HIET 'may be considered in every severe calcium channel blocker overdose' — sets the first-tier baseline before the episode climbs to what's tried when that baseline fails."
+    },
+    {
+      "url": "https://pubmed.ncbi.nlm.nih.gov/37976176/",
+      "title": "Beta-blocker and calcium-channel blocker toxicity: current evidence on evaluation and management (Goldfine, Troger, Erickson, Chai, Eur Heart J Acute Cardiovasc Care, 2024)",
+      "why": "Lays out the mechanistic case for methylene blue and hydroxocobalamin as non-catecholamine rescue vasopressors once HIET is inappropriate or insufficient — the pharmacology bridge from tier-1 to tier-2 therapy."
+    },
+    {
+      "url": "https://emcrit.org/ibcc/ccb-2/",
+      "title": "Calcium Channel Blocker (CCB) & Beta-Blocker (BBl) overdose (EMCrit IBCC, updated Sept 2025)",
+      "why": "Free, practitioner-facing reference explicitly structured as tier-1 (calcium, glucagon, HIE) vs tier-2 rescue (hemodialysis, methylene blue, ECMO, lipid emulsion) with practical dosing — gives the hosts a shared ladder to argue their way up."
+    },
+    {
+      "url": "https://doi.org/10.1093/ajrccm/aamag162.5056",
+      "title": "A Case of Beta Blocker and Calcium Channel Blocker Overdose Requiring High Dose Insulin Therapy (Elhaj et al., Am J Respir Crit Care Med conference abstract, 2026)",
+      "why": "A real 85-year-old patient who needed nearly the entire ladder at once — atropine, calcium, glucagon, HIET up to 10 units/kg/hr, four vasopressors, and methylene blue — before stabilizing; a vivid narrative anchor for how far refractory cases actually go."
+    },
+    {
+      "url": "https://doi.org/10.1164/ajrccm.2025.211.abstracts.a1667",
+      "title": "A Case of Beta Blocker and Calcium Blocker Overdose Managed With Veno-arterial Extracorporeal Circulation (Jawed et al., Am J Respir Crit Care Med conference abstract, 2025)",
+      "why": "The far end of the ladder: HIET, glucagon and lipid emulsion all failed, VA-ECMO reversed a week-long refractory cardiogenic shock — but the patient also suffered an ischemic stroke on circuit, a complication worth discussing honestly rather than glossing over."
+    },
+    {
+      "url": "https://pubmed.ncbi.nlm.nih.gov/33555964/",
+      "title": "Extracorporeal treatment for calcium channel blocker poisoning: systematic review and recommendations from the EXTRIP workgroup (Wong, Hoffman, Walsh et al., Clin Toxicol, 2021)",
+      "why": "The guideline-level counterweight: the international EXTRIP workgroup actually recommends against ECMO for CCB poisoning specifically, citing very low-quality evidence — a skeptical check on how confidently the 'climb the ladder' narrative should be told."
+    }
+  ],
+  "rationale": "This topic's last episode (2026-08-13) was a full debate on whether high-dose insulin/euglycaemia therapy (HIET) should be started reflexively or reserved for echocardiographically-confirmed cardiogenic shock, built around the Megarbane/Isbister point-counterpoint and the new Mehrpour & Brent phenotyping algorithm. Re-running that same fight with the same sources three weeks later would be a rehash rather than new reporting, so this episode deliberately moves one step further down the clinical pathway: what actually happens when phenotyping is done correctly and HIET is started early, but the patient still doesn't respond? A brand-new March 2026 case (Catarinella & Endeman) reasserts HIET as a near-universal first move, then the episode climbs the escalation ladder through methylene blue and hydroxocobalamin (Goldfine 2024) to lipid emulsion and ECMO, using two vivid 2025-2026 conference-abstract cases (Elhaj; Jawed) as concrete narrative anchors — one that needed nearly every rung of the ladder to survive, one that needed ECMO and paid a real neurological price for it. The EXTRIP workgroup's 2021 recommendation against ECMO for CCB poisoning, on grounds of very low-quality evidence, is the deliberate skeptical counterweight, so the episode doesn't just narrate an escalating-therapy success story. I kept the format at 'deep-dive' (the topic's own default) rather than debate: unlike the phenotyping question three weeks ago, the rescue-ladder evidence isn't a live two-sided argument between named experts, it's a genuinely thin evidence base that the EXTRIP group itself flags as low-quality — that's a 'here's what we actually know and don't' story, not a debate. Note: the Consensus connector failed to connect this run, so the format call and framing are based on the primary/expert literature above rather than an aggregate-consensus check; worth rerunning that check next time the connector is healthy.",
+  "case_vignette": "Three weeks after the last CCB overdose episode ended with 'get the echo before you commit to insulin,' the ICU team does exactly that, confirms cardiogenic shock, starts HIET early and correctly per the algorithm — and the patient is still crashing four hours later, now on three vasopressors with a rising lactate. The registrar looks at the fellow: 'We did everything right. What's actually next, and does any of it actually work?'"
+}
