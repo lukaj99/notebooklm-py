@@ -1,0 +1,35 @@
+{
+  "topic_id": "moto-tires-and-grip",
+  "title": "Sport Tires, Pressures, and the Physics of Grip — 2026-09-03",
+  "audio_format": "deep-dive",
+  "rationale": "This episode moves past \"run OEM pressure\" bar-stool advice into the actual engineering underneath it, using a source set that runs from first-principles grip theory (Roadracing World) through construction (MC Garage's radial-vs-bias explainer, Bridgestone's own tech docs) to hard physics (the MDPI thermal model) and measured data (Selig's PhD thesis on pressure vs. road friction) -- then lands on the one place where genuine expert disagreement exists: whether dropping cold pressure a couple PSI below placard actually buys more grip, which Motorcycle.com's \"Black Magic\" piece shows tire manufacturers themselves reject as an oversimplified trade against wear, heat, and stability. Deep-dive is the right format because the listener wants the mechanism explained, not two hosts yelling past each other -- but the pressure controversy still gives the investigation real teeth, since it directly contradicts trackday folklore the hosts have almost certainly heard or repeated themselves. For a rider who wrenches on his own Street Triple 765 RS year-round, this turns tire pressure from a checkbox into something he can reason about corner by corner and season by season.",
+  "case_vignette": "It's a cool September morning and the Street Triple has been sitting in the garage overnight; the first roundabout onto the arterial road is damp with dew, and there's a half-second where the front just doesn't feel planted the way it did on yesterday's ride home. He'd been meaning to drop the cold pressures a couple PSI below placard after a mate at the track swore it \"wakes the front up\" -- tonight's the night to actually check whether that's real or just something everyone repeats.",
+  "style": "Frame this as a scenario-based discussion between two riding-obsessed co-hosts who do their own wrenching: 'what would you actually do on the road / in the garage' framing rather than a spec-sheet read-through. Include moments of genuine disagreement that get resolved by citing the sources. Keep it conversational and energetic, but always land on clear, actionable takeaways a rider can use this weekend.",
+  "sources": [
+    {
+      "url": "https://www.roadracingworld.com/news/how-do-motorcycle-tires-create-grip/",
+      "title": "How Do Motorcycle Tires Create Grip?",
+      "why": "Sets the episode's whole mental model in one piece: chemical vs. mechanical grip, F=μN, load transfer under braking/acceleration, and how trail-braking technique changes the normal force a tire actually has to work with -- the spine the rest of the episode hangs on."
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=FwcoGGZ1hUA",
+      "title": "Bias-Ply Motorcycle Tires vs. Radial Motorcycle Tires (MC Garage, Motorcyclist)",
+      "why": "Explains why radial belting decouples tread stiffness from sidewall flex -- the missing construction link that makes clear why a couple PSI of pressure changes a sport tire's contact patch and grip so much more than it would on an old bias-ply carcass."
+    },
+    {
+      "url": "https://tires.bridgestone.com/en-us/learn/motorcycle/tire-technology",
+      "title": "Bridgestone Tire Technology (Motorcycle)",
+      "why": "Primary manufacturer source (not marketing copy) for how multi-compound tread and belt technology actually get built -- grounds the compound-chemistry half of the grip story in real engineering terms the hosts can point to."
+    },
+    {
+      "url": "https://eprints.hud.ac.uk/id/eprint/21030/",
+      "title": "The Influence of Internal Tyre Pressure on Road Friction (PhD thesis, M. Selig)",
+      "why": "The one source with actual measured data -- robotic locked-wheel braking tests plus a rubber-friction model quantifying how inflation pressure moves stopping distance and μ -- turning 'run it a couple PSI low for grip' from bar talk into a testable claim."
+    },
+    {
+      "url": "http://web.archive.org/web/20250720111400/https://www.motorcycle.com/features/black-magic-motorcycle-tires.html",
+      "title": "Black Magic: Motorcycle Tires — Motorcycle.com",
+      "why": "The real controversy for this episode: named engineers at Michelin, Pirelli, Dunlop, and Avon unanimously push back on the lower-pressure-for-more-grip folk wisdom, explaining the wear/heat/sidewall-flex costs that the trackday version of that advice glosses over."
+    }
+  ]
+}
