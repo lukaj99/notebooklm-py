@@ -1,0 +1,29 @@
+{
+  "topic_id": "high-risk-chest-pain-risk-stratification",
+  "title": "High-Risk Chest Pain: Whose Troponin Rule-Out Do You Trust? — 2026-09-04",
+  "audio_format": "deep-dive",
+  "rationale": "This episode is built around a genuinely unresolved 2025-2026 split rather than settled consensus: the brand-new US ACC/AHA/ACEP/NAEMSP/SCAI guideline (the first ever formally co-authored by an emergency medicine society) leans on GRACE/TIMI and a different hs-cTn timing window than the ESC 2023 algorithm most UK EDs actually run, while a 2025 RCEM TERN survey shows HEART itself is used in fewer than half of UK departments — meaning the \"standard of care\" this listener assumes exists is more contested than the textbooks suggest. Layering the EMCrit interpretive chapter underneath gives the hosts a rigorous shared vocabulary before they get into the fight; REBEL EM shows real-world practice has already outrun the guidelines toward single-troponin discharge; and the St Emlyn's/JAMA Cardiology pairing stages the sharpest live disagreement — whether a single very-low troponin (in-hospital or prehospital) is safe to act on, argued from opposite sides with 2023-2026 evidence. Deep-dive format suits this better than adversarial debate: the goal is to walk a working UK EM doctor through *why* the guidelines diverge and what that means for the actual decision at the bedside, not to stage a false binary.",
+  "case_vignette": "A 54-year-old comes into a crowded Friday-night ED with an hour of central chest tightness that's now settled, a normal ECG, and a single hs-troponin that's detectable but well below the local rule-out cutoff. HEART score is borderline low; her risk factors are unremarkable but she's anxious to get home before her night shift. The registrar has to decide, right now, whether this one troponin plus a low-ish score is enough to discharge her — or whether serial testing, a different risk score, or even a CT is what the evidence, and which guideline you happen to be following, actually demands.",
+  "sources": [
+    {
+      "url": "https://emcrit.org/ibcc/troponin/",
+      "title": "IBCC: Diagnosis of myocardial injury vs ischemia (troponin chapter)",
+      "why": "Farkas's continuously-updated interpretive framework — gives the hosts the vocabulary to separate an assay's analytic floor (<2-5 ng/L) from a genuine rule-out threshold, and why hsTrop alone can't distinguish type 1 MI, type 2 MI, and non-ischaemic myocardial injury before the guideline fights even start."
+    },
+    {
+      "url": "https://repisalud.isciii.es/bitstreams/8a2baba3-4a53-4627-ba4c-7198e25cc21b/download",
+      "title": "2023 ESC Guidelines for the management of acute coronary syndromes (full text)",
+      "why": "The guideline that actually runs most UK EDs — defines the 0h/1h and 0h/2h hs-cTn algorithms and, notably, downgraded routine post-rule-out CCTA from Class I to IIa, a direct break from US practice."
+    },
+    {
+      "url": "https://rebelem.com/single-troponin-testing-in-ed-patients-with-suspected-acute-myocardial-infarction/",
+      "title": "REBEL EM: Single Troponin Testing in ED Patients With Suspected Acute Myocardial Infarction",
+      "why": "Appraises the Wassie/Kaiser Permanente cohort showing over half of physicians already discharge on one low conventional troponin plus HEART, well inside the 1% acceptable-miss threshold — the gap between what guidelines say and what's already happening on shift."
+    },
+    {
+      "url": "https://www.stemlynsblog.org/rule-out-acs-single-troponin/",
+      "title": "St Emlyn's: Can we rule out ACS with a single prehospital troponin? (ARTICA trial appraisal)",
+      "why": "Beardsell's sharp methodological pushback — the point-of-care assay in ARTICA doesn't meet true 'high-sensitivity' precision criteria, so extrapolating in-hospital hs-troponin confidence to prehospital HEAR triage may be premature, directly relevant to UK ambulance practice."
+    }
+  ]
+}
