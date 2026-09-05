@@ -1,0 +1,29 @@
+{
+  "topic_id": "post-cardiac-arrest-ttm",
+  "title": "Post-Cardiac Arrest TTM: Target, Duration, and the Guideline Split — 2026-09-05",
+  "audio_format": "deep-dive",
+  "rationale": "This episode is timely because the ground has shifted twice in the last 18 months in ways that directly change ED practice: EUSEM/ESAIC broke ranks with ILCOR/ERC-ESICM/AHA to recommend routine 32-34°C hypothermia (2024), AHA and ESICM's 2025 guideline refreshes still disagree with each other on target temperature, and the dedicated ICECAP duration trial — the first RCT built specifically to answer \"how long to cool\" — reported in August 2026 with results that undercut the fixed 24-36h windows both societies still default to. The six sources were chosen to walk a UK EM listener through this as investigation rather than food-fight: EMCrit's IBCC gives the practical spine, PulmCrit sharpens the AHA-vs-ESICM disagreement, the EUSEM/ESAIC statement supplies the controversy in a real society's own words, ICECAP and the Taccone non-shockable-rhythm meta-analysis are the newest evidence forcing reappraisal, and EM Cases Ep 216 closes the loop with how a practising team actually implements all this. Deep-dive format fits better than debate here — there is genuine disagreement, but it's guideline-committee-level nuance (target temperature, duration, subgroup effects) best unpacked by patient, sequential explanation rather than staged opposition, matching the listener's stated preference.",
+  "case_vignette": "A 62-year-old man has a witnessed VF arrest at home; bystander CPR starts within two minutes and he gets ROSC after three shocks. On arrival at your ED he's comatose (GCS 3), haemodynamically stable, with no obvious cause found on initial workup. As you hand over to critical care, the team has to decide: target normothermia at 37.5°C per ESICM, keep hypothermia at 33°C on the table per AHA and EUSEM/ESAIC, and — whatever the target — how long to actually maintain it, given ICECAP just suggested the standard 24-36h window might be longer than needed.",
+  "sources": [
+    {
+      "url": "https://emcrit.org/ibcc/post-arrest/",
+      "title": "IBCC — Post-cardiac arrest management (temperature control)",
+      "why": "The practical spine: Farkas's living reference reconciles AHA-vs-ESICM 2025 language into an actual bedside protocol (37.5°C target, sedation/shivering management), which is what a UK EM doctor actually needs at 3am."
+    },
+    {
+      "url": "https://emcrit.org/pulmcrit/2025-arrest/",
+      "title": "PulmCrit — 2025 AHA & ESICM guidelines on post-arrest care",
+      "why": "The sharpest articulation of why two major 2025 guidelines still disagree on target temperature — AHA keeping a hypothermia option alive versus ESICM's near-full pivot to fever prevention alone."
+    },
+    {
+      "url": "https://eusem.org/news/942-temperature-control-after-successful-resuscitation-from-cardiac-arrest-in-adults-a-joint-statement-from-the-european-society-for-emergency-medicine-eusem-and-the-european-society-of-anaesthesiology-and-intensive-care-esaic",
+      "title": "EUSEM/ESAIC joint statement (2024) — routine hypothermia 32–34°C for all comatose adults",
+      "why": "A genuine society-level dissent from ILCOR/ERC-ESICM/AHA, leaning on the Cochrane review over TTM1/TTM2/HYPERION — the controversy in its own words, in a document written for European emergency physicians."
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=wugZT5mKq3s",
+      "title": "EM Cases Ep 216 — Cardiac Arrest Update: Beyond the 2025 ACLS Guidelines, Part 2 (Post-ROSC Care)",
+      "why": "The most current FOAMed synthesis (April 2026) translating all of the above into what an ED/ICU team actually does at the bedside, rather than trial-recap alone."
+    }
+  ]
+}
