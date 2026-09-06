@@ -1,0 +1,39 @@
+{
+  "topic_id": "ed-analgesia-opioid-stewardship",
+  "title": "Beyond the Milligram: ED Analgesia and Opioid Stewardship — 2026-09-06",
+  "audio_format": "deep-dive",
+  "rationale": "This episode is built around a genuine live tension rather than a single guideline recap: RCEM's newly refreshed (Oct 2024) numeric opioid-stewardship rules sit alongside ACEP's deliberately looser, consensus-only US policy, while three 2025-26 FOAMed/community pieces push back from different directions — St Emlyn's on whether ketamine adjuncts actually help opioid-dependent patients (not just opioid-naive ones), EM Cases on undertreatment-as-stewardship-failure in OUD, and PulmCrit on nalbuphine as an underused mu-sparing option with its own withdrawal hazard. The Tessitore 2026 ketorolac meta-analysis anchors the evidence base for the 'do we even need opioids' question in common ED presentations. A deep-dive suits this better than a debate format: the real story is how stewardship, oligoanalgesia risk, and novel agents interact in the same patient rather than two camps shouting past each other, and the UK listener needs the RCEM specifics translated against these international and community counterpoints, not a manufactured argument.",
+  "case_vignette": "A 34-year-old on prescribed methadone for opioid use disorder is brought into a UK ED after a motorcycle spill with an obviously deformed, closed femoral shaft fracture and 9/10 pain. The team has to decide, in real time, how aggressively to dose IV opioids given his tolerance, whether a ketamine adjunct changes the calculus, and — before discharge planning even starts — how RCEM's 3-5 day supply cap and 'no modified-release opioids' rule apply to a patient already on long-term opioid therapy.",
+  "sources": [
+    {
+      "url": "https://rcem.ac.uk/wp-content/uploads/2024/10/Management_of_Acute_Pain_in_Adults_2024_v1.pdf",
+      "title": "RCEM Best Practice Guideline: Management of Acute Pain in Adults in the ED (Oct 2024, v1)",
+      "why": "The listener's own college's current rulebook — refreshed Oct 2024 with an explicit Opioids Aware-aligned stewardship section: no modified-release/compound opioids at discharge, 3-5 day supply caps (7 exceptional), mandatory taper counselling. This is the numeric anchor every other source gets measured against."
+    },
+    {
+      "url": "https://www.abem.org/wp-content/uploads/2024/07/key-advances_-critical-issues-related-to-opioids_clinical-policy-alert.pdf",
+      "title": "ACEP Clinical Policy: Critical Issues Related to Opioids in Adult ED Patients (reconfirmed July 2025)",
+      "why": "The current US benchmark, deliberately reconfirmed rather than tightened — stays at consensus-level Level C recommendations with no hard day-cap, unlike RCEM's specific numbers. A live authority-vs-authority contrast on how prescriptive stewardship guidance should even be."
+    },
+    {
+      "url": "https://www.stemlynsblog.org/ketamine-for-opioid-users/",
+      "title": "St Emlyn's — Should we be giving ketamine to opioid users in acute pain?",
+      "why": "Critical appraisal of a fresh Danish RCT on adjunctive low-dose ketamine specifically in opioid-dependent ED patients — engages the oligoanalgesia-vs-stewardship tension head-on and flags the trial's exclusion-criteria limits rather than just endorsing the headline result."
+    },
+    {
+      "url": "https://emergencymedicinecases.com/substance-use-disorder-stigma-compassion-system-change/",
+      "title": "EM Cases — Substance Use Disorder: Stigma, Compassion and System Change",
+      "why": "May 2026 expert discussion arguing undertreatment of genuine acute pain in patients with OUD is itself a stewardship failure — the necessary counterweight so 'reduce opioids' doesn't become 'undertreat tolerance and dependence.'"
+    },
+    {
+      "url": "https://emcrit.org/pulmcrit/nalbuphine/",
+      "title": "PulmCrit — Nalbuphine, the Diet Coke of opioids",
+      "why": "Farkas reframes stewardship around mu-receptor stimulation rather than blanket opioid avoidance, making the case for nalbuphine's respiratory-safety profile while flagging its precipitated-withdrawal risk in patients with full agonists on board — a genuinely underexplored practical angle."
+    },
+    {
+      "url": "http://ceemjournal.org/journal/view.php?doi=10.15441/ceem.25.002",
+      "title": "Ketorolac analgesia in the ED: a systematic review and meta-analysis (Tessitore et al., 2026)",
+      "why": "The newest and largest synthesis (40 RCTs) showing ketorolac matches opioids across renal colic, headache, MSK and biliary pain — the strongest evidence-based case that NSAID monotherapy is often simply enough."
+    }
+  ]
+}
