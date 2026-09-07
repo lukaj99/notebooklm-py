@@ -1,0 +1,33 @@
+{
+  "topic_id": "dsm5-dropped-medically-unexplained",
+  "title": "The Year Psychiatry Stopped Requiring 'Medically Unexplained' — 2026-09-07",
+  "audio_format": "deep-dive",
+  "sources": [
+    {
+      "url": "https://doi.org/10.1007/s44192-026-00398-4",
+      "title": "Overview of somatization through three historical lenses and future directions (Garde et al., 2026)",
+      "why": "Brand-new (2026) open-access review tracing the concept from somatization through DSM-5 SSD to present, arguing the field still lacks a workable conceptual model — good scene-setter for 'what's changed since 2013'."
+    },
+    {
+      "url": "https://doi.org/10.1002/wps.21353",
+      "title": "The epidemiology of ICD-11 bodily distress disorder and DSM-5 somatic symptom disorder in new large-scale population surveys within the World Mental Health Survey Initiative (Gureje et al., 2025, World Psychiatry)",
+      "why": "The newest and largest cross-national prevalence data for SSD since Löwe's 2022 scoping review — lets the episode update the base-rate numbers with real multi-country survey data rather than relying on the older single-country estimates."
+    },
+    {
+      "url": "https://doi.org/10.1017/S0033291721004177",
+      "title": "Somatic symptom disorder: a scoping review on the empirical evidence of a new diagnosis (Löwe et al., 2022, Psychological Medicine)",
+      "why": "The strongest evidence-based defense of SSD's reliability, validity and clinical utility — needed as the counterweight so the episode doesn't just relitigate the critics unopposed."
+    },
+    {
+      "url": "https://www.bmj.com/content/346/bmj.f1580",
+      "title": "The new somatic symptom disorder in DSM-5 risks mislabeling many people as mentally ill (Frances, 2013, BMJ)",
+      "why": "The founding critique from the DSM-IV chair himself — sets up the core tension (dropping 'medically unexplained' vs. a criterion with no reference standard) the whole episode has to resolve."
+    },
+    {
+      "url": "https://doi.org/10.1371/journal.pone.0088740",
+      "title": "Symptoms, the Nature of Fibromyalgia, and DSM-5 Defined Mental Illness in Patients with Rheumatoid Arthritis and Fibromyalgia (Wolfe, Walitt, Katz & Häuser, 2014, PLOS ONE)",
+      "why": "Concrete worked example of the false-positive problem in a real disease population (RA and fibromyalgia), open access, and shows the 'B criterion' being applied to actual patients rather than in the abstract."
+    }
+  ],
+  "rationale": "First time this topic has run. The core tension hasn't changed since DSM-5 shipped in 2013 — dropping the requirement that symptoms be 'medically unexplained' fixed a criterion clinicians could never actually certify, but replaced it with a judgment call (is this patient's health anxiety 'disproportionate'?) that has no reference standard. What's genuinely new for this episode is the evidence base underneath that argument: Gureje et al.'s 2025 World Mental Health Survey Initiative paper is the largest, most current cross-national prevalence data for DSM-5 SSD and ICD-11 bodily distress disorder to date, superseding the single-country estimates most discussions still cite, and Garde et al.'s 2026 historical-lenses review shows the conceptual argument is still unresolved thirteen years on rather than settled either way. I could not reach the Consensus connector this run (it failed to connect), so I was unable to run the aggregate expert-consensus check the routine normally uses to sanity-check debate vs. deep-dive framing; based on the literature itself, though, the evidence reads less like a live yes/no dispute (which would favor 'debate') and more like a genuine values question sitting on top of settled facts about reliability/validity — Löwe's scoping review and Frances's original critique aren't actually contradicting each other on the data, they're disagreeing about what the data justifies. That's why I kept the topic list's own 'deep-dive' call (debate: false) rather than overriding it, and picked sources that let the hosts walk from the historical fact pattern (what changed in 2013 and why) through the current best evidence (Gureje 2025, Löwe 2022) to the concrete stakes (Wolfe et al.'s fibromyalgia/RA patients actually meeting the criteria) without needing to manufacture an adversarial format the underlying literature doesn't really support."
+}
