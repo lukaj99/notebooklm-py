@@ -1,0 +1,39 @@
+{
+  "topic_id": "slaters-ghost-misdiagnosis-panic",
+  "title": "Slater's Ghost — The Misdiagnosis Panic That Wasn't — 2026-09-07",
+  "audio_format": "deep-dive",
+  "rationale": "This episode traces a specific number — Slater's 1965 claim that up to a third of 'hysteria' diagnoses were wrong — to its source, and finds the source itself admits its own data were too poorly presented to summarise cleanly, which is why re-analyses have put the true rate anywhere from 20% to 60%. The Stone/Smyth/Carson 2005 BMJ review is the spine: same underlying literature, better methodology, and a misdiagnosis rate that falls to 4% by the 1970s — attributed explicitly to improving study quality, not to CT and MRI, which is the counterintuitive causal claim the whole hour is built to defend. The JAMA Neurology 2018 consensus and the brand-new AAN 2025 guideline show why that low rate holds up today: FND is now diagnosed positively (Hoover's sign, entrainment) rather than by exclusion, and current guidance is unusually unanimous that the diagnosis is reliable. The St Emlyn's dystonia case supplies the vivid, ED-native version of Slater's founding fear to open on, and the Nickens BMJ rapid response supplies the necessary honesty: the 4% figure proves absence of a later explanation, not proof of correctness, and akathisia misdiagnosed as psychogenic is a live, documented harm. Deep-dive format suits a myth-audit better than adversarial debate — there's no clean two-camp dispute here, just a founding statistic that needs tracing, a modern number that needs quoting verbatim, and an honest caveat about a genuinely thin evidence base for what to do once the diagnosis is (correctly) made.",
+  "case_vignette": "A 29-year-old woman is brought to the ED with a witnessed convulsive episode that stopped as soon as the crash team arrived — eyes closed, resisting eye-opening, no post-ictal confusion. The registrar examines for Hoover's sign, finds it positive, and has to decide, in real time, whether to trust a positive functional diagnosis or order the EEG and MRI anyway 'just in case' — the exact decision point where sixty years of Slater's ghost either helps or gets in the way.",
+  "sources": [
+    {
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=16223792&rettype=abstract&retmode=text",
+      "title": "Stone, Smyth, Carson et al. — Systematic review of misdiagnosis of conversion symptoms and 'hysteria' (BMJ 2005)",
+      "why": "The load-bearing number of the episode: 27 studies, 1,466 patients, misdiagnosis falling 29% to 4% decade by decade, with the authors explicitly attributing the fall to improving study methodology rather than CT/MRI — the exact claim the whole episode is built to explain."
+    },
+    {
+      "url": "http://web.archive.org/web/20251218202842/https://www.neurology.org/doi/10.1212/WNL.0000000000214466",
+      "title": "AAN Practice Guideline Executive Summary — Management of Functional Seizures (Neurology, Dec 2025)",
+      "why": "The freshest possible answer to 'what does the specialty actually recommend now' — first-ever AAN guideline on any FND subtype, multi-society endorsed, and it states patients are more often misdiagnosed WITH epilepsy than the reverse, inverting Slater's founding fear outright."
+    },
+    {
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7293766/",
+      "title": "Espay, Aybek, Carson, Edwards, Stone et al. — Current Concepts in Diagnosis and Treatment of FND (JAMA Neurology 2018)",
+      "why": "Establishes why the modern misdiagnosis rate is low: FND is diagnosed positively via reproducible bedside signs, not by exclusion of organic disease — the mechanism that makes the audit's low numbers credible rather than lucky."
+    },
+    {
+      "url": "http://web.archive.org/web/20250627151339id_/https://litfl.com/wp-content/uploads/2019/07/Pract-Neurol-2001-Stone-50-3.pdf",
+      "title": "Stone & Sharpe — Hoover's Sign (Practical Neurology 2001, hosted on LITFL)",
+      "why": "The clinical companion to the audit: written by the same Jon Stone behind the 2005 BMJ review, it shows the exact bedside sign that lets a clinician rule a functional weakness IN with confidence — turns the statistic into something a listener can do on their next shift."
+    },
+    {
+      "url": "https://www.stemlynsblog.org/dystonia-emergency-department/",
+      "title": "Dystonia in the Emergency Department — St Emlyn's (Rick Body, 2014)",
+      "why": "A vivid, ED-native miniature of Slater's original fear — a young woman dismissed as 'crazy' who actually has drug-induced dystonia — used to open the episode on the fear before the audit dismantles its statistical basis."
+    },
+    {
+      "url": "http://web.archive.org/web/20201105184412/https://www.bmj.com/content/371/bmj.m3745/rr-0",
+      "title": "BMJ rapid response — 'A functional neurological misdiagnosis, akathisia, and suicide' (Jill Nickens, Akathisia Alliance)",
+      "why": "The honest counter-punch the episode needs: a named, citable challenge arguing the 4% figure only proves no explanation was later found, illustrated by a real case of drug-induced akathisia read as FND — keeps the episode from overclaiming that the diagnosis is now infallible."
+    }
+  ]
+}
