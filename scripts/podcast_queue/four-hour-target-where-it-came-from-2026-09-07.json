@@ -1,0 +1,40 @@
+{
+  "topic_id": "four-hour-target-where-it-came-from",
+  "title": "The Four-Hour Target: A Number With No Evidence Behind It — 2026-09-07",
+  "audio_format": "deep-dive",
+  "rationale": "This episode follows the four-hour target from its announcement in the 2000 NHS Plan through to its 2024 restoration, using sources that let the hosts hold two things true at once rather than pick a side. The RCEM position statement is the anchor: the professional body that most needs the target to survive concedes in writing that its 98%/95% cut-offs \"were not based on any evidence or even expert opinion,\" which does the investigative work of confirming the Guly-and-Higginson origin story with an on-the-record institutional voice rather than just an academic citation. The Momesso field-test paper is the modern-chapter payoff — hard single-site data showing that removing four-hour reporting cut short-stay admissions but lengthened stays for everyone, which is exactly the finding that refuses both the \"target is pure ritual\" and \"target is unambiguously good\" readings. The RCEM Performance Tracker supplies the correction the media keeps getting wrong (76%/78% are delivery-plan ambitions, not a redefinition of the 95% constitutional standard) alongside the current numbers showing England hasn't hit 95% since 2013. Darzi and Reform are placed in deliberate tension — one locates the crisis in 2012 reorganisation and austerity, the other argues staffing and funding \"alone cannot explain\" it and points at NHS-internal flow failure — so the hosts have a live, sourced disagreement about who is accountable for what the target now measures. CQC's State of Care closes the loop with the regulator's own inspection evidence of what erosion of the standard looks like in patient harm terms (1.8 million 12-hour waits), grounding the abstract governance argument in the corridor described in the vignette. Deep-dive suits this better than debate: the through-line is a single number's biography and the evidence keeps forcing \"both are true\" conclusions (Bevan-and-Hood gaming vs Propper-et-al causal benefit) rather than a two-sided dispute with a resolution.",
+  "case_vignette": "It's 3am on a wet Tuesday in a district general ED and Mrs Okafor has been on a trolley in the corridor by the nurses' station for nine hours — the decision to admit her was made within the first hour, but there is no bed on the medical ward, so she boards behind a curtain that was meant for overflow triage. Nobody on shift is thinking about the four-hour clock anymore, because the trust has been in escalation since November and the number that was supposed to flag her case as a failure stopped being visible the moment she was 'decided to admit.' The hosts open here because every structural thread in this episode — a fabricated evidence base, a gamed metric, a genuine causal benefit, an abandoned reform — runs straight through this one corridor.",
+  "style": "Frame this as an investigative discussion between two hosts who know the NHS from the inside: structural and political, not clinical — no management advice for individual patients. Work through what the data actually shows, then argue about causation and accountability, disagreeing openly and resolving it by citing the sources rather than by splitting the difference. Be willing to say plainly where the evidence points and where it genuinely does not. Distinguish carefully between what is measured, what is inferred, and what is asserted. Land on concrete, named interventions and who would have to act to deliver them — not on vague calls for more funding.",
+  "sources": [
+    {
+      "url": "https://rcem.ac.uk/wp-content/uploads/2026/06/RCEM_position_statement_Improving_quality_indicators_and_system_metrics.pdf",
+      "title": "RCEM Position Statement: Improving Quality Indicators and System Metrics for Emergency Departments in England",
+      "why": "The target's own chief institutional defender states in writing that the 98% and 95% cut-offs 'were not based on any evidence or even expert opinion' — confirms the fabricated-origin claim with an official-body voice, then argues to keep the target anyway, setting up the episode's central refusal of the easy conclusion."
+    },
+    {
+      "url": "https://discovery.ucl.ac.uk/id/eprint/10173918/1/Ibrahim_Final_Manuscript.pdf",
+      "title": "Momesso T, Gokpinar B, Ibrahim R, Boyle AA. 'Effect of removing the 4-hour access standard in the ED: a retrospective observational study.' Emergency Medicine Journal, 2023",
+      "why": "The actual field-test paper from the Powis-led Clinical Review sites: removing four-hour reporting cut short-stay admissions but lengthened ED stay for both admitted and discharged patients — the single finding that undercuts any clean 'the target is good' or 'the target is bad' verdict."
+    },
+    {
+      "url": "https://rcem.ac.uk/nhs-performance-tracker/",
+      "title": "RCEM NHS Performance Tracker",
+      "why": "Live official data explicitly separating the 76%/78% interim delivery ambition from the unchanged 95% constitutional standard — corrects the near-universal '76% target' error while supplying current hard numbers (95% not met in England since June 2013)."
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/independent-investigation-of-the-nhs-in-england/independent-investigation-of-the-national-health-service-in-england-accessible-version",
+      "title": "Independent Investigation of the National Health Service in England (Lord Darzi)",
+      "why": "The official government-commissioned diagnosis pins A&E's collapse from 96.6% to 74.5% on the 2012 reorganisation and austerity — the 'political failure' account the hosts test against Reform's rival diagnosis below."
+    },
+    {
+      "url": "https://reform.uk/wp-content/uploads/2023/02/Briefing-Paper-AE-crisis-FINAL-4.pdf",
+      "title": "The A&E Crisis: What's Really Driving Poor Performance? (Reform, 2023)",
+      "why": "Directly rebuts Darzi's funding/staffing framing with data showing shortages 'alone cannot explain' the crisis and that roughly 43% of long-stay discharge delays are the NHS's own responsibility — the live disagreement about who is actually accountable."
+    },
+    {
+      "url": "http://web.archive.org/web/20260208235018/https://www.cqc.org.uk/publications/major-report/state-care/2024-2025/access/secondary",
+      "title": "CQC State of Care 2024/25 — Secondary care / urgent and emergency care",
+      "why": "The regulator's own inspection evidence — 1.8 million 12-hour waits in 2024/25, documented corridor-care harm, occupancy far above RCEM's recommended threshold — grounds the abstract question of what the target's erosion costs patients in the exact scene the episode opens on."
+    }
+  ]
+}
