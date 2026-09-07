@@ -1,0 +1,29 @@
+{
+  "topic_id": "rule-in-revolution-small-print",
+  "title": "The Rule-In Revolution And Its Small Print — 2026-09-07",
+  "audio_format": "deep-dive",
+  "rationale": "This episode takes a diagnostic reform that is genuinely correct — FND as rule-in, not exclusion, per Espay/Aybek/Carson/Edwards/Stone 2018 — and asks whether the confidence behind its signature signs is earned. The five sources trace one arc: EMOttawa 2018 states the shift's rationale with real primary-literature engagement; McWhirter 2011 supplies the actual numbers behind Hoover's sign (an 8-patient sensitivity estimate with a CI spanning 24-91%, hiding under a 100%-specificity headline); and EMOttawa 2024, RCEMLearning, and EMCrit's IBCC show, in three independent teaching contexts (grand rounds, the UK's own emergency-medicine college, critical-care reference), how confidently and uniformly these signs get taught without the caveats. A deep-dive format suits this better than a debate — there's no serious camp defending diagnosis-by-exclusion, and the real tension isn't 'shift vs. no shift' but 'shift vs. how well-checked its tools are', which rewards patient, evidence-by-evidence unpacking rather than adversarial framing. For a UK EM audience specifically, RCEMLearning's own house teaching makes the small print land close to home.",
+  "case_vignette": "A 34-year-old woman is brought to a UK ED with sudden left leg weakness; stroke is excluded on imaging and the registrar demonstrates a clearly positive Hoover's sign, so she is confidently told she has a functional neurological disorder and discharged with a physio leaflet rather than a neurology referral. The decision point the hosts open on: how much diagnostic weight that single bedside sign can actually bear, given its only prospective validation is a 63%-sensitive result built on eight patients — and what should have happened differently if her weakness recurs a month later.",
+  "sources": [
+    {
+      "url": "https://emottawablog.com/2018/10/functional-neurological-disorders/",
+      "title": "Caring for Patients with Functional Neurological Disorders in the ED: Updates, Pearls, and Pitfalls - EMOttawa Blog",
+      "why": "States the episode's founding premise in plain language ('FND is not a diagnosis of exclusion') and, unusually for FOAMed, actually engages primary literature (Stone 2009, Carson 2011, Reuber 2003) — the right anchor for the 'genuine and welcome shift' half of the story before the pushback begins."
+    },
+    {
+      "url": "https://emottawablog.com/2024/04/functional-neurologic-disorders/",
+      "title": "Functional Neurologic Disorders (Grand Rounds) - EMOttawa Blog",
+      "why": "A 2024 grand-rounds summary that presents Hoover's sign, tremor entrainment and seizure semiology as settled, citation-numbered rule-in tools with no hint that each rests on one small study — the exact bedside-confidence-outrunning-the-arithmetic pattern the episode is built to expose."
+    },
+    {
+      "url": "http://web.archive.org/web/20260517061211/https://www.rcemlearning.co.uk/foamed/functional-seizures/",
+      "title": "RCEMLearning: Functional Seizures",
+      "why": "What UK emergency physicians — this listener's own professional body — are actually taught about spotting dissociative seizures at the bedside, letting the episode hold RCEM's own teaching up against Syed & LaFrance's finding that most of those taught signs, including pelvic thrusting, barely beat chance."
+    },
+    {
+      "url": "https://emcrit.org/ibcc/sz/",
+      "title": "Status Epilepticus - EMCrit IBCC (Josh Farkas)",
+      "why": "A widely-used critical-care reference that still lists pelvic thrusting as a taught pseudoseizure discriminator, despite Syed/LaFrance 2011 clocking its sensitivity as low as 1% — a single clean case study of the gap between the heuristic clinicians reach for and the sign that actually discriminates (fluctuating course, ictal eye closure)."
+    }
+  ]
+}
