@@ -124,14 +124,24 @@ def test_build_queue_instructions_rationale_precedes_vignette():
     assert result.index("why now") < result.index("the case")
 
 
-def test_build_queue_instructions_style_overrides_base():
+def test_build_queue_instructions_style_refines_base_without_replacing_it():
     result = build_queue_instructions(
         {"style": "Two riders talking wrenching.", "rationale": "new tire data"}
     )
 
-    assert result.startswith("Two riders talking wrenching.")
-    assert DERANGED_PHYSIOLOGY_STYLE not in result
+    # The base voice leads and survives; the episode framing refines it.
+    assert result.startswith(DERANGED_PHYSIOLOGY_STYLE)
+    assert "Two riders talking wrenching." in result
+    assert result.index(DERANGED_PHYSIOLOGY_STYLE) < result.index("Two riders talking wrenching.")
     assert "new tire data" in result
+
+
+def test_build_queue_instructions_style_precedes_rationale_and_vignette():
+    result = build_queue_instructions(
+        {"style": "Host framing.", "rationale": "why now", "case_vignette": "the case"}
+    )
+
+    assert result.index("Host framing.") < result.index("why now") < result.index("the case")
 
 
 def test_load_topics_skips_non_medicine_domains(tmp_path, monkeypatch):

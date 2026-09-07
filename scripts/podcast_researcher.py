@@ -392,14 +392,21 @@ def deliver_failure(topic: Topic, error: str) -> None:
 def build_queue_instructions(payload: dict) -> str:
     """Build audio-overview instructions from a queue payload.
 
-    Starts from the payload's own ``style`` when present (non-medical domains
-    supply their own host framing), else the base Deranged Physiology style; appends the
-    curator's ``rationale`` as editorial context and, when present, an
-    optional ``case_vignette`` for the hosts to open the episode with (both
-    produced by the deep-research workflow's curator stage).
+    Always leads with the Deranged Physiology style, which is domain-general:
+    the register and the audit stance hold whatever the topic. A payload's own
+    ``style`` (the curator stage writes one for non-medical domains) is then
+    appended as episode-specific direction that refines the voice rather than
+    replacing it. Then the curator's ``rationale`` as editorial context and,
+    when present, an optional ``case_vignette`` for the hosts to open with.
     """
 
-    instructions = payload.get("style") or DERANGED_PHYSIOLOGY_STYLE
+    instructions = DERANGED_PHYSIOLOGY_STYLE
+    style = payload.get("style")
+    if style:
+        instructions += (
+            "\n\nFraming specific to this episode. It refines the voice above, "
+            f"and does not replace it: {style}"
+        )
     rationale = payload.get("rationale")
     if rationale:
         instructions += f"\n\nEditorial context for this episode: {rationale}"
