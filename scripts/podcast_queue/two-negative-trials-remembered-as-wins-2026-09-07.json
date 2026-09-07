@@ -1,0 +1,29 @@
+{
+  "topic_id": "two-negative-trials-remembered-as-wins",
+  "title": "Two Negative Trials, Remembered As Wins — 2026-09-07",
+  "audio_format": "deep-dive",
+  "rationale": "What's new here is the juxtaposition, not any single source: Physio4FMD (2024) and CODES (2020) are usually discussed separately, but read together — one negative SF-36 result, one negative seizure-frequency result, both followed by a wave of secondary-outcome and cost-effectiveness reporting that got absorbed into UK service commissioning — the same structural pattern shows up twice, which is itself evidence about how the field, not just these two trials, handles a missed primary endpoint. The source set is built to keep the episode honest on all three legs of the argument the angle demands: the primary data itself (Nielsen 2024, esummary abstract with the exact CI), the promotional reading in its most explicit form (Perez's 'landmark study' commentary), the skeptical reading with real teeth (Tuller's cross-trial synthesis plus two granular follow-ups — one showing the CODES '9 of 16' figure shrinks to 5 after correcting for multiple comparisons, one contesting the retrospective claim that Physio4FMD's primary outcome was simply the wrong choice), and the one argument that survives regardless of how the spin question is resolved — the Physio4FMD cost-utility analysis, which gives a legitimate, endpoint-independent reason to keep funding the therapy. Deep-dive is the right format because there isn't a clean two-sided debate to stage: the most interesting move is holding the trialists' own defensible caveats, the commentators' overreach, and the critics' sometimes-overcorrected skepticism in view at once, which rewards sustained reasoning over adversarial point-scoring — exactly what the topic brief asks for.",
+  "case_vignette": "A 32-year-old woman is brought to the ED by ambulance after a witnessed episode of limb jerking and unresponsiveness lasting six minutes, the third such attack this month. She was diagnosed with dissociative (functional) seizures eighteen months ago and has since completed a CBT-based FND pathway that her referral letter described as evidence-based, citing 'landmark' trial data. Her seizure frequency hasn't changed, but she tells the registrar she copes better and is less frightened when one happens — and the registrar, writing the discharge summary, has to decide what that pathway's evidence actually promised her in the first place.",
+  "sources": [
+    {
+      "url": "https://trialbyerror.org/2025/05/12/when-primary-outcomes-yield-null-results-in-clinical-trials-fnd-experts-prefer-their-secondary-outcomes/",
+      "title": "David Tuller, 'When Primary Outcomes Yield Null Results in Clinical Trials, FND Experts Prefer Their Secondary Outcomes' — Trial By Error, 2025",
+      "why": "Puts CODES and Physio4FMD side by side and names the pattern explicitly — the single source that argues both fields pivoted from null primary to positive secondary in the same way, giving hosts the cross-trial thread to pull."
+    },
+    {
+      "url": "https://trialbyerror.org/2020/06/27/trial-by-error-my-letter-to-author-of-codes-commentary/",
+      "title": "David Tuller, letter to the author of the CODES 'landmark' commentary — Trial By Error, 2020",
+      "why": "Complicates the '9 of 16 secondary outcomes favoured CBT' figure the episode angle itself cites: only 5 survive correction for multiple comparisons, and the press release blurred which result was primary — a concrete, checkable stress-test rather than a slogan."
+    },
+    {
+      "url": "https://trialbyerror.org/2025/05/13/a-letter-seeking-a-correction-in-fmd-physiotherapy-paper/",
+      "title": "David Tuller, 'A Letter Seeking a Correction in FMD Physiotherapy Paper' — Trial By Error, 2025",
+      "why": "Takes on the Physio4FMD side of the 'wrong primary outcome' question directly — disputes the trialists' own retrospective claim that CGI-I, not SF-36 physical function, should have been primary, and challenges the cited consensus basis for that reframing."
+    },
+    {
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=40190588&rettype=abstract&retmode=text",
+      "title": "Hunter RM, Nielsen G, et al. Cost Utility of Specialist Physiotherapy for Functional Motor Disorder (Physio4FMD): Economic Analysis of a Pragmatic RCT. Neurol Clin Pract. 2025",
+      "why": "The genuinely separate, non-spin case for the intervention: 86% probability of cost-effectiveness at £20,000/QALY, physiotherapy dominant once productivity costs are counted — a reason to fund the treatment that doesn't depend on relitigating the primary endpoint, and keeps the episode from collapsing into cynicism."
+    }
+  ]
+}
