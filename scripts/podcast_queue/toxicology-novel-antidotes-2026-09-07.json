@@ -1,0 +1,34 @@
+{
+  "topic_id": "toxicology-novel-antidotes",
+  "title": "Toxicology: New Antidotes, New Doubts — 2026-09-07",
+  "audio_format": "deep-dive",
+  "rationale": "2025–26 has been the most turbulent stretch for \"reversal agent\" orthodoxy in a generation: the FDA forced Andexxa off the US market in December 2025 after ANNEXA-I showed roughly double the thromboembolic/stroke-death rate, yet the EMA renewed Ondexxya months earlier and the British Society for Haematology's April 2026 position statement keeps it in UK practice — with NICE and NHS Scotland themselves disagreeing on how widely to use it. At the same time, the street opioid supply has outrun naloxone's design: medetomidine-adulterated \"blues\" produce a mixed opioid/alpha-2 toxidrome naloxone can't touch, pushing EMCrit and the IBCC to seriously float atipamezole (a veterinary drug with zero human RCT data) as the first real human antidote candidate, while St Emlyn's makes the case that nitazene contamination is quietly outpacing standard naloxone dosing, and a fresh RCT shows auto-injector nalmefene beating intranasal naloxone head-to-head against fentanyl. These sources were chosen because they triangulate the same underlying tension — regulators, guideline bodies, and frontline FOAMed educators are all reassessing whether the \"known\" antidote is still fit for purpose — from primary regulatory, society-guideline, RCT, and bedside-practitioner angles. A deep-dive format suits this better than an adversarial debate: the UK listener needs the hosts to walk through *why* each controversy exists (pharmacology, trial data, regulatory incentives) rather than watch two sides shout past each other, and the andexanet split in particular rewards patient unpacking of what changed between December 2025 and April 2026.",
+  "case_vignette": "A 34-year-old is brought in collapsed behind a bin, pupils blown rather than pinpoint, heart rate 42, BP 78/40 after injecting street \"blues\"; naloxone partially rouses him but his rate drifts back down within minutes, and the panel eventually flags fentanyl plus medetomidine. In the next bay, a 79-year-old on apixaban with a falling GCS after a fall needs a bleeding-reversal decision that now hinges on a live NICE-vs-Scotland, UK-vs-FDA split over andexanet alfa. Two patients, same night shift, same underlying question: when the textbook antidote stops fully working, what do you actually reach for next?",
+  "sources": [
+    {
+      "url": "https://emcrit.org/emcrit/medetomidine-overdose-withdrawal/",
+      "title": "EMCrit 415 - Medetomidine Overdose and Withdrawal",
+      "why": "Weingart's fresh 2025 breakdown of atipamezole as the first plausible human antidote for medetomidine-contaminated opioids — what a targeted alpha-2 reversal agent would actually look like in the ED."
+    },
+    {
+      "url": "https://emcrit.org/ibcc/oa2a/",
+      "title": "Xylazine & Medetomidine: Opioid plus alpha-2 agonist (OA2A) toxidromes - EMCrit Project",
+      "why": "Farkas's reference chapter on why naloxone alone can't touch the alpha-2 component of xylazine/medetomidine toxidromes — the pharmacology underpinning the atipamezole case, for the hosts to unpack the mechanism live."
+    },
+    {
+      "url": "https://www.stemlynsblog.org/nitazenes-deep-dive/",
+      "title": "Nitazenes: a deep(ish) dive on a growing problem",
+      "why": "Yates's 2025 appraisal of three studies on naloxone-resistant nitazene overdose, arguing UK EDs need higher/serial dosing — a live question about whether the 50-year-old antidote still works against the newest synthetic opioids."
+    },
+    {
+      "url": "https://b-s-h.org.uk/guidelines/guidelines/use-of-andexanet-alfa-a-british-society-for-haematology-position-statement",
+      "title": "Use of Andexanet Alfa: A British Society for Haematology Position Statement",
+      "why": "UK haematology's direct April 2026 rebuttal to the US withdrawal: andexanet stays licensed and reimbursed here, exposing a live transatlantic and NICE-vs-NHS-Scotland split on the same drug."
+    },
+    {
+      "url": "http://web.archive.org/web/20260615211721/https://www.fda.gov/vaccines-blood-biologics/safety-availability-biologics/update-safety-andexxa",
+      "title": "FDA Safety Communication: Update on the Safety of Andexxa (Dec 2025)",
+      "why": "The regulatory trigger for the whole controversy: FDA pulled Andexxa from the US market after ANNEXA-I showed roughly double the thromboembolic/stroke-death rate — the single biggest 'novel antidote' story of the past year."
+    }
+  ]
+}
