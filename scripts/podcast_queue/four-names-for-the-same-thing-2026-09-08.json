@@ -1,0 +1,29 @@
+{
+  "topic_id": "four-names-for-the-same-thing",
+  "title": "Four Names For The Same Thing, All In Use At Once — 2026-09-08",
+  "audio_format": "deep-dive",
+  "rationale": "This episode treats the four-names collision (ICD-11 bodily distress disorder, Fink's bodily distress syndrome, the ICD-11-PHC bodily stress syndrome proposal, and DSM-5 somatic symptom disorder) not as trivia but as a test case for what a diagnostic label is actually for. The Wessely 1999 paper anchors the historical mechanism - syndromes get merged rhetorically before anyone shows they share a mechanism - while EURONET-SOMA supplies the plain-language definitions needed to see how four near-identical names could plausibly be miscited for one another, as Henningsen & Löwe (2024) document happened twice in peer review. The EMCrit vocal cord dysfunction piece generalizes the pattern outside psychiatry entirely, and the focal-deficit IBCC page plus the GET/PACE rebuttal supply the two hardest tests of the episode's standard - does a name predict prognosis, select treatment, or identify mechanism - applied respectively to functional neurological disorder (diagnosed by exclusion) and to ME/CFS (a constituent of bodily distress syndrome where the treatment question is still contested between NICE and the PACE-trial tradition). A deep-dive format suits this because the real story is not two camps shouting past each other but a slow-motion taxonomic failure that keeps repeating for structural reasons - cheap to rename, expensive to validate - and the UK EM listener needs the reasoning chain, not a debate performance.",
+  "case_vignette": "A 34-year-old woman presents to the ED with an acute flare of widespread pain and breathlessness on a background of chronic fatigue and IBS-type bowel symptoms. Her notes carry three different diagnostic labels from three different clinics in the past two years - 'somatic symptom disorder' from her GP, 'bodily distress syndrome' from rheumatology, and 'medically unexplained symptoms' on last year's discharge summary - none of which tell the registrar whether to repeat the same exclusion workup again or what a positive diagnosis would actually change. The decision point: does any of these four names carry enough content to alter management tonight, or is the label doing no more work than the last one did?",
+  "sources": [
+    {
+      "url": "https://www.simonwessely.com/Downloads/Publications/Other_p/72.pdf",
+      "title": "Functional somatic syndromes: one or many? (Wessely, Nimnuan, Sharpe, The Lancet, 1999)",
+      "why": "The hinge document in the naming trail: Wessely's own argument that discrete syndromes overlap so heavily they might be one construct is the intellectual move that fed forward into 'medically unexplained symptoms' and, decades later, into the bodily-distress family - gives the hosts the primary source for where the modern collapsing-together started."
+    },
+    {
+      "url": "https://www.euronet-soma.eu/information/functional-disorders/",
+      "title": "EURONET-SOMA, \"Functional disorders\" patient/clinician explainer",
+      "why": "The one source that lays ICD-11 bodily distress disorder, DSM-5 somatic symptom disorder, functional somatic syndromes and MUS side by side in plain language from the field's own leading research consortium - the concrete definitions the hosts need before they can show how Henningsen & Löwe's citation-error problem becomes possible."
+    },
+    {
+      "url": "https://emcrit.org/ibcc/vcd/",
+      "title": "Vocal Cord Dysfunction - EMCrit Project (IBCC)",
+      "why": "Shows the four-names problem is not a psychiatric-classification quirk but a structural pattern: nine near-synonymous labels for one laryngeal entity, evidence-based diagnosis and treatment notwithstanding - lets the hosts test whether renaming ever tracks a real mechanistic split anywhere in medicine, not just in bodily distress."
+    },
+    {
+      "url": "https://emcrit.org/ibcc/focal-deficit/",
+      "title": "Approach an acute focal neurological deficit - EMCrit Project (IBCC)",
+      "why": "States plainly that functional neurological disorder is 'generally diagnosed by exclusion after exhaustive workup' - grounds the episode's central test (does a name predict prognosis, select treatment, or identify mechanism?) in what actually happens at the bedside rather than in manual text."
+    }
+  ]
+}
