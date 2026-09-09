@@ -1,0 +1,30 @@
+{
+  "topic_id": "who-actually-decides-in-a-hospital",
+  "title": "The Org Chart Is A Lie: Who Actually Decides Anything In A Hospital — 2026-09-09",
+  "audio_format": "deep-dive",
+  "rationale": "This episode is a structural anatomy, not a funding-vs-demand debate, so the picks are chosen to build one continuous decision map rather than stage a fight: a primary parliamentary source (HSCC 2022-23) supplies the documentary basis for the ICB/ICP 'have regard to' gap the 2022 Act created, the NAO 2024 report converts that gap into hard operational numbers (planning-timetable control, Recovery Support Programme trusts, deteriorating ICB finances), the NHS England corridor-care principles document gives a concrete, current worked example of the same multi-layer sign-off shape that governs job plans and business cases, the Nuffield Trust piece supplies the necessary skepticism about whether such chains produce real accountability or just a gameable metric, and the IfG productivity puzzle grounds the closing verdict on clinical directors in independent evidence about trust management capacity rather than folklore. Deep-dive format suits a listener who already knows the clinical reality and wants the causal wiring diagram delivered without adversarial theatre — the tension here is analytical (appearance of authority vs its location), not a two-sides argument with a natural motion to debate.",
+  "case_vignette": "It's 2am on a Friday in a busy district general ED: an 84-year-old with a fractured NOF has been medically fit for the ward for six hours but is on a corridor trolley because there is no bed, the site nurse practitioner is the one physically deciding who gets the next bed as it turns over, the consultant the family will blame is the one who admitted her, the trust board is legally accountable for the risk under the NHS Act 2006, and the actual lever that would fix the bottleneck — social care capacity, or the ICB's commissioning of step-down beds — sits with a body that has no power to direct the trust to do anything differently. Nobody in that chain is lying about who's in charge; the system just never wrote down that those are three different people.",
+  "style": "Frame this as an investigative discussion between two hosts who know the NHS from the inside: structural and political, not clinical — no management advice for individual patients. Work through what the data actually shows, then argue about causation and accountability, disagreeing openly and resolving it by citing the sources rather than by splitting the difference. Be willing to say plainly where the evidence points and where it genuinely does not. Distinguish carefully between what is measured, what is inferred, and what is asserted. Land on concrete, named interventions and who would have to act to deliver them — not on vague calls for more funding.",
+  "sources": [
+    {
+      "url": "http://web.archive.org/web/20241007184900/https://publications.parliament.uk/pa/cm5803/cmselect/cmhealth/587/report.html",
+      "title": "Integrated Care Systems: autonomy and accountability — Health and Social Care Committee, Seventh Report of Session 2022-23",
+      "why": "The primary-source root of the 2022 Act's central joke: Parliament's own committee, citing NAO, found nobody can say what an ICS is actually accountable for delivering — the documentary basis for 'the integrating body has no power to direct the thing it's meant to integrate.'"
+    },
+    {
+      "url": "https://www.nao.org.uk/reports/nhs-financial-management-and-sustainability-2024/",
+      "title": "NHS financial management and sustainability 2024 (National Audit Office)",
+      "why": "Turns the ICB autonomy question into hard numbers: NHSE's planning-guidance timetable delayed 2023-24 ICB spending plan approval to May/June, 3 ICBs and 21 trusts sit in the Recovery Support Programme, and 15/19 ICB CFOs report deteriorating finances — the statutory design says ICBs hold the budget; the operational reality says NHSE still holds the clock."
+    },
+    {
+      "url": "https://www.nuffieldtrust.org.uk/news-item/long-waits-for-a-hospital-bed-in-an-emergency-will-urgent-care-policies-make-a-difference-for-patients",
+      "title": "Long Waits for a Hospital Bed in an Emergency: Will Urgent Care Policies Make a Difference for Patients? (Nuffield Trust, Jul 2026)",
+      "why": "The necessary skeptical counterweight to the NHS England sign-off document: flags the new corridor-care definition as gameable (delay handover, exclude waiting-room patients), the sharpest available case of a decision chain that exists on paper without anyone being made to actually change anything."
+    },
+    {
+      "url": "https://www.instituteforgovernment.org.uk/sites/default/files/2023-06/nhs-productivity-puzzle.pdf",
+      "title": "The NHS Productivity Puzzle — Institute for Government / Public First / Health Foundation (June 2023)",
+      "why": "Independent evidence for the honest, mixed verdict on trust-level management the episode lands on: names trusts as 'chronically undermanaged' with managers lacking the analytical capacity to fix flow — feeds directly into whether clinical directors and executive teams can, in practice, change the thing they're nominally responsible for."
+    }
+  ]
+}
