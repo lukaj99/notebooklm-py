@@ -1,0 +1,34 @@
+{
+  "topic_id": "reassurance-that-does-not-reassure",
+  "title": "The Reassurance That Doesn't Reassure — 2026-09-10",
+  "audio_format": "deep-dive",
+  "rationale": "What's new here isn't the underlying trial — Rolfe & Burton is over a decade old — it's the discipline of taking its null result at face value and following it all the way through, rather than treating \"the test will reassure them\" as self-evidently true because it feels compassionate. The six sources trace a single line of reasoning: start with the numbers (Rolfe & Burton), watch the mechanism play out in a population UK EM doctors actually see (First10EM on CCTA), get an unusually candid admission from within EM culture that the benefit is clinician comfort, not patient comfort (EM Nerd), get the honest survey data on why clinicians really order tests — fear of missing something, litigation — sitting uncomfortably next to the stated reason of patient reassurance (CEEM), and then push toward the harder, still-open question of what actually works, where the evidence (Petrie 2007) is suggestive but incomplete, and the guidance (NICE NG197) is procedural rather than proven. A deep-dive suits this better than a debate: there isn't a clean two-sided dispute in the verified sources so much as a single evidence base that clinicians haven't fully absorbed, and the interesting work is diagnostic reasoning about mechanism and motive, not adversarial point-scoring. The tone throughout should be dry rather than indignant — this is an audit of a gap, not an accusation.",
+  "case_vignette": "A 34-year-old presents to a UK ED at 2am with two hours of atypical, non-exertional chest tightness, normal observations, and a HEART score of 2. The registrar orders a troponin \"just to reassure her\" — it comes back undetectable, she's told everything is normal, and she goes home relieved. She re-attends the same department 36 hours later with the identical symptoms and the identical worry, asking whether they missed something the first time — the exact moment where the episode's angle bites: the test worked as a ritual, but not as reassurance.",
+  "sources": [
+    {
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=23440131&rettype=abstract&retmode=text",
+      "title": "Rolfe A, Burton C. Reassurance after diagnostic testing with a low pretest probability of serious disease: systematic review and meta-analysis. JAMA Intern Med. 2013;173(6):407-416.",
+      "why": "The mandatory anchor and every number in the episode: 14 RCTs, 3,828 low-pretest-probability patients, no effect on illness worry (OR 0.87) or anxiety, no effect on symptom persistence (OR 0.99), only a modest cut in later primary-care visits (OR 0.77, NNT 16-26) — the null result the whole episode has to explain."
+    },
+    {
+      "url": "http://ceemjournal.org/journal/view.php?doi=10.15441/ceem.17.233",
+      "title": "Addressing overuse in emergency medicine: evidence of a role for greater patient engagement (Clin Exp Emerg Med, 2017)",
+      "why": "Puts a number on the gap the episode is auditing: surveyed EPs cite fear of missing a diagnosis (69%) and litigation (64%) as the real drivers of testing, in the same breath as citing Rolfe-type evidence that testing doesn't reliably reassure — the stated reason and the actual reason, named side by side."
+    },
+    {
+      "url": "https://first10em.com/ccta-evidence/",
+      "title": "CCTA doesn't help: The evidence",
+      "why": "A worked mechanism case: Morgenstern's RCT-by-RCT read of coronary CT in low-risk chest pain shows the test moves clinician confidence and downstream cascade testing, not patient outcomes — the mechanistic 'why' behind Rolfe & Burton's null result in a population the UK-EM listener actually sees."
+    },
+    {
+      "url": "https://emcrit.org/emnerd/em-nerd-the-case-of-the-anatomic-heart-revisited/",
+      "title": "EM Nerd: The Case of the Anatomic Heart Revisited",
+      "why": "Supplies the episode's dry closing line almost verbatim — Spiegel on SCOT-HEART: the only benefit CCTA reliably delivers is 'diagnostic comfort... to the treating clinician,' making explicit that the ritual serves the clinician's uncertainty, not the patient's psyche."
+    },
+    {
+      "url": "http://web.archive.org/web/20260615235538/https://www.nice.org.uk/guidance/ng197/chapter/Recommendations",
+      "title": "NICE NG197: Shared Decision Making (recommendations)",
+      "why": "The nearest thing to a UK guideline-backed alternative to reflexive testing — structured, mandated conversation about risk, benefit, and 'doing nothing' — giving the hosts a concrete answer to 'if not the test, then what' rather than leaving it purely rhetorical."
+    }
+  ]
+}
