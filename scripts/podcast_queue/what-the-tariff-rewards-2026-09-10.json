@@ -1,0 +1,38 @@
+{
+  "topic_id": "what-the-tariff-rewards",
+  "title": "What The Tariff Actually Rewards — 2026-09-10",
+  "audio_format": "deep-dive",
+  "sources": [
+    {
+      "url": "https://www.nuffieldtrust.org.uk/sites/default/files/2017-01/2014-nhs-payment-research-report-web-final.pdf",
+      "title": "The NHS payment system: evolving policy and emerging evidence (Nuffield Trust)",
+      "why": "Traces Payment by Results from 2003/04 through HRGs, the 2010/11 marginal rate for emergency admissions, and CQUIN — the historical spine the episode needs before judging the current scheme."
+    },
+    {
+      "url": "https://assets.publishing.service.gov.uk/media/5a7ef8ed40f0b6230268cb1f/Monitor_and_NHS_England_U2019s_review_of_the_marginal_rate_rule.pdf",
+      "title": "Monitor and NHS England's review of the marginal rate rule",
+      "why": "The one formal official evaluation of the 30% emergency marginal rate: finds it did hold back growth in short-stay avoidable admissions, but flags poor implementation and opaque reinvestment of the retained 70% — directly complicates the simple 'it failed' story."
+    },
+    {
+      "url": "https://www.bbc.com/news/health-23127924",
+      "title": "NHS funding gap costs hospitals £500m, survey finds (BBC News, 2013)",
+      "why": "Reports the Foundation Trust Network survey in which 96% of member trusts said the marginal rate rule wasn't achieving its stated aim, with most unable to see where the retained 70% had actually gone — the provider-side view that sits in tension with Monitor's own review."
+    },
+    {
+      "url": "https://www.nao.org.uk/wp-content/uploads/2013/10/10288-001-Emergency-admissions.pdf",
+      "title": "Emergency admissions to hospital: managing the demand (National Audit Office, 2013)",
+      "why": "Independent audit finding that financial incentives to reduce emergency admissions sit almost entirely with hospitals, while commissioners, GPs, community and social care carry little or none — the mechanism-level explanation for why a tariff rule aimed at hospitals alone struggled to bend system-wide demand."
+    },
+    {
+      "url": "https://bmjmedicine.bmj.com/content/4/1/e001398",
+      "title": "Association between meeting adult acute asthma best practice tariff standard of care and 30 day and 90 day hospital readmission: nationwide cohort study (BMJ Medicine, 2025)",
+      "why": "A rare, recent, independent outcome evaluation of a Best Practice Tariff: the discharge-bundle element was associated with fewer readmissions, but the specialist-review-timing element — the part that actually triggers the tariff payment — was not. Shows the reward and the outcome can come apart even within one BPT."
+    },
+    {
+      "url": "https://www.england.nhs.uk/wp-content/uploads/2023/03/23-25NHSPS_NHS-provider-payment-mechanisms.pdf",
+      "title": "23-25 NHS Payment Scheme: NHS provider payment mechanisms (NHS England)",
+      "why": "The current settlement: blended payment under the Aligned Payment and Incentive model, replacing the National Tariff from April 2023 — needed to close the episode on what actually determines a trust's marginal pound today, not what did a decade ago."
+    }
+  ],
+  "rationale": "This topic has never been queued before, so there's no prior episode to update against, but the research turned up a genuine complication worth building the episode around: the official Monitor/NHS England review of the marginal rate emergency tariff found real (if partial) success in holding back avoidable short-stay admissions, while the Foundation Trust Network's own provider survey found 96% of trusts thought the same rule was failing and that the retained 70% was rarely visibly reinvested — two credible, contemporaneous verdicts on the same policy pointing in different directions. The NAO's independent audit supplies the mechanism for why: the financial incentive to cut admissions sat almost entirely with hospitals while the rest of the system carried none of it. A 2025 BMJ Medicine cohort study on the asthma Best Practice Tariff adds a sharper, more recent example of the same problem at the level of an individual metric — one component of the tariff's standard of care tracked outcomes, the other (the one that actually releases the payment) didn't. UpToDate had no relevant content to check, as expected for a health-financing rather than clinical topic, so it wasn't used. The Consensus connector failed to connect this run (a 404/dialing error, not a missing capability) so I could not get an aggregate expert-consensus read to sanity-check the format call; I kept audio_format at the topic list's own default of deep-dive rather than upgrading to debate, since the tension here is better handled as an audit that holds multiple imperfect verdicts side by side than as two hosts each defending a fixed position — but a debate format is a reasonable alternative call if the orchestrator or a future run wants to revisit it once Consensus is back."
+}
