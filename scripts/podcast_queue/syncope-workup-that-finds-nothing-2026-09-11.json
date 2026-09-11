@@ -1,0 +1,34 @@
+{
+  "topic_id": "syncope-workup-that-finds-nothing",
+  "title": "The Syncope Workup That Finds Nothing — 2026-09-11",
+  "audio_format": "deep-dive",
+  "rationale": "This episode is built to dismantle a habit rather than introduce a fact: the UK EM listener already knows the syncope screen exists, so the value is in walking, test by test, from the 2009 Mendu anchor (which the hosts should verify against its exact published figures rather than quote from memory) through to what current guidance and current data say should replace it. The IBCC chapter supplies the test-by-test rationale, NICE CG109 grounds the episode in the pathway this specific listener practices under — lying-standing BP as a mandated step, not an afterthought. The CSRS pair (REBEL EM's validation writeup against Solbiati's external validation, which found CSRS-labelled low-risk patients had a higher adverse-event rate than gestalt-labelled low-risk patients) keeps the \"risk stratification that was supposed to fix this\" section honest rather than promotional — the score is real, but its superiority over experienced judgement is not settled, which is exactly the kind of tension a deep-dive should surface without forcing an artificial debate. REBEL EM's piece on Probst's admission-vs-discharge analysis closes the loop on the episode's real question — whether the admission itself is functioning as a test or just as a more expensive place to repeat one. Deep-dive format fits because the throughline is investigative (trace the evidence test by test) rather than adversarial; the one live tension (CSRS vs. gestalt) is presented as an open empirical question inside that investigation, not as two camps staged to fight.",
+  "case_vignette": "A 78-year-old woman is found on the kitchen floor by her daughter — no witnessed seizure activity, no tongue bite, she's back to baseline within minutes and is on amlodipine and tamsulosin. She's triaged, GCS 15, obs normal, ECG shows sinus rhythm with a normal QTc. The SHO reflexively adds troponin, a head CT, and carotid Dopplers to the admission bloods before anyone has checked her lying and standing blood pressure — the decision point where NICE CG109's mandated postural BP, the Mendu-era 'syncope screen,' and the question of whether admitting her for observation will find anything the bedside assessment hasn't already, all collide.",
+  "sources": [
+    {
+      "url": "https://emcrit.org/ibcc/syncope/",
+      "title": "Syncope - EMCrit Project (IBCC)",
+      "why": "Farkas's test-by-test scaffold is the spine of the episode: it states explicitly what bedside eval, the ECG, and 'advanced testing' (troponin, CT, carotid Doppler, EEG) have each actually been shown to change, giving the hosts a working definition of 'defensible' versus 'ritual' before the guidelines even come up."
+    },
+    {
+      "url": "http://web.archive.org/web/20260209014554/https://www.nice.org.uk/guidance/cg109/chapter/Recommendations",
+      "title": "NICE CG109: Transient loss of consciousness ('blackouts') in over 16s — Recommendations",
+      "why": "The guideline this listener actually works under: mandates lying-and-standing BP on initial assessment plus structured history and 12-lead ECG, and explicitly says not to tilt-test before ambulatory ECG or after vasovagal is already diagnosed — the concrete 'what NICE says to do' to hold up against 3am reflex ordering."
+    },
+    {
+      "url": "https://rebelem.com/validation-of-the-canadian-syncope-risk-score/",
+      "title": "Validation of the Canadian Syncope Risk Score - REBEL EM",
+      "why": "Walks through the CSRS's methodology and performance and flags REBEL's own reservations about complexity and real-world uptake — introduces the risk score that was supposed to formalize disposition, on its own terms, before the counter-evidence complicates it."
+    },
+    {
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=34039646&rettype=abstract&retmode=text",
+      "title": "Multicentre external validation of the Canadian Syncope Risk Score to predict adverse events and comparison with clinical judgement (Solbiati et al., Emerg Med J, 2021)",
+      "why": "The data point that complicates the score-solves-it narrative: CSRS-labelled 'low risk' patients had a HIGHER 30-day serious-adverse-event rate (6.7%) than patients clinicians called low-risk by gestalt (2%), with gestalt's sensitivity beating the score's — used to ask whether formal risk stratification actually outperforms an experienced clinician's judgement at 3am."
+    },
+    {
+      "url": "https://rebelem.com/is-there-a-benefit-to-hospitalization-in-syncope/",
+      "title": "Is There a Benefit to Hospitalization in Syncope? - REBEL EM",
+      "why": "Direct evidence for the closing question: Probst et al.'s propensity-matched analysis found admission did not reduce serious adverse events in older-adult syncope, undercutting the logic that admitting for observation is itself doing diagnostic work rather than just re-running Mendu's low-yield screen in a bed."
+    }
+  ]
+}
