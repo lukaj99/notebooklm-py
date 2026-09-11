@@ -1,0 +1,44 @@
+{
+  "topic_id": "scan-that-found-something-else",
+  "title": "The Scan That Found Something Else — Incidentalomas And The Cascade — 2026-09-11",
+  "audio_format": "deep-dive",
+  "rationale": "This is a deep-dive rather than a debate because the episode's real tension isn't two camps shouting past each other — it's a single, well-documented mechanism (Ganguli's cascades, the South Korea natural experiment, hedged reporting) working exactly as designed across every actor in the chain, which rewards patient unpacking over adversarial framing. The six picks triangulate the whole arc: ESE and RCR supply the two professional bodies naming the problem from opposite ends (a clean stop-here threshold for adrenal lesions; an explicit ban on the hedge language that generates follow-up work), RCEM supplies the UK-specific answer to who is actually on the hook once a report lands, First10EM's two pieces (2022 mechanism, 2024 South Korea data) give the dry, evidence-first synthesis of why overdiagnosis is a systems output rather than a bad decision by any one clinician, and the archived EM Cases episode puts a radiologist in the room to explain the hedge from the other side of the dictation. Read together they let the hosts walk from 'how common is this on tonight's CT list' through the guidance that's supposed to stop the chase, into Ganguli-and-South-Korea-style measured harm, and land on the radiology report as the actual trigger — without needing to manufacture a fight that the sources don't support.",
+  "case_vignette": "A 58-year-old with three days of pleuritic chest pain gets a CTPA to rule out PE in resus at 2am. The PE is negative — but the report also flags a 6mm subsolid pulmonary nodule and, lower down the scan, a 1.8cm low-attenuation adrenal lesion, closing with \"clinical correlation recommended.\" The discharging SHO has to decide, on the spot, what of that sentence is actionable, what the ESE and RCEM rules actually say about each finding, and whose problem it becomes once the patient walks out the door.",
+  "sources": [
+    {
+      "url": "https://rcem.ac.uk/wp-content/uploads/2021/10/RCEM_BPC_InvestigationResults_200520.pdf",
+      "title": "RCEM Best Practice: Management of Investigation Results in the Emergency Department",
+      "why": "The UK college's own answer to who owns an unchased finding — a dedicated incidentalomas section with worked lung-nodule and adrenal-adenoma vignettes and a concrete 48-72hr review/GP-letter/2WW SOP, letting the hosts play it against the more diffuse US systems-responsibility model."
+    },
+    {
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=37318239&rettype=abstract&retmode=text",
+      "title": "Fassnacht et al., ESE/ENSAT clinical practice guidelines on the management of adrenal incidentalomas (Eur J Endocrinol, 2023) — abstract",
+      "why": "The exact 'European adrenal incidentaloma guidance' the episode is built around — states a homogeneous lesion ≤10 HU on unenhanced CT is benign and needs no further imaging regardless of size, the clean stop-here rule the cascade routinely overrides."
+    },
+    {
+      "url": "https://www.rcr.ac.uk/media/wlsf4ufl/ppqi_reporting-standards-guidance.pdf",
+      "title": "Standards for interpretation and reporting of imaging investigations, third edition (RCR, 2025)",
+      "why": "The radiology profession's own admission that 'clinical correlation advised' is a problem — current RCR standard explicitly tells reporters to drop the blanket hedge and either give a specific recommendation or say clearly why none is needed."
+    },
+    {
+      "url": "https://first10em.com/overdiagnosis-would-we-better-better-off-not-looking/",
+      "title": "Overdiagnosis: Would we be better off not looking? — First10EM (Justin Morgenstern, 2024)",
+      "why": "Names the episode's exact objects — incidental nodules, subsegmental PE on trauma CT — and carries the South Korea thyroid overdiagnosis data (Ahn/Kim/Welch's fifteen-fold incidence rise with flat mortality) into an EM-specific frame of 'at what threshold does a finding become disease.'"
+    },
+    {
+      "url": "https://first10em.com/overdiagnosis-in-the-emergency-department/",
+      "title": "Overdiagnosis in the emergency department — First10EM (Justin Morgenstern, 2022)",
+      "why": "Lays out the systemic drivers — sensitive tests, risk-averse culture, medico-legal fear, expanding disease definitions — that make the cascade a rational output of rational actors, the mechanism piece under the episode's closing line."
+    },
+    {
+      "url": "http://web.archive.org/web/20250807012308/https://emergencymedicinecases.com/emergency-radiology-controversies/",
+      "title": "Emergency Radiology Controversies — EM Cases (Anton Helman with Walter Himmel & Ryan Margau, 2021)",
+      "why": "The radiologist's side of the hedge — an EM doc and a radiologist talk through solitary pulmonary nodules and vague reports from opposite ends of the same referral, giving the episode a genuine second voice on why reports hedge and what the ED is actually meant to do with one."
+    },
+    {
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=31617925&rettype=abstract&retmode=text",
+      "title": "Ganguli et al., Cascades of Care After Incidental Findings in a US National Survey of Physicians (JAMA Netw Open, 2019) — abstract",
+      "why": "The cascade as a measured phenomenon: almost every surveyed physician had experienced a cascade after an incidental finding, many reported patient harm and wasted time, and the drivers they named — fear of missing something, malpractice worry, patient expectation — are exactly the rational pressures the episode is about."
+    }
+  ]
+}
