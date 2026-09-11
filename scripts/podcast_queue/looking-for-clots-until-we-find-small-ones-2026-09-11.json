@@ -1,0 +1,39 @@
+{
+  "topic_id": "looking-for-clots-until-we-find-small-ones",
+  "title": "Looking For Clots Until We Find Small Ones — 2026-09-11",
+  "audio_format": "deep-dive",
+  "rationale": "This episode treats PE as the textbook case study in diagnosis-drift-by-imaging-quality rather than a protocol refresher, so the six sources are chosen to trace one continuous argument rather than stack independent facts: Morgenstern's First10EM piece supplies the epidemiological spine (Wiener 2011's 80% post-CTPA incidence rise against flat mortality) and carries it straight into the Le Gal SSPE cohort's uncomfortably high recurrence rate; Wiener, Schwartz and Woloshin's own abstract anchors the overdiagnosis signature, and the SSPE section is reported honestly rather than resolved for the audience. The PROPER-trial appraisal and the fresh 2026 EM Nerd piece on the Hydra RCT do the same work for the 'tools built to scan fewer people' section — both show that PERC and YEARS work when followed, and that clinicians routinely don't follow them (CTPA rates barely moved in PROPER; 78% still scanned in the YEARS arm of Hydra). Bookending with NICE NG158 and its own PERC-refresh evidence document grounds all of this in what a UK EM registrar is actually told to do, and exposes two guideline gaps NICE itself has documented: no distinct SSPE pathway, and clinician avoidance of PERC in real practice. A deep-dive format fits better than a debate: the live disagreement over how to read the Le Gal recurrence rate is one strand among several, not a two-sided fight the whole episode should be organized around, and the listener's stated preference is for investigative synthesis over adversarial sparring — the piece is meant to land on 'the reflex is the villain, not the scanner,' which is an audit conclusion, not a verdict for one side.",
+  "case_vignette": "A 58-year-old presents with three days of pleuritic chest pain and a resting heart rate of 96; her Wells score lands her in the 'PE unlikely' band, but the department is busy and the registrar sends a D-dimer and CTPA together rather than gating on PERC first. The scan comes back positive for a single isolated subsegmental PE, with no proximal DVT on the follow-up leg ultrasound — and NICE NG158 has no distinct recommendation for exactly this scenario. The team has to decide, with no clean guideline to lean on and a 3.1% recurrence rate from the one prospective study that tried to answer the question, whether to anticoagulate for months against a real bleeding risk, or watch and wait for a clot that may never have mattered.",
+  "sources": [
+    {
+      "url": "https://first10em.com/what-to-do-about-subsegmental-pulmonary-embolism/",
+      "title": "What to do about subsegmental pulmonary embolism?",
+      "why": "Opens the episode's core arc in one place — Morgenstern walks from Wiener's 2011 overdiagnosis signature (80% incidence rise, flat mortality) straight into the Le Gal SSPE cohort, and reports its higher-than-hoped 3.1% recurrence rate honestly rather than as a win for either camp."
+    },
+    {
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=21555660&rettype=abstract&retmode=text",
+      "title": "Wiener RS, Schwartz LM, Woloshin S. Time trends in pulmonary embolism in the United States: evidence of overdiagnosis (Arch Intern Med, 2011) — abstract",
+      "why": "The epidemiological signature the whole episode rests on: after CTPA arrived, PE incidence rose sharply while mortality barely moved and case fatality fell — more clots found, not fewer deaths."
+    },
+    {
+      "url": "https://rebelem.com/is-it-proper-to-perc-it-up/",
+      "title": "Is it PROPER to PERC it Up?",
+      "why": "Landmark RCT test of PERC (Freund 2018) appraised for the 'uncomfortable point': non-inferior for missed VTE, but the CTPA rate barely moved (66% to 57%) — a rule only reduces scanning if clinicians apply it as a gate instead of ordering D-dimer regardless."
+    },
+    {
+      "url": "https://emcrit.org/emnerd/the-case-of-the-malignant-cohort/",
+      "title": "The Case of the Malignant Cohort",
+      "why": "Fresh (2026) EM Nerd dissection of the Hydra RCT sharpens the same uncomfortable point to its most extreme: 78% of patients in the supposedly imaging-sparing YEARS arm still got a CTPA — the tool exists, the reflex wins anyway."
+    },
+    {
+      "url": "https://www.nice.org.uk/guidance/ng158/chapter/Recommendations",
+      "title": "NICE NG158 — Venous thromboembolic diseases: diagnosis, management and thrombophilia testing (Recommendations)",
+      "why": "The actual UK diagnostic pathway the listener works under — 2-level Wells, PERC, D-dimer-then-CTPA — and notably has no distinct pathway for isolated subsegmental PE at all, a live guideline gap the episode should name."
+    },
+    {
+      "url": "https://www.nice.org.uk/guidance/ng158/evidence/perc-supporting-information-pdf-13128067837",
+      "title": "NICE NG158 — Supporting document for the refresh of recommendation 1.1.16 on the PERC rule (August 2023)",
+      "why": "NICE's own committee record, citing an HSIB patient-safety report, documents that UK clinicians avoid using PERC in practice — direct evidence that a scan-sparing tool only works if it's actually applied before reflexive D-dimer ordering, which NICE's own data says often doesn't happen."
+    }
+  ]
+}
