@@ -1,0 +1,44 @@
+{
+  "topic_id": "mri-that-finds-everyone-abnormal",
+  "title": "The MRI That Finds Everyone Abnormal — Imaging The Back — 2026-09-11",
+  "audio_format": "deep-dive",
+  "rationale": "This deep-dive rather than debate format suits the material because the real tension isn't two camps shouting past each other — it's one coherent argument (imaging finds things that were never going to matter, and routine use doesn't help and may harm) running into one hard exception (cauda equina, where a low positive rate is the acceptable cost of not missing a surgical emergency) and one unresourced system (NHS EDs told to raise their MRI threshold with no matching MRI access). The six sources build that arc in order: Chou and Jarvik supply the RCT-level verdict that routine/early imaging doesn't improve outcomes and can tilt toward more surgery; First10EM supplies the overdiagnosis mechanism that explains why an incidental finding becomes a label a patient can't un-hear; St Emlyn's and EM Cases pin down what a defensible emergency indication actually looks like in a UK ED — an 11.1% positive rate for suspected CES and the PVR/CT workarounds used when MRI isn't sitting empty at 3am; and the RCEM position statement supplies the honest institutional friction — the college agrees with the clinical logic of the national CES pathway but refuses to endorse it because nobody funded the scanners to match the lowered threshold. Brinjikji's asymptomatic-prevalence review opens the episode; the LIRE trial's mixed report-nudge result is background context the hosts can mention, though no independently verifiable URL for it made the cut here. Together these sources let the hosts trace one throughline — the same statistical fact (degenerative findings are near-universal with age) that makes routine imaging low-yield is what makes CES scanning's low positive rate defensible, not damning — without staging a manufactured fight where none of the source material actually disagrees.",
+  "case_vignette": "A 34-year-old office worker walks in with three weeks of axial low back pain, no red flags, and asks for \"the scan\" because a colleague's MRI \"found the cause\" of their back pain last year. Two bays down, a 58-year-old presents with two days of bilateral leg pain, saddle-area numbness, and new difficulty starting his stream — and the question is no longer whether to scan, but how fast an MRI (or, if the scanner isn't free, a bridging CT) can happen. Same modality, same department, same night shift — and the entire episode lives in why one of these patients should almost certainly not get an MRI and the other cannot leave without one.",
+  "sources": [
+    {
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=25430861&rettype=abstract&retmode=text",
+      "title": "Brinjikji et al., Systematic literature review of imaging features of spinal degeneration in asymptomatic populations (AJNR, 2015) — abstract",
+      "why": "The opening fact: disc degeneration, bulges and protrusions are present in a large and age-rising share of people with no back pain at all, so a report listing them is describing age, not necessarily the cause of the pain in front of you."
+    },
+    {
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=19200918&rettype=abstract&retmode=text",
+      "title": "Chou et al., Imaging strategies for low-back pain: systematic review and meta-analysis (Lancet, 2009)",
+      "why": "The trial-level verdict: pooled RCTs show immediate lumbar imaging for low back pain without red flags changes pain, function, or quality of life not at all — this is the evidence NICE NG59's 'do not routinely image' rests on."
+    },
+    {
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=12783911&rettype=abstract&retmode=text",
+      "title": "Jarvik et al., Rapid MRI vs radiographs for low back pain (JAMA, 2003)",
+      "why": "The head-to-head RCT that makes the harm concrete: rapid MRI produced equivalent outcomes to plain films at one year, at higher cost and with a trend toward more spine surgery — imaging itself nudging the treatment pathway."
+    },
+    {
+      "url": "https://first10em.com/overdiagnosis-would-we-better-better-off-not-looking/",
+      "title": "Overdiagnosis: Would we be better off not looking? — First10EM",
+      "why": "Supplies the mechanism connecting Brinjikji's asymptomatic-findings data to real harm: a true-positive finding that would never have caused illness still gets labelled, and 'the genie can't go back in the bottle' once a patient is told their MRI found something."
+    },
+    {
+      "url": "https://www.stemlynsblog.org/risk-factors-for-cauda-equina/",
+      "title": "Re-evaluating risk factors for Cauda Equina — St Emlyn's",
+      "why": "Gives the actual UK number for the defensible side: 11.1% MRI-confirmed cauda equina compression in a UK tertiary series — the empirical price tag for 'we scan a lot of negatives so we don't miss the one positive,' plus candid detail on which red flags actually predict compression."
+    },
+    {
+      "url": "https://emergencymedicinecases.com/imaging-decisions-emergency-medicine/",
+      "title": "Ep 222 Imaging Decisions in Emergency Medicine — EM Cases",
+      "why": "The current FOAMed articulation of what UK EDs do when MRI isn't immediately available — PVR thresholds and CT lumbar spine as interim risk-stratification for suspected CES — showing the practical workaround to the access gap RCEM flags."
+    },
+    {
+      "url": "https://rcem.ac.uk/wp-content/uploads/2024/03/RCEM_Position_Statement_Cauda_Equina_Syndrome_v2.pdf",
+      "title": "RCEM Position Statement: Cauda Equina Syndrome (2024)",
+      "why": "The genuine institutional tension: RCEM won't formally endorse the national CES pathway because it lowers the MRI-request threshold without funding the 24/7 MRI access to meet it — evidence-based indication colliding with unresourced infrastructure, which is exactly why NG59 is hard to follow in practice."
+    }
+  ]
+}
