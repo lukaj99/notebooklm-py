@@ -1,0 +1,29 @@
+{
+  "topic_id": "whose-95-percent-reference-interval",
+  "title": "Whose 95% Is It Anyway — Where 'Normal Range' Comes From — 2026-09-11",
+  "audio_format": "deep-dive",
+  "rationale": "This deep-dive is built to do something FOAMed rarely does: take the reference interval's own construction seriously before attacking it, then audit the audit. CLSI EP28-A3c and the IFCC C-RIDL self-critique establish that \"normal range\" is a statistical artefact (central 95% of ~120 healthy people per partition) that even its own authors call theoretically shaky — so the hosts can dismantle the naive \"5% of tests are always abnormal by definition\" line with real numbers (Phillips & Thompson 1981; Desbiens 1990 Lexis-modelling) narrated from the brief, since no freely accessible primary text survived verification for those two papers this cycle. The three case studies — ferritin (EM Cases, clinician-facing failure modes), TSH (Wartofsky & Dickey's pro-2.5 case, set against Surks's population data narrated for balance), and eGFR race-coefficient removal (REBEL EM's hard registry numbers plus a 2026 UK cohort showing the \"fix\" still has real trade-offs) — each show a reference range going wrong for a different reason: wrong population, unresolved population dispute, and category-vs-continuum politics respectively. Deep-dive format suits a UK-practising listener better than adversarial debate here: the strongest tension in the verified sources (TSH) has only one side directly citable, and the episode's real payoff is investigative — separating evidence, defensible habit, and pure ritual — rather than partisan point-scoring.",
+  "case_vignette": "A 32-year-old woman on levothyroxine presents with fatigue and heavy periods. Her bloods come back ferritin 28 mcg/L (flagged low-normal), TSH 5.1 (flagged high on one lab's range, normal on another's), and an eGFR that reads 58 on the creatinine-only equation her trust adopted in 2021 but 66 on the older formula still printed in her old discharge letter. Nothing here is a single wrong number — it's three different reference intervals disagreeing with themselves, and the ED doctor has to decide, in real time, which \"abnormal\" actually means something.",
+  "sources": [
+    {
+      "url": "https://cdn.bfldr.com/YLD4EVFU/at/scjm7t2858p8thq2gkbwb8/ep28a3ce_sample.pdf",
+      "title": "CLSI EP28-A3c: Defining, Establishing, and Verifying Reference Intervals in the Clinical Laboratory (3rd ed.)",
+      "why": "The standard itself, in its own words: 120 nonparametric reference individuals per age/sex partition, by definition excluding the outer 5% of a 'healthy' population — this is the number the entire episode has to earn before it can be criticised."
+    },
+    {
+      "url": "https://cms.ifcc.org/media/476752/ifcc-c-ridl_global-study-part-1.pdf",
+      "title": "IFCC C-RIDL: A global multicenter study on reference values, Part 1",
+      "why": "The guideline body auditing its own guideline in CC-BY open text: admits CLSI/IFCC's nonparametric-at-120 default is 'generally theoretical' and that parametric-vs-nonparametric derivation is still unsettled — turns 'the standard' into a live methodological argument, not received wisdom."
+    },
+    {
+      "url": "https://rebelem.com/race-multiplier-in-the-egfr-equation-what-is-the-impact-for-african-americans/",
+      "title": "Race Multiplier in the eGFR Equation: What's the impact for African-Americans? — REBEL EM",
+      "why": "Puts hard numbers on the 2021 race-coefficient removal using a 56,845-patient registry — the concrete cost (staging shifts, transplant/dialysis eligibility) of an equation change that's usually summarised as a slogan."
+    },
+    {
+      "url": "http://web.archive.org/web/20251015112301/https://emergencymedicinecases.com/iv-iron-for-anemia-in-emergency-medicine/",
+      "title": "IV Iron for Anemia in Emergency Medicine — EM Cases",
+      "why": "A working clinician's engagement with the ferritin threshold's failure modes (inflammation, CKD, thalassemia) — grounds the 'derived from the wrong reference population' critique in a bedside decision instead of a lab-medicine footnote."
+    }
+  ]
+}
