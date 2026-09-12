@@ -1,0 +1,35 @@
+{
+  "topic_id": "who-polices-the-hospital",
+  "title": "Who Polices The Hospital: Statutory Teeth vs. the Magic Box — 2026-09-12",
+  "audio_format": "deep-dive",
+  "rationale": "What's new here is the Dash and Richards reviews landing within a week of each other in October 2024 and giving, for the first time, hard numbers for something every clinician has long suspected but never seen quantified: the statutory regulator itself is running on stale, unreconstructable data (six-year-old ratings, 19% of locations never inspected, providers calling the algorithm a \"magic box\"). Layering the BOA piece on top turns a lawyer's technicality — technology appraisals are mandatory, guidelines are advisory — into something with real teeth via Fisher and Rose, which most doctors get backwards in exactly the direction that matters for practice. The RCEM report closes the loop by supplying the one body with no statutory power at all that clinicians nonetheless organize their working lives around, setting up the final structural question: teeth versus fear, and how badly the two are correlated. Deep-dive rather than debate because the real story isn't two sides shouting past each other — it's an investigative unpacking of a taxonomy nobody in the system has been taught, where the CQC (statutory but broken), NICE (split by instrument), coroners (statutory duty to respond, zero duty to act), and professional bodies (almost entirely advisory bar one narrow consultant-appointment carve-out) each demand a different, precise answer to \"what actually happens if this body says no.\"",
+  "case_vignette": "It's a Friday night shift in a trust still rated \"Good\" by the CQC — a rating awarded four years ago, before most of the current registrars started, because the regulator hasn't been back since. A senior registrar wants to deviate from a NICE clinical guideline to manage the queue of boarded patients faster and can't get a straight answer on whether that's a sackable risk or just Tuesday. Upstairs in medical records, a coroner's Prevention of Future Deaths report from eighteen months ago, describing a strikingly similar death, sits unanswered past its 56-day deadline — and nothing on paper says anyone has to do anything more about it than that.",
+  "style": "Frame this as an investigative discussion between two hosts who know the NHS from the inside: structural and political, not clinical — no management advice for individual patients. Work through what the data actually shows, then argue about causation and accountability, disagreeing openly and resolving it by citing the sources rather than by splitting the difference. Be willing to say plainly where the evidence points and where it genuinely does not. Distinguish carefully between what is measured, what is inferred, and what is asserted. Land on concrete, named interventions and who would have to act to deliver them — not on vague calls for more funding.",
+  "sources": [
+    {
+      "url": "https://www.gov.uk/government/publications/review-into-the-operational-effectiveness-of-the-care-quality-commission-full-report/review-into-the-operational-effectiveness-of-the-care-quality-commission-full-report",
+      "title": "Review into the operational effectiveness of the Care Quality Commission: full report (the Dash Review, Oct 2024)",
+      "why": "The regulator's own commissioned autopsy: pins every headline figure in this episode — 15,800 to 6,700 inspections, 87 to 136 days re-inspection lag after 'inadequate', 19% of locations never rated, ratings up to a decade old — and records providers calling CQC's own scoring method 'a magic box' they cannot reconstruct."
+    },
+    {
+      "url": "https://thenhsalliance.org/resources/on-the-day-briefing-reviews-into-cqc-s-operational-effectiveness-and-single-assessment-framework",
+      "title": "On the day briefing: Reviews into CQC's operational effectiveness and single assessment framework",
+      "why": "Explains the causal mechanism behind CQC's collapse — the 2021 single assessment framework plus a failed IT rebuild — and sets Dash side by side with the parallel Richards review, so the host can show two independent inquiries landing on the same verdict rather than one outlier report."
+    },
+    {
+      "url": "https://www.cqc.org.uk/system/files/2024-10/20241015-Review-of-CQC-single-assessment-framework-and-its-implementation-web.pdf",
+      "title": "Review of CQC's single assessment framework and its implementation (Richards review, full report)",
+      "why": "The clinical-leader's-eye account of being regulated by a broken regulator: NHS chief executives on record calling the assessment framework a 'pseudoscience' that can rate a service 'good' despite live regulatory breaches, and CQC itself 'on a downward spiral' whose inspectors 'instil fear.'"
+    },
+    {
+      "url": "https://www.boa.ac.uk/resource/advice-not-orders-the-evolving-legal-status-of-clinical-guidelines.html",
+      "title": "\"Advice, not orders\"? The evolving legal status of clinical guidelines",
+      "why": "The one source that gets the NICE distinction right rather than repeating it as a slogan: technology appraisals carry a statutory 90-day funding duty under regulation 7, clinical guidelines don't, yet Fisher (1997) and Rose (2014) mean commissioners need an 'exceptional basis' to depart from guidance anyway — quotes Rawlins' own 'never obligatory' line directly, then complicates it via Bolitho."
+    },
+    {
+      "url": "https://rcem.ac.uk/wp-content/uploads/2026/06/RCEM_SoEM_England_A4_0326-UPDATED-FINAL.pdf",
+      "title": "The State of Emergency Medicine — Royal College of Emergency Medicine (2026)",
+      "why": "The advisory body with zero statutory power over a trust that frontline clinicians fear and cite most: 554,251 twelve-hour trolley waits and an estimated 15,860 associated deaths in 2025 — the evidentiary anchor for the closing question of which bodies could actually stop a hospital doing something tomorrow versus which ones doctors merely dread."
+    }
+  ]
+}
