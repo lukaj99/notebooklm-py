@@ -1,0 +1,29 @@
+{
+  "topic_id": "test-blind-to-its-own-disease",
+  "title": "The Test That Cannot See The Disease It Is For — 2026-09-13",
+  "audio_format": "deep-dive",
+  "rationale": "This episode builds a diagnostic taxonomy the audience uses every shift but rarely names explicitly: the difference between a test that looked and missed (sensitivity problem) and a test that was never looking in the right place at all (category error). The six sources are chosen to make that taxonomy concrete with real, current numbers rather than abstract epidemiology — a brand-new (Feb 2026) AANEM task force statement supplies the cleanest category-error case (small fibre neuropathy, where nerve conduction studies are normal by design and even the confirmatory tests admit they have no gold standard), while a 2024 meta-analysis and the Perry-2011-anchored CT/SAH literature (reviewed via REBEL EM and codified in NICE NG228) supply the sharpest sensitivity-problem cases with numbers a UK EM doctor will recognise from their own guidelines. Two FOAMed explainer pieces (First10EM, and implicitly the emcrit-style likelihood-ratio argument it echoes) and a 2021 J Emerg Med paper add the theoretical throughline and a genuine, still-unresolved practice controversy (LP after a negative CT beyond 6 hours) without forcing the episode into an adversarial two-sides structure it doesn't need — a deep-dive format lets the hosts move case to case (SFN, SAH, ECG, and by extension HFpEF, B12, coeliac biopsy) building one cumulative argument: 'normal' is a claim about an instrument's blind spots, not about the patient in front of you.",
+  "case_vignette": "A 52-year-old woman is referred to the ED registrar after months of burning, stocking-distribution foot pain — her GP's nerve conduction study came back entirely normal, and she's been told there's \"nothing wrong with her nerves.\" That same night, a 38-year-old man arrives with a sudden, severe headache that started six hours ago; his CT head is also normal, and the team has to decide, in real time, whether \"normal\" means the same thing here as it did for the foot pain — or something completely different.",
+  "sources": [
+    {
+      "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=41670166&rettype=abstract&retmode=text",
+      "title": "AANEM Small Fiber Neuropathy Task Force: Diagnostic and Screening Laboratory Tests in the Assessment of Patients With SFN (2026)",
+      "why": "The category-error anchor of the episode: a Feb-2026 professional task force reporting skin-biopsy IENFD at 74-78% sensitivity and stating outright that no test — biopsy included — is sufficient to stand alone as a gold standard, which is the clinical body admitting there is no reference standard for the disease NCS was never built to see."
+    },
+    {
+      "url": "https://first10em.com/the-sensitivity-and-specificity-are-lying-to-you/",
+      "title": "The sensitivity and specificity are lying to you (First10EM, Justin Morgenstern)",
+      "why": "Supplies the episode's through-line math using a 90%-sensitive SAH rule as its worked example: shows explicitly why a sensitive-but-imperfect test barely moves post-test probability, i.e. why 'normal' is a statement about the test, not the patient."
+    },
+    {
+      "url": "https://rebelem.com/does-a-normal-head-ct-within-6-hours-of-onset-of-headache-rule-out-sah/",
+      "title": "Does a Normal Head CT Within 6 Hours of Onset of Headache Rule Out SAH? (REBEL EM, Salim Rezaie)",
+      "why": "Walks through the Perry BMJ 2011 cohort itself — 100% sensitivity inside 6 hours falling off afterward — giving the episode's cleanest sensitivity-problem case its exact numbers and the clinical-practice context for why the cutoff matters at the bedside."
+    },
+    {
+      "url": "https://www.nice.org.uk/guidance/ng228/chapter/recommendations",
+      "title": "NICE NG228: Subarachnoid haemorrhage caused by a ruptured aneurysm — diagnosis and management",
+      "why": "The UK-specific stake in the ground for this listener: NICE codifies CT accuracy as 'highest within 6 hours' and drops routine LP only inside that window, turning the Perry-2011 numbers into the guideline this doctor actually practices under."
+    }
+  ]
+}
