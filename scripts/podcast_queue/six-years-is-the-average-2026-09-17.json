@@ -1,0 +1,29 @@
+{
+  "topic_id": "six-years-is-the-average",
+  "title": "Six Years Is The Average, Not The Outlier — Diagnostic Delay — 2026-09-17",
+  "audio_format": "deep-dive",
+  "rationale": "This episode deliberately does not chase the viral \"it takes 6-8 years to diagnose X\" framing; it interrogates it. The spine is Nnoaham 2011 (the primary source behind the headline number) checked against its own inconvenient finding — that state-funded systems produced longer delays (8.3y) than private ones (5.5y), which a simple underfunding narrative can't absorb — and against Fryer 2024's scoping review, which shows the \"average\" masks a 1.5-11.4y range across studies. NICE NG73's rationale chapter is the rare case of a guideline body admitting in writing that its own fix for one bottleneck (GP-to-ultrasound) will worsen the next one (ultrasound-to-specialist), which is exactly the \"three different problems, three different fixes\" argument the episode wants to land: a test that doesn't exist yet (POTS pre-2015, anchored here by EMCrit's everyday articulation of the HRS criteria), a test that exists but isn't funded, and a test that's funded but has no referral pathway. ESHRE's challenge to laparoscopy-as-gold-standard adds a genuine, unresolved clinical controversy rather than a strawman. The two LITFL pieces ground the sex-disparity thread in a named cognitive bias (not just Hoffmann/Tarzian as folklore) and in one clean analogous, quantified case (MI care) that shows the mechanism isn't specific to \"mysterious\" female-predominant conditions. Deep-dive format fits because the real tension here isn't two sides shouting past each other — the RCEM and First10EM material both explicitly warn against over-claiming bias — it's an investigative untangling of three distinct system failures that get discussed as one.",
+  "case_vignette": "A 24-year-old woman presents to the ED for the third time this year with collapse on standing, palpitations and presyncope; her GP letters over the past five years describe recurrent \"health anxiety\" despite a resting HR of 110 and a documented postural rise of 40 bpm today. The registrar has to decide whether to formally apply orthostatic vitals against the 2015 POTS consensus criteria and start a referral, or send her back to primary care as \"medically unexplained\" — the exact fork in the pathway that, repeated across specialties and years, is what actually produces a six-year average rather than a six-year outlier.",
+  "sources": [
+    {
+      "url": "https://www.nice.org.uk/guidance/ng73/chapter/rationale-and-impact",
+      "title": "Rationale and impact | Endometriosis: diagnosis and management (NG73) | NICE",
+      "why": "The guideline committee's own words: they strengthened ultrasound and referral from 'consider' to 'offer'/'refer' because patients were 'often unable to get a diagnosis... for very long periods' — then concede this will 'exacerbate' capacity pressure downstream, i.e. the body writing the fix admits it just moves the bottleneck rather than removing it."
+    },
+    {
+      "url": "https://emcrit.org/ibcc/syncope/",
+      "title": "Syncope - EMCrit Project (IBCC)",
+      "why": "A working ED reference stating the POTS threshold (HR rise >30bpm, or >120 standing) as if it were always self-evident — useful precisely because it lets the hosts point out this 'obvious' criterion is only 11 years old and rests on cheap, decades-old orthostatic vitals that were simply never mandated in routine practice until the 2015 consensus statement."
+    },
+    {
+      "url": "https://web.archive.org/web/20191211120338/https://litfl.com/cognitive-dispositions-to-respond/",
+      "title": "Cognitive Dispositions to Respond - LITFL (CCC Patient Safety)",
+      "why": "Names 'gender bias' as a formally catalogued cognitive disposition to respond ('overdiagnosis of the favoured gender... no pathophysiological basis') — gives the Hoffmann/Tarzian argument a clinical-reasoning vocabulary instead of leaving it as anecdote, while the episode should still flag that bias is one converging factor, not proven to be the dominant one."
+    },
+    {
+      "url": "http://web.archive.org/web/20260421134007/https://litfl.com/network-five-women-in-medicine/",
+      "title": "Network Five: Women in Medicine - LITFL Podcast",
+      "why": "A quantified, cited (Mnatzaganian 2020, van Oosterhout 2020) case of sex-based delay outside the episode's three core conditions — longer time-to-presentation and door-to-balloon in women having MIs — evidence that the pattern generalises beyond 'diagnoses that need an uninvented test.'"
+    }
+  ]
+}
