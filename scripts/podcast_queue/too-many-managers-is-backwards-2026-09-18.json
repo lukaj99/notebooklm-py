@@ -1,0 +1,35 @@
+{
+  "topic_id": "too-many-managers-is-backwards",
+  "title": "'Too Many Managers' Is Empirically Backwards — 2026-09-18",
+  "audio_format": "deep-dive",
+  "rationale": "What's new is the direction-of-effect reversal at the heart of British health politics: the two most-cited quantitative studies on NHS management headcount point opposite ways — Warwick's finding that moving management share from 2% to 3% improved efficiency by 5% and cut infections by 15%, against Asaria, McGuire and Street's more rigorous 129-trust panel (2012/13-2018/19) finding no relationship at all — and it's the second study's explanation, not its null result, that gives the episode its spine: NHS managers carry compliance responsibility without the authority, pay, or autonomy their private-sector job titles imply. We ground that abstract mechanism in three real-world tests of the same thesis — the NAO's flow report shows adding clinical staff and money hasn't fixed crowding, RCEM's own corridor-care report rejects both 'too much demand' and 'too few staff' as sufficient causes, and the Darzi investigation shows how easily 'management structures' gets absorbed into a politically convenient blame narrative rather than a specific, testable claim — with the EMJ mortality study anchoring why any of this matters beyond an accounting dispute. A deep-dive format suits this because the argument is cumulative and evidentiary — unpacking a genuine empirical puzzle (Warwick vs Asaria/McGuire/Street) and its real operational consequences — rather than two sides shouting past each other.",
+  "case_vignette": "It's 2am in a major trauma centre and an 84-year-old with a fractured hip has been on a trolley in the ED corridor for nine hours, because there's no bed upstairs. There is a bed manager on shift — the trust has one, on a capped NHS pay band, doing exactly the job the \"too many managers\" argument says shouldn't exist — but she has no power to compel a ward to accept a boarder, no authority over the discharge team's pace, and no budget lever to pull. Everyone in the building can see the problem. Nobody in the building, manager or clinician, has the authority to fix it alone.",
+  "style": "Frame this as an investigative discussion between two hosts who know the NHS from the inside: structural and political, not clinical — no management advice for individual patients. Work through what the data actually shows, then argue about causation and accountability, disagreeing openly and resolving it by citing the sources rather than by splitting the difference. Be willing to say plainly where the evidence points and where it genuinely does not. Distinguish carefully between what is measured, what is inferred, and what is asserted. Land on concrete, named interventions and who would have to act to deliver them — not on vague calls for more funding.",
+  "sources": [
+    {
+      "url": "http://web.archive.org/web/20250722040501/https://blogs.lse.ac.uk/politicsandpolicy/nhs-managers-performance/",
+      "title": "Does hiring more NHS managers make hospitals perform better? (LSE British Politics and Policy, Asaria, McGuire & Street, 2022)",
+      "why": "The episode's spine: all 129 non-specialist acute trusts, 2012/13-2018/19, no measurable link between manager numbers or spend and performance — directly contradicting the Warwick 2%-to-3% efficiency finding — and the authors' own explanation is the new insight: NHS managers are pay-capped, low-autonomy compliance staff, not the strategic actors the headcount debate assumes."
+    },
+    {
+      "url": "https://www.nao.org.uk/reports/managing-the-flow-of-patients-through-hospital-from-ae/",
+      "title": "Managing the flow of patients through hospital from A&E (NAO, Sept 2026)",
+      "why": "The operational stress-test of the 'authority without responsibility' thesis: A&E doctors up 34%, nurses up 23%, diagnostics up roughly half, spend per attendance up a third since 2018/19 — yet only modest performance gains — showing that adding headcount, clinical or managerial, doesn't fix flow when nobody owns it."
+    },
+    {
+      "url": "https://www.gov.uk/government/publications/independent-investigation-of-the-nhs-in-england/independent-investigation-of-the-national-health-service-in-england-accessible-version",
+      "title": "Lord Darzi: Independent Investigation of the NHS in England (accessible version, GOV.UK)",
+      "why": "The canonical official document that folds 'management structures and systems' into a politically commissioned austerity narrative — useful as the exhibit for how a vague management critique becomes political ritual rather than a falsifiable claim, alongside the £11.6bn+ maintenance backlog and 13% of beds lost to delayed discharge."
+    },
+    {
+      "url": "https://rcem.ac.uk/wp-content/uploads/2025/11/APPG-report-final-2.pdf",
+      "title": "APPG on Emergency Care / RCEM report on corridor care (Nov 2025)",
+      "why": "The profession's own diagnosis explicitly rejects both 'rising demand' and 'just add staff' as sufficient explanations for corridor care, pointing instead to system-wide undercapacity and unclear ownership of flow — the clinical mirror of Asaria et al.'s finding that the problem is structural authority, not headcount."
+    },
+    {
+      "url": "https://emj.bmj.com/lookup/doi/10.1136/emermed-2021-211572",
+      "title": "Association between delays to patient admission from the emergency department and all-cause 30-day mortality (Jones, Moulton, Swift et al., Emergency Medicine Journal, 2022)",
+      "why": "Anchors why the accountability-vacuum argument is not academic: one extra death for every 82 patients delayed 6-8h+ from ED arrival to inpatient bed, across 5.25m patients — the quantified harm that makes 'who actually has authority to fix flow' more than a Whitehall turf argument."
+    }
+  ]
+}
