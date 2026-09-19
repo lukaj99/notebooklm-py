@@ -1,0 +1,29 @@
+{
+  "topic_id": "hypothesis-that-outran-its-evidence",
+  "title": "The Hypothesis That Outran Its Evidence — 2026-09-19",
+  "audio_format": "deep-dive",
+  "rationale": "This episode is built around a single, tightly-verified evidentiary spine — the 2022 Pretorius/Kell primary paper, the 2023 Cochrane assessment that found high risk of bias across all five microclot studies with no quantification and no specificity to long COVID, and the NICE NG188 guideline that confirms no UK-sanctioned pharmacological treatment exists for the condition patients are being sold anticoagulation and plasmapheresis to fix. The two First10EM posts are included not as microclot sources but as independently documented instances of the exact same failure mode — a secondary or hypothesis-generating finding converted into a public treatment narrative ahead of trial evidence — which lets the hosts build the general pattern before applying it to the specific, still-unsettled microclot dispute. Deep-dive format was chosen over debate because the strongest oppositional material described in the research pass (the live 2024 RPTH exchange between Hunt et al. and Kell/Pretorius, the Keller CPET replications, and the Walitt NIH study) did not clear the public-accessibility verification bar for this list, so the hosts cannot stage a sourced argument between named opposing papers — they can, however, walk a UK ED doctor through what a contested-but-unsettled hypothesis looks like next to a monetised one, using only sources that will actually resolve for the listener. The episode's job is investigative, not adversarial: model the distinction between evidence that has replicated, evidence that hasn't yet, and evidence that has already been turned into a private invoice.",
+  "case_vignette": "A 34-year-old woman attends the ED with new bruising and rectal bleeding. She has had 18 months of post-COVID fatigue and brain fog, and four months ago a private long-COVID clinic diagnosed her with \"microclots\" on the strength of a blood test and started her on rivaroxaban — with no NICE-endorsed indication, no haematology input, and no bleeding-risk monitoring since. The registrar has to decide whether to stop the anticoagulant tonight, and then has to explain to a patient who has been told her fatigue has a named, treatable cause why the evidence underneath that treatment is contested rather than either proven or disproven.",
+  "sources": [
+    {
+      "url": "https://www.cochrane.org/evidence/CD015775_what-evidence-microclots-cause-post-covid-19-syndrome-and-removal-using-plasmapheresis-justified",
+      "title": "What is the evidence that 'microclots' cause the post-COVID-19 condition, and is removal using plasmapheresis justified? (Cochrane, 2023)",
+      "why": "The load-bearing evidentiary check: all five microclot studies rated high risk of bias, no quantification in three of five, particles seen in healthy controls and diabetics too — and zero RCT evidence for the plasmapheresis patients are already paying for."
+    },
+    {
+      "url": "https://www.nice.org.uk/guidance/ng188/chapter/5-Management",
+      "title": "NICE NG188 — COVID-19 rapid guideline: managing the long-term effects of COVID-19, Management chapter",
+      "why": "The UK-practice anchor: NICE states plainly there is no pharmacological intervention with sufficient evidence for long COVID itself, which is the guideline reality underneath the private anticoagulation/apheresis clinics."
+    },
+    {
+      "url": "https://first10em.com/no-metformin-is-probably-not-the-cure-for-long-covid/",
+      "title": "No, metformin is probably not the cure for long COVID - First10EM",
+      "why": "A second, independently-documented case of the same mechanism — a secondary trial outcome inflated into a public 'cure' — giving the hosts a clean template for how a hypothesis outruns its evidence before it happens to microclots."
+    },
+    {
+      "url": "https://first10em.com/paxlovid-doesnt-work-for-long-covid-either-the-stop-pasc-trial/",
+      "title": "Paxlovid doesn't work for long COVID either (The STOP-PASC trial) - First10EM",
+      "why": "A third data point in the same pattern from an RCT that actually reported, useful for the hosts to contrast 'hope preceded the trial' against the microclot story, where no trial exists yet to fail or succeed."
+    }
+  ]
+}
