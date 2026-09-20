@@ -1,0 +1,35 @@
+{
+  "topic_id": "rationing-nobody-calls-rationing",
+  "title": "The Rationing Nobody Calls Rationing — 2026-09-20",
+  "audio_format": "deep-dive",
+  "rationale": "This episode is built to show a mechanism, not to stage a fight: the newest number (BBC's 2025 FOI on IFR approval rates) supplies the shock figure, the NHS England EBI guidance and NICE's NG77 supply the paper trail showing exactly how and where a system-level funding boundary gets relabelled as an individual clinical judgement, the McLaughlin BMC Medicine study proves the same trick operates identically in an unrelated specialty (hip replacement, BMI thresholds) so the hosts can generalise past cataracts, Benbow supplies the institutional history of why unelected arm's-length bodies ended up holding this decision in the first place, and the King's Fund gives the hosts a rigorous vocabulary — explicit versus implicit versus implicit-to-avoid-defending — so the episode argues about the right thing (who decided this was an acceptable substitute for legislating the boundary, and whether anyone actually decided it) rather than relitigating whether the NHS is underfunded. Deep-dive format because the genuinely live controversies here (is variation clinical judgement or postcode lottery; is the IFR 'exceptionality' test coherent) are best explored as one continuous investigative argument building from a documented number to a named mechanism to an accountability question, not staged as two sides shouting past each other — the sources themselves mostly agree on the facts and diverge on interpretation, which rewards synthesis over debate.",
+  "case_vignette": "It's 3am in majors and the night's fourth faller is an 81-year-old care-home resident with a fractured neck of femur, who tells you she \"just didn't see\" the step. Her notes show an ophthalmology referral from fourteen months ago, declined under the local ICB's visual-acuity threshold because her eyesight hadn't yet deteriorated to the cut-off point — the exact cut-off NICE told commissioners in 2017 not to use. Nobody rationed her cataract surgery on paper; a panel somewhere just decided she wasn't exceptional enough yet, and tonight the orthopaedic team will fix what that decision cost.",
+  "style": "Frame this as an investigative discussion between two hosts who know the NHS from the inside: structural and political, not clinical — no management advice for individual patients. Work through what the data actually shows, then argue about causation and accountability, disagreeing openly and resolving it by citing the sources rather than by splitting the difference. Be willing to say plainly where the evidence points and where it genuinely does not. Distinguish carefully between what is measured, what is inferred, and what is asserted. Land on concrete, named interventions and who would have to act to deliver them — not on vague calls for more funding.",
+  "sources": [
+    {
+      "url": "https://www.bbc.co.uk/news/articles/clynvjgynp8o",
+      "title": "NHS funding 'postcode lottery' affecting thousands of patients — BBC News (28 Feb 2025)",
+      "why": "The headline number the whole episode hangs on: FOI to 42 ICBs, 29 responding, IFR approval rates from 2% (Shropshire/Telford & Wrekin; Bristol/N.Somerset/S.Gloucestershire) to 69% (Gloucestershire) — same rules, same country, thirty-fold spread for an identical request."
+    },
+    {
+      "url": "https://ebi.aomrc.org.uk/wp-content/uploads/2024/01/EBI_list_1_Statutory_Guidance_no_coding_0923.pdf",
+      "title": "NHS England Evidence-Based Interventions: Statutory Guidance (s.14Z8 NHS Act 2006)",
+      "why": "The mechanism itself, in NHS England's own words: Category 1 interventions are 'not routinely commissioned' unless an IFR panel finds individual clinical exceptionality — this is the document that formally converts a system-level funding boundary into a private, per-patient clinical judgement."
+    },
+    {
+      "url": "http://web.archive.org/web/20260616213933/https://www.nice.org.uk/guidance/ng77/chapter/recommendations",
+      "title": "Cataracts in adults: management (NG77) — Recommendations | NICE",
+      "why": "The explicit national standard being flouted: NICE says do not restrict cataract surgery by visual-acuity threshold — the fixed point that makes ~29% of local threshold policies a documented contradiction, not a defensible local judgement call."
+    },
+    {
+      "url": "https://eprints.whiterose.ac.uk/129256/9/With%20Great%20Power%20(Amended).pdf",
+      "title": "\"With Great Power Comes Great Responsibility\": Democracy, the Secretary of State for Health and Blame Shifting Within the English NHS (Benbow, Int J Health Services 2018)",
+      "why": "Names who decided arm's-length, unelected bodies should hold the rationing question: traces how NICE, Monitor and NHS England were structurally built via successive reforms to let ministers offload blame for funding decisions — the accountability chain behind 'a body nobody can name.'"
+    },
+    {
+      "url": "https://assets.kingsfund.org.uk/f/256914/x/76191f690c/thinking_about_rationing_may_2012.pdf",
+      "title": "Thinking about Rationing (The King's Fund, 2012)",
+      "why": "Supplies the vocabulary the episode needs to stay honest: Klein and Maybin's taxonomy of denial, selection, delay, deflection and dilution, plus their explicit warning that the most insidious rationing is the kind that arrives as a by-product of other policy rather than a decision anyone owns."
+    }
+  ]
+}
