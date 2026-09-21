@@ -1,0 +1,40 @@
+{
+  "topic_id": "when-speaking-up-costs-the-career",
+  "title": "When Speaking Up Costs The Career — 2026-09-21",
+  "audio_format": "deep-dive",
+  "rationale": "This episode is timed to a genuine inflection point: the National Guardian's Office that Francis's 2015 review created is scheduled to close in nine months, folded into NHS England — so a decade of Freedom to Speak Up data can finally be read as a completed experiment rather than a work in progress. The National Guardian's own 2024/25 report and the 2023/24 case-data report supply the full, correctly-baselined numbers (38,158 cases, 2.9% detriment, the ICB/ambulance divergence, the 74-80% \"would speak up again\" figure) that the official \"growing trust\" narrative rests on; Martin, Chew and Dixon-Woods' peer-reviewed fieldwork supplies the structural counter-read — Guardians mostly signpost rather than protect — which is what the named cases (Mattu, Day, Duffy) each dramatise from a different angle without needing individual sourcing here, since every mechanism in each case activates only after the detriment has landed. The Pinsent Masons summary of Day v HEE anchors the one durable structural fix the programme produced: a closed accountability gap, not a saved career. NHS England's own closure announcement and Protect's pointed rebuttal give the hosts a real, sourced disagreement to close on — is folding the Office into NHS England a rationalisation of a maturing system, or the removal of the only nominally independent layer, nine years in, with no published impact evaluation? Deep-dive format fits because the throughline is investigative — building a data-backed structural case — rather than a symmetrical two-sided dispute; the one live disagreement gets its due without forcing the whole episode into an adversarial frame.",
+  "case_vignette": "It's 3am in resus on a winter night shift, and the department is two nurses short on majors. A newly qualified doctor has raised it twice already and been told to \"flag it with your Guardian in the morning\" — while the patient in bed 14 sits in a corridor chair, nine hours into the wait for a medical bed. The doctor knows that putting the staffing gap in writing tonight, by name, could reach the same consultant who signs their ARCP outcome in six weeks. They say nothing on the record, scribble a note for the Guardian anyway, and go back to the queue.",
+  "style": "Frame this as an investigative discussion between two hosts who know the NHS from the inside: structural and political, not clinical — no management advice for individual patients. Work through what the data actually shows, then argue about causation and accountability, disagreeing openly and resolving it by citing the sources rather than by splitting the difference. Be willing to say plainly where the evidence points and where it genuinely does not. Distinguish carefully between what is measured, what is inferred, and what is asserted. Land on concrete, named interventions and who would have to act to deliver them — not on vague calls for more funding.",
+  "sources": [
+    {
+      "url": "https://nationalguardian.org.uk/wp-content/uploads/2025/08/20250702-Annual-data-report-2425-Publishable.pdf",
+      "title": "Culture is a patient safety issue: National Guardian's Office Annual Speaking Up Data Report 2024/25",
+      "why": "The primary hard-data source for the whole episode: 38,158 cases (+18.6%), the 2.9% headline detriment rate, and the ICB (4.2%→13.4%) vs ambulance trust (15.2%→3.2%) split that the hosts must not flatten into one number."
+    },
+    {
+      "url": "https://nationalguardian.org.uk/wp-content/uploads/2024/07/FTSU-Case-Data-Annual-Report-23-24-1.pdf",
+      "title": "Freedom to Speak Up Case Data Annual Report 2023/24 (National Guardian's Office)",
+      "why": "Corrects a baseline error before it airs — the '3,206' figure is a bullying/harassment subcategory, not the 2017/18 total (which was actually 7,087); this report carries the clean year-by-year total-case time series through 32,167."
+    },
+    {
+      "url": "https://api.repository.cam.ac.uk/server/api/core/bitstreams/8622cc7b-fcd6-473e-9358-5321f71cd50f/content",
+      "title": "Martin GP, Chew S, Dixon-Woods M. 'Uncovering, creating or constructing problems? Enacting a new role to support staff who raise concerns about quality and safety in the English NHS' (Health, 2021)",
+      "why": "The only peer-reviewed fieldwork on what Guardians actually do: 51 interviews conclude the role mostly signposts and makes sense of low-level worries rather than protecting anyone who bears witness to serious wrongdoing — the evidence base for the episode's central claim."
+    },
+    {
+      "url": "https://www.pinsentmasons.com/out-law/news/junior-doctor-wins-court-backing-for-whistleblowing-status",
+      "title": "Junior doctor wins court backing for whistleblowing status — Pinsent Masons (2017)",
+      "why": "Plain-English account of the one clean legal win in the whole story: the Court of Appeal's 2017 extension of 'employer' to training bodies like HEE, closing the gap that left junior doctors unprotected against the body that actually controlled their careers — even though Day's own claim did not succeed."
+    },
+    {
+      "url": "http://web.archive.org/web/20260715155312/https://www.england.nhs.uk/publication/the-future-of-freedom-to-speak-up/",
+      "title": "The future of Freedom to Speak Up (NHS England)",
+      "why": "The load-bearing plot twist: the National Guardian's Office Francis built closes at the end of June 2026, folded into NHS England, DHSC, CQC and providers — the decade-old independent layer is being dismantled just as this episode airs."
+    },
+    {
+      "url": "http://web.archive.org/web/20260419074856/https://protect-advice.org.uk/whats-next-for-whistleblowing-in-the-nhs/",
+      "title": "What's next for whistleblowing in the NHS — Protect (July 2025)",
+      "why": "The direct rebuttal to NHS England's framing: Guardians were under-resourced and structurally unable to hold trusts accountable, the Office is being dissolved after nine years with no published impact evaluation, and Scotland's statutory Independent National Whistleblowing Officer is offered as the model with actual teeth."
+    }
+  ]
+}
