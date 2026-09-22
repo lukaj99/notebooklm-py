@@ -1,0 +1,35 @@
+{
+  "topic_id": "photo-z6iii-mastery",
+  "title": "Nikon Z6 III — What the Spec Sheet Doesn't Tell You About Autofocus and Exposure — 2026-09-22",
+  "audio_format": "deep-dive",
+  "rationale": "This episode is built on a genuine gap between what Nikon's own documentation promises and what independently measured, field-tested data shows: the manual describes flagship-inherited subject detection and a best-in-class Pre-Release Capture feature, while Photography Life's NX-Studio-confirmed AF-sticking bug and the primary readout-speed and dynamic-range datasets (horshack, Photons to Photos) show real, quantifiable limits the manual never states. Deep-dive is the right format — this isn't a two-camp shouting match but an investigative unpacking of manufacturer claim versus measured reality, which is exactly what the listener wants for a commute: authoritative Nikon documentation, two independent primary-measurement sources, a NX-Studio-verified field defect report, and a working photographer's hands-on verdict, all aimed at making the Z6 III's AF and exposure behavior legible for someone shooting it daily and editing their own RAWs.",
+  "case_vignette": "You're at last light photographing a kestrel hovering over a hedgerow, burst rate maxed and 3D-tracking locked on the eye — three frames in, the AF box quietly slides off the head onto a wingtip and stays there while you keep firing, and you only notice back at the computer when half the sequence is soft. On the same shoot you'd switched on Pre-Release Capture to catch the exact wingbeat, only to realize afterward it locked you into JPEG — and now you're pushing two stops of shadow into a marginal high-ISO frame trying to salvage the one sharp exposure that's actually RAW.",
+  "style": "Frame this as a scenario-based discussion between two working photographers: 'what would you actually do on this shoot / at this edit' framing rather than a spec-sheet read-through. Include moments of genuine disagreement that get resolved by citing the sources. Keep it conversational and energetic, but always land on clear, actionable technique the listener can try on their next shoot.",
+  "sources": [
+    {
+      "url": "https://onlinemanual.nikonimglib.com/z6III/en/focus_35.html",
+      "title": "Focus (Nikon Z6III Online Manual)",
+      "why": "The ground-truth spec for every AF-area mode and subject-detection category (People/Animal/Vehicle/Airplane/Auto) — sets up exactly what Nikon claims the AF system does, so the episode can test that claim against real field reports."
+    },
+    {
+      "url": "http://web.archive.org/web/20250709212115/https://photographylife.com/reviews/nikon-z6-iii/3",
+      "title": "Nikon Z6 III Initial Review - Focusing Capabilities (Photography Life)",
+      "why": "Isolates a specific, NX-Studio-confirmed defect — the focus point sticking and losing the eye a frame or two into a fast burst — that Nikon's own manual never mentions, the clearest manufacturer-doc-vs-field-reality gap in the episode."
+    },
+    {
+      "url": "https://horshack-dpreview.github.io/RollingShutter/?Model1=%5ENikon+Z6+III%24&displayFormat=sec&sortasc=Model",
+      "title": "Sensor Readout Speed / Rolling Shutter Measurements — RollingShutter project (horshack)",
+      "why": "Independent, methodologically documented readout-speed measurements that separate what the 'partially stacked' sensor's faster readout actually buys in burst/AF terms from what's inherited EXPEED 7 algorithm — the hard number behind the speed-for-DR trade-off."
+    },
+    {
+      "url": "https://petapixel.com/2024/07/30/nikon-z6-iii-review-a-little-rough-around-the-edges/",
+      "title": "Nikon Z6 III Review: Nikon's Best Camera This Side of the Z8 (PetaPixel)",
+      "why": "A working photographer's hands-on verdict on AF quirks, sports/action burst behavior, and how much the DR trade-off actually matters in real shooting — grounds the data-driven sources in lived shooting decisions."
+    },
+    {
+      "url": "https://onlinemanual.nikonimglib.com/z6III/en/csmd_pre-release_capture_options_242.html",
+      "title": "d3: Pre-Release Capture Options (Nikon Z6III Online Manual)",
+      "why": "Nikon's own spec for Pre-Release Capture — buffer timing, the 90-second standby cutoff, JPEG-only limitation — the concrete feature the episode's case vignette hinges on, with detail no third-party writeup carries."
+    }
+  ]
+}
