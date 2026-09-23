@@ -1,0 +1,40 @@
+{
+  "topic_id": "tech-selfhosting-homelab",
+  "title": "Self-Hosting and Homelab — What's Actually Worth Running — 2026-09-23",
+  "audio_format": "deep-dive",
+  "rationale": "This episode is built for a listener who already runs the infrastructure being discussed — an Arch workstation, a VPS fleet, Docker, Tailscale, and a self-hosted media stack — so the value isn't convincing them self-hosting is worth it, it's sharpening the specific operational calls they're already making. What's new: Tailscale's own 2026 outage postmortem puts a number on how much a \"self-hosted\" mesh actually depends on a hosted coordination plane; Immich's v3.2 release shows how far the leading self-hosted photos app has closed the gap on Google Photos; and a checksummed multi-vendor GPU transcode leaderboard replaces marketing claims with reproducible numbers for anyone sizing a media box. Deep-dive (not debate) is the right format because the real tension here isn't a clean two-sided fight — it's a set of overlapping tradeoffs (VPN-mesh vs. public tunnel exposure, GPU spend vs. measured transcode throughput, Compose vs. K3s complexity) that reward investigative unpacking with evidence, not a shouting match. The two XDA pieces on Tailscale-only vs. Cloudflare Tunnel access give the hosts genuine opposing practitioner accounts to reason through rather than just assert, and the Docker Compose polemic gives them a pointed foil for the orchestration-complexity question without needing to manufacture a debate the sources don't actually support.",
+  "case_vignette": "A listener's Immich instance has been living behind Tailscale-only access on the VPS fleet, but a family member outside the tailnet wants a shareable link to a photo album — and the same week, Tailscale posts its own postmortem on 2026 coordination-server outages that took down mesh connectivity fleet-wide. Now they're weighing whether to keep everything VPN-only or punch a narrow Cloudflare Tunnel hole for just the sharable services, while also deciding if the aging N100 box behind Jellyfin needs a real GPU before the next 4K library import.",
+  "style": "Frame this as a scenario-based discussion between two opinionated engineers who run real infrastructure: 'what would you actually deploy / how would this fail' framing rather than a feature-list read-through. Include moments of genuine disagreement that get resolved by citing the sources. Keep it conversational and energetic, but always land on clear, actionable decisions the listener can apply to their own lab.",
+  "sources": [
+    {
+      "url": "https://tailscale.com/blog/hypergrowth-isnt-always-easy",
+      "title": "Hypergrowth isn't always easy",
+      "why": "Tailscale's own postmortem on its 2026 coordination-server outages — the uncomfortable admission that a 'self-hosted' mesh still leans on a hosted control plane as a single point of failure."
+    },
+    {
+      "url": "https://www.xda-developers.com/i-dont-expose-my-home-server-anymore-i-let-tailscale-do-the-scary-part/",
+      "title": "I don't expose my home server anymore: I let Tailscale do the scary part",
+      "why": "The strongest recent case for VPN-mesh-only access: nothing should earn a spot on the public internet if a private tunnel can do the job instead."
+    },
+    {
+      "url": "https://www.xda-developers.com/cloudflare-tunnels-gave-lab-public-url-without-opening-single-port/",
+      "title": "Cloudflare Tunnels gave my home lab a public URL without opening a single port",
+      "why": "Direct counterweight from a CGNAT-blocked operator: exposing Jellyfin/Nextcloud/Immich via tunnel beats VPN-only when you actually need to share access, ToS caveats included."
+    },
+    {
+      "url": "https://immich.app/blog/v3.2.0-release",
+      "title": "Immich Blog: v3.2.0 Release Notes",
+      "why": "Straight from the maintainers — new Search API v2 and cross-user face-clustering show exactly how close (and how far) a self-hosted Google Photos replacement now gets to cloud UX."
+    },
+    {
+      "url": "https://github.com/SpaceinvaderOne/transcoding-gpu-benchmark",
+      "title": "transcoding-gpu-benchmark — multi-vendor 4K transcode leaderboard (Unraid)",
+      "why": "A reproducible, checksummed leaderboard that turns 'what GPU do I need for transcoding' from marketing claims into a number anyone can verify on their own box."
+    },
+    {
+      "url": "https://ilikekillnerds.com/2026/01/17/docker-compose-is-all-you-need-and-kubernetes-people-are-in-denial/",
+      "title": "Docker Compose Is All You Need and Kubernetes People Are in Denial",
+      "why": "The bluntest anti-Kubernetes polemic in circulation — forces the question of whether K3s/orchestration in a homelab is genuine need or resume-driven complexity."
+    }
+  ]
+}
