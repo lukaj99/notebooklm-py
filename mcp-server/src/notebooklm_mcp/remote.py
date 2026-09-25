@@ -20,7 +20,7 @@ OAUTH_DISABLED = os.getenv("OAUTH_DISABLED", "").lower() in ("true", "1")
 
 
 def build_auth_settings(config: RemoteServerConfig) -> AuthSettings:
-    """Build FastMCP auth settings from environment config."""
+    """Build MCP auth settings from environment config."""
 
     return AuthSettings(
         issuer_url=config.issuer_url,
@@ -34,6 +34,11 @@ def build_auth_settings(config: RemoteServerConfig) -> AuthSettings:
         revocation_options=RevocationOptions(enabled=True),
         required_scopes=list(config.required_scopes),
         resource_server_url=config.resource_server_url,
+        # Explicitly off, matching mcp 1.x (which had no such check). Tokens only
+        # record an RFC 8707 resource when the client sent one, so tokens already
+        # in the OAuth store can carry none; turning this on would log those
+        # connectors out. Revisit once every stored token carries a resource.
+        validate_token_resource=False,
     )
 
 
@@ -137,9 +142,9 @@ class BareProtectedResourceMetadataMiddleware:
 
 
 def build_asgi_app(mcp, config: RemoteServerConfig | None = None) -> ASGIApp:
-    """Wrap the FastMCP Starlette app with CORS covering every route.
+    """Wrap the MCP Starlette app with CORS covering every route.
 
-    FastMCP's ``streamable_http_app()`` only wires CORS onto the OAuth
+    The SDK's ``streamable_http_app()`` only wires CORS onto the OAuth
     routes (register/authorize/token/revoke) via the mcp SDK's own per-route
     ``cors_middleware()`` — the ``/mcp`` route itself is wrapped directly by
     ``RequireAuthMiddleware`` with no CORS handling. A browser OPTIONS

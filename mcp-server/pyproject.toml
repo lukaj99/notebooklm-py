@@ -6,14 +6,20 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 dependencies = [
-    # [mcp] pulls fastmcp (pinned ==3.4.4 in the root pyproject, where the
-    # rationale lives). Required two ways: the root package's `notebooklm-mcp`
-    # stdio entry point imports fastmcp at module scope, and server.py patches
-    # fastmcp's in-memory token expiry to 365 days. That patch is wrapped in
-    # try/except ImportError, so without fastmcp it silently no-ops and remote
-    # OAuth tokens revert to a 1-hour expiry ("Connection expired" on reconnect).
-    "notebooklm-py[mcp]>=0.8.0",
-    "mcp>=1.28.1",
+    # Plain notebooklm-py, NOT the [mcp] extra. That extra installs standalone
+    # fastmcp for the root package's own MCP server (`notebooklm-mcp`), pinned
+    # to fastmcp 3.4.x, which requires mcp<2. This server is built on mcp
+    # itself, so sharing a venv with that pin would hold it on mcp 1.x and the
+    # 2025-11-25 protocol. It does not need fastmcp: its OAuth tokens come from
+    # FileBackedOAuthProvider, whose lifetimes are set in config, not from
+    # fastmcp's in-memory provider. Consequence: the root `notebooklm-mcp`
+    # console script still gets installed here but cannot start. Run it from a
+    # venv with notebooklm-py[mcp] instead.
+    "notebooklm-py>=0.8.0",
+    # 2.2: MCPServer with both protocol eras (2025-11-25 handshake and
+    # 2026-07-28 stateless), cache hints and Mcp-Method/Mcp-Name checks.
+    # Capped below the next major, which will break the API again.
+    "mcp>=2.2.0,<3",
     "starlette>=0.37.0",
     "uvicorn[standard]>=0.30.0",
 ]

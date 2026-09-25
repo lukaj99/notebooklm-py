@@ -13,14 +13,17 @@ from pathlib import Path
 from typing import Any
 
 from mcp.server.auth.settings import AuthSettings
-from mcp.server.fastmcp import FastMCP
+from mcp.server.caching import CacheHint
+from mcp.server.connection import MODERN_PROTOCOL_VERSIONS
 from mcp.server.lowlevel.helper_types import ReadResourceContents
+from mcp.server.mcpserver import Context, MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
-from mcp.shared.exceptions import McpError
-from mcp.types import INVALID_PARAMS, ErrorData, GetPromptResult
+from mcp.shared.exceptions import MCPError
+from mcp.types import INVALID_PARAMS, GetPromptResult, InputRequiredResult
 from notebooklm import NotebookLMClient
 from notebooklm.rpc import AudioFormat, AudioLength
 from pydantic import AnyUrl
+from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse
 
@@ -49,15 +52,6 @@ def _require_audio_choice(choices: dict[str, Any], value: str, *, flag: str) -> 
         allowed = ", ".join(choices)
         raise ValueError(f"{flag} must be one of: {allowed}") from None
 
-
-# Patch FastMCP default token expiry to 365 days for self-hosted use.
-# The in-memory provider defaults to 1 hour, which causes "Connection expired" errors.
-try:
-    import fastmcp.server.auth.providers.in_memory as _in_memory_auth
-
-    _in_memory_auth.DEFAULT_ACCESS_TOKEN_EXPIRY_SECONDS = 365 * 24 * 3600
-except (ImportError, AttributeError):
-    pass
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -293,42 +287,97 @@ def _secret_equals(presented: str, expected: str) -> bool:
     return hmac.compare_digest(presented.encode("utf-8"), expected.encode("utf-8"))
 
 
-# MCP 2025-11-25 "resource not found". The 2026-07-28 era uses -32602 instead;
-# switch when this server moves to mcp v2 (blocked on fastmcp 4.x, see README).
+# "Resource not found" in the 2025-11-25 era. The 2026-07-28 era moved it to
+# -32602 (INVALID_PARAMS); mcp 2.x sends -32602 in both eras, so legacy
+# clients get -32002 from NotebookLMServer.read_resource below.
 RESOURCE_NOT_FOUND = -32002
 
+# 2026-07-28 freshness hints. The tool, prompt and resource lists are code
+# constants, identical for every caller and changed only by a deploy, so a
+# client may reuse them for 5 minutes. "private" because every remote request is
+# OAuth-scoped: a shared cache must not serve one principal's result to another.
+# resources/read has no hint (SDK default: 0 ms, private) because both resources
+# are live NotebookLM data.
+LIST_CACHE_HINT = CacheHint(ttl_ms=300_000, scope="private")
+CACHE_HINTS = {
+    "server/discover": LIST_CACHE_HINT,
+    "tools/list": LIST_CACHE_HINT,
+    "prompts/list": LIST_CACHE_HINT,
+    "resources/list": LIST_CACHE_HINT,
+    "resources/templates/list": LIST_CACHE_HINT,
+}
 
-class NotebookLMFastMCP(FastMCP):
-    """FastMCP that answers unknown resources and prompts with real JSON-RPC codes.
+ALLOWED_HOSTS = ["127.0.0.1:*", "localhost:*", "[::1]:*", "notebook.jovanovic.org.uk"]
+# DNS-rebinding protection treats an *unset* allowed_origins as "reject every
+# request that carries an Origin header" (see
+# mcp.server.transport_security._validate_origin) rather than "no restriction"
+# — only requests with no Origin header at all (same-origin navigations, curl,
+# most non-browser MCP clients) pass through un-checked. Browser-based MCP
+# clients (the claude.ai connector UI) always send Origin on cross-origin POSTs,
+# so without this the OAuth dance can complete and still have every real /mcp
+# call rejected with 403 "Invalid Origin header" — a token being valid never
+# matters if this check fires first.
+ALLOWED_ORIGINS = [
+    "https://claude.ai",
+    "https://notebook.jovanovic.org.uk",
+    "http://localhost:*",
+    "http://127.0.0.1:*",
+]
 
-    mcp 1.28.1 raises a plain exception for both, which its lowlevel server turns
-    into error code 0. That is not a JSON-RPC code, so clients cannot tell "not
-    found" from a crash. The checks below only match URIs and names against what
-    is registered; they never run a resource function (templates call Google).
+
+class NotebookLMServer(MCPServer):
+    """MCPServer with this deployment's transport security and not-found codes.
+
+    mcp 2.x takes transport security per HTTP app rather than in the
+    constructor, so streamable_http_app() fills it in here: every caller
+    (remote.py, tests, `run`) gets the same host and origin allow-lists.
+
+    Unknown resources and prompts are rejected before any function runs. The
+    checks only match URIs and names against what is registered; they never
+    call a resource function (the notebook template calls Google).
     """
 
-    async def read_resource(self, uri: AnyUrl | str) -> Iterable[ReadResourceContents]:
+    def __init__(self, *args: Any, host: str = "127.0.0.1", **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._http_host = host
+        self._transport_security = TransportSecuritySettings(
+            allowed_hosts=ALLOWED_HOSTS, allowed_origins=ALLOWED_ORIGINS
+        )
+
+    def streamable_http_app(self, **kwargs: Any) -> Starlette:
+        # run_streamable_http_async passes transport_security=None explicitly,
+        # so replace None rather than only filling a missing key.
+        if kwargs.get("transport_security") is None:
+            kwargs["transport_security"] = self._transport_security
+        kwargs.setdefault("host", self._http_host)
+        return super().streamable_http_app(**kwargs)
+
+    async def read_resource(
+        self, uri: AnyUrl | str, context: Context[Any, Any] | None = None
+    ) -> Iterable[ReadResourceContents] | InputRequiredResult:
         uri_str = str(uri)
         manager = self._resource_manager
         known = any(str(r.uri) == uri_str for r in manager.list_resources()) or any(
             t.matches(uri_str) is not None for t in manager.list_templates()
         )
         if not known:
-            raise McpError(
-                ErrorData(
-                    code=RESOURCE_NOT_FOUND,
-                    message=f"Resource not found: {uri_str}",
-                    data={"uri": uri_str},
-                )
+            modern = context is not None and context.protocol_version in MODERN_PROTOCOL_VERSIONS
+            raise MCPError(
+                code=INVALID_PARAMS if modern else RESOURCE_NOT_FOUND,
+                message=f"Resource not found: {uri_str}",
+                data={"uri": uri_str},
             )
-        return await super().read_resource(uri)
+        return await super().read_resource(uri, context)
 
     async def get_prompt(
-        self, name: str, arguments: dict[str, Any] | None = None
-    ) -> GetPromptResult:
+        self,
+        name: str,
+        arguments: dict[str, Any] | None = None,
+        context: Context[Any, Any] | None = None,
+    ) -> GetPromptResult | InputRequiredResult:
         if self._prompt_manager.get_prompt(name) is None:
-            raise McpError(ErrorData(code=INVALID_PARAMS, message=f"Unknown prompt: {name}"))
-        return await super().get_prompt(name, arguments)
+            raise MCPError(code=INVALID_PARAMS, message=f"Unknown prompt: {name}")
+        return await super().get_prompt(name, arguments, context)
 
 
 def create_mcp_server(
@@ -341,47 +390,30 @@ def create_mcp_server(
     trusted_access_emails: tuple[str, ...] = (),
     auto_approve_redirect_uris: tuple[str, ...] = (),
     proxy_shared_secret: str = "",
-) -> FastMCP:
-    """Create a FastMCP server for stdio or remote HTTP transports."""
+) -> NotebookLMServer:
+    """Create the MCP server for stdio or remote HTTP transports.
+
+    `port` is only used by `main` when running Streamable HTTP directly.
+    """
 
     client_manager = NotebookLMClientManager()
 
     @asynccontextmanager
-    async def lifespan(_: FastMCP[Any]):
+    async def lifespan(_: MCPServer[Any]):
         try:
             yield
         finally:
             await client_manager.close()
 
-    mcp = NotebookLMFastMCP(
+    mcp = NotebookLMServer(
         name=SERVER_NAME,
         instructions=SERVER_INSTRUCTIONS,
         website_url=SERVER_WEBSITE_URL,
         host=host,
-        port=port,
         auth=auth_settings,
         auth_server_provider=auth_provider,
         lifespan=lifespan,
-        transport_security=TransportSecuritySettings(
-            allowed_hosts=["127.0.0.1:*", "localhost:*", "[::1]:*", "notebook.jovanovic.org.uk"],
-            # DNS-rebinding protection treats an *unset* allowed_origins as
-            # "reject every request that carries an Origin header" (see
-            # mcp.server.transport_security._validate_origin) rather than
-            # "no restriction" — only requests with no Origin header at all
-            # (same-origin navigations, curl, most non-browser MCP clients)
-            # pass through un-checked. Browser-based MCP clients (the
-            # claude.ai connector UI) always send Origin on cross-origin
-            # POSTs, so without this the OAuth dance can complete and still
-            # have every real /mcp call rejected with 403 "Invalid Origin
-            # header" — a token being valid never matters if this check
-            # fires first.
-            allowed_origins=[
-                "https://claude.ai",
-                "https://notebook.jovanovic.org.uk",
-                "http://localhost:*",
-                "http://127.0.0.1:*",
-            ],
-        ),
+        cache_hints=CACHE_HINTS,
     )
 
     @mcp.custom_route("/health", methods=["GET"], include_in_schema=False)
@@ -737,7 +769,10 @@ def main() -> None:
     args = parser.parse_args()
 
     mcp = create_mcp_server(host=args.host, port=args.port)
-    mcp.run(transport=args.transport)
+    if args.transport == "stdio":
+        mcp.run("stdio")
+    else:
+        mcp.run("streamable-http", host=args.host, port=args.port)
 
 
 if __name__ == "__main__":

@@ -1,28 +1,33 @@
 from __future__ import annotations
 
 import pytest
-from mcp.shared.exceptions import McpError
-from mcp.shared.memory import create_connected_server_and_client_session
+from mcp.client import Client
+from mcp.shared.exceptions import MCPError
 from mcp.types import INVALID_PARAMS
 
 from notebooklm_mcp.server import RESOURCE_NOT_FOUND, create_mcp_server
 
 pytestmark = pytest.mark.timeout(30)
 
+# legacy: the 2025-11-25 initialize handshake. auto: negotiates 2026-07-28.
+ERAS = {"legacy": RESOURCE_NOT_FOUND, "auto": INVALID_PARAMS}
+
 
 @pytest.mark.asyncio
-async def test_unknown_resource_returns_resource_not_found_code():
-    """An unknown URI gets -32002 with the URI in data, not the SDK's code 0."""
-    async with create_connected_server_and_client_session(create_mcp_server()) as client:
-        with pytest.raises(McpError) as excinfo:
+@pytest.mark.parametrize(("mode", "expected_code"), ERAS.items())
+async def test_unknown_resource_code_follows_the_protocol_era(mode, expected_code):
+    """-32002 for 2025-11-25 clients, -32602 in 2026-07-28, URI in data either way."""
+    async with Client(create_mcp_server(), mode=mode) as client:
+        with pytest.raises(MCPError) as excinfo:
             await client.read_resource("notebooklm://no-such-resource")
 
-    assert excinfo.value.error.code == RESOURCE_NOT_FOUND == -32002
+    assert excinfo.value.error.code == expected_code
     assert excinfo.value.error.data == {"uri": "notebooklm://no-such-resource"}
 
 
 @pytest.mark.asyncio
-async def test_registered_resources_still_read():
+@pytest.mark.parametrize("mode", ERAS)
+async def test_registered_resources_still_read(mode):
     """The not-found check only rejects unregistered URIs (fixed and templated)."""
     mcp = create_mcp_server()
 
@@ -34,7 +39,7 @@ async def test_registered_resources_still_read():
     def item_resource(item_id: str) -> str:
         return f"item-{item_id}"
 
-    async with create_connected_server_and_client_session(mcp) as client:
+    async with Client(mcp, mode=mode) as client:
         fixed = await client.read_resource("test://fixed")
         templated = await client.read_resource("test://items/42")
 
@@ -43,10 +48,11 @@ async def test_registered_resources_still_read():
 
 
 @pytest.mark.asyncio
-async def test_unknown_prompt_returns_invalid_params():
-    """An unknown prompt name is invalid params (-32602), not the SDK's code 0."""
-    async with create_connected_server_and_client_session(create_mcp_server()) as client:
-        with pytest.raises(McpError) as excinfo:
+@pytest.mark.parametrize("mode", ERAS)
+async def test_unknown_prompt_returns_invalid_params(mode):
+    """An unknown prompt name is invalid params (-32602) in both eras."""
+    async with Client(create_mcp_server(), mode=mode) as client:
+        with pytest.raises(MCPError) as excinfo:
             await client.get_prompt("no-such-prompt")
 
     assert excinfo.value.error.code == INVALID_PARAMS

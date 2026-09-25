@@ -163,20 +163,29 @@ On first connect, the client should:
 
 ## Protocol versions
 
-The server runs on the `mcp` 1.28.1 SDK, which negotiates MCP protocol versions up
-to 2025-11-25 over stdio and Streamable HTTP. HTTP+SSE has been removed;
-`notebooklm-mcp-sse` remains as an alias that starts the Streamable HTTP server.
+The server runs on the `mcp` 2.x SDK (`MCPServer`) and serves both protocol eras
+over stdio and Streamable HTTP. HTTP+SSE has been removed; `notebooklm-mcp-sse`
+remains as an alias that starts the Streamable HTTP server.
 
-- Unknown resource: error -32002, with the URI in `data` (the 2025-11-25 code).
-- Unknown prompt: error -32602.
+- **2025-11-25**: the `initialize` handshake with an `Mcp-Session-Id`, as used by
+  today's connectors. An unknown resource returns -32002 with the URI in `data`.
+- **2026-07-28**: stateless requests with no handshake, `server/discover`, and
+  `Mcp-Method`/`Mcp-Name` headers that must match the body (-32020 otherwise).
+  An unknown resource returns -32602 with the URI in `data`.
+- Either era: an unknown prompt returns -32602. A `GET /mcp` without a session is
+  refused with a 4xx; it never opens a stream.
+- Cache hints: `server/discover` and the tool, prompt, resource and template lists
+  carry `ttlMs` 300000 with `cacheScope` `private` (every remote request is
+  OAuth-scoped). `resources/read` carries none, because both resources are live
+  NotebookLM data.
+- No Tasks extension: `generate_artifact` already returns a task id at once and
+  `get_artifact_status` polls it, so no tool blocks for long.
 
-The 2026-07-28 protocol (stateless requests, `server/discover`, `Mcp-Method` and
-`Mcp-Name` headers, `ttlMs`/`cacheScope` cache hints, -32602 for unknown
-resources) needs `mcp` 2.x, which is blocked here. This venv also installs the
-root package's `fastmcp` pin, and fastmcp 3.x requires `mcp<2`. Moving needs
-fastmcp 4.x (which requires `mcp>=2`) in the root package, plus porting
-`server.py` from `mcp.server.fastmcp` to `mcp.server.mcpserver`, including the
-OAuth provider wiring.
+This package depends on plain `notebooklm-py`, not its `[mcp]` extra. That extra
+installs standalone `fastmcp` 3.x for the root package's own MCP server, and
+fastmcp 3.x requires `mcp<2`. As a result the root `notebooklm-mcp` console
+script is installed in this venv but cannot start; run it from a venv with
+`notebooklm-py[mcp]`.
 
 ## Development
 

@@ -246,7 +246,7 @@ def test_bare_protected_resource_metadata_available(monkeypatch, tmp_path):
         bare = client.get("/.well-known/oauth-protected-resource")
         assert bare.status_code == 200
         assert bare.json()["resource"] == "http://localhost:8006/mcp"
-        assert bare.json()["authorization_servers"] == ["http://localhost:8006/"]
+        assert bare.json()["authorization_servers"] == ["http://localhost:8006"]
 
         # The resource-path-suffixed location must keep working too — this
         # is additive, not a replacement.
@@ -759,3 +759,75 @@ def test_silent_approval_does_not_trust_the_client(monkeypatch, tmp_path):
         assert consent.status_code == 302
 
     assert json.loads(store.read_text())["trusted_client_ids"] == []
+
+
+def test_oauth_discovery_and_registration_under_the_public_host(monkeypatch, tmp_path):
+    """Regression guard for claude.ai connector discovery behind the public host.
+
+    fastmcp 3.4.3 added a Host guard that answered the deployment's own public
+    host with a non-200 on /.well-known/oauth-protected-resource/mcp, which
+    dead-ended claude.ai's OAuth discovery ("Couldn't connect to the server").
+    This drives the full ASGI app with the production Host and Origin and
+    requires every discovery step plus dynamic client registration to succeed.
+    """
+
+    monkeypatch.setenv("NOTEBOOKLM_MCP_PUBLIC_URL", "https://notebook.jovanovic.org.uk")
+    monkeypatch.setenv("NOTEBOOKLM_MCP_OAUTH_PASSWORD", "secret-pass")
+    monkeypatch.setenv("NOTEBOOKLM_MCP_OAUTH_STORE_PATH", str(tmp_path / "oauth-state.json"))
+
+    config = RemoteServerConfig.from_env()
+    provider = FileBackedOAuthProvider(config)
+    mcp = create_mcp_server(
+        host=config.host,
+        port=config.port,
+        auth_settings=build_auth_settings(config),
+        auth_provider=provider,
+        oauth_password=config.oauth_password,
+    )
+    headers = {"host": "notebook.jovanovic.org.uk", "origin": "https://claude.ai"}
+
+    with TestClient(
+        build_asgi_app(mcp, config), base_url="https://notebook.jovanovic.org.uk"
+    ) as client:
+        suffixed = client.get("/.well-known/oauth-protected-resource/mcp", headers=headers)
+        bare = client.get("/.well-known/oauth-protected-resource", headers=headers)
+        server_meta = client.get("/.well-known/oauth-authorization-server", headers=headers)
+        unauthorized = client.post(
+            "/mcp",
+            headers=headers,
+            json={"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}},
+        )
+        registered = client.post(
+            "/register",
+            headers=headers,
+            json={
+                "redirect_uris": ["https://claude.ai/api/mcp/auth_callback"],
+                "client_name": "claude.ai",
+                "grant_types": ["authorization_code", "refresh_token"],
+                "response_types": ["code"],
+                "token_endpoint_auth_method": "none",
+            },
+        )
+
+    assert suffixed.status_code == 200
+    assert suffixed.json() == {
+        "resource": "https://notebook.jovanovic.org.uk/mcp",
+        "authorization_servers": ["https://notebook.jovanovic.org.uk"],
+        "scopes_supported": list(config.required_scopes),
+        "bearer_methods_supported": ["header"],
+    }
+    assert bare.status_code == 200
+    assert bare.json()["resource"] == suffixed.json()["resource"]
+    assert bare.json()["authorization_servers"] == suffixed.json()["authorization_servers"]
+    assert server_meta.status_code == 200
+    assert server_meta.json()["issuer"] == "https://notebook.jovanovic.org.uk"
+    assert server_meta.json()["registration_endpoint"] == (
+        "https://notebook.jovanovic.org.uk/register"
+    )
+    assert unauthorized.status_code == 401
+    assert (
+        'resource_metadata="https://notebook.jovanovic.org.uk/.well-known/'
+        'oauth-protected-resource/mcp"' in unauthorized.headers["www-authenticate"]
+    )
+    assert registered.status_code == 201, registered.text
+    assert registered.json()["client_id"]

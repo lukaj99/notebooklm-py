@@ -142,8 +142,11 @@ def test_remote_server_exposes_http_and_oauth_metadata(tmp_path: Path) -> None:
     assert health.status_code == 200
     assert healthz.status_code == 200
     assert auth_metadata.status_code == 200
-    assert auth_metadata.json()["issuer"] == "https://notebooklm.example.com/"
+    assert auth_metadata.json()["issuer"] == "https://notebooklm.example.com"
     assert resource_metadata.status_code == 200
     assert resource_metadata.json()["resource"] == "https://notebooklm.example.com/mcp"
+    # RFC 9728 -> RFC 8414 link: a client follows authorization_servers[0] to
+    # the AS metadata and requires its issuer to match exactly.
+    assert resource_metadata.json()["authorization_servers"] == [auth_metadata.json()["issuer"]]
     assert unauthorized.status_code == 401
     assert "resource_metadata=" in unauthorized.headers["www-authenticate"]
