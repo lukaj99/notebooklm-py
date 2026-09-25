@@ -7,15 +7,20 @@ import asyncio
 import hmac
 import html
 import logging
+from collections.abc import Iterable
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import FastMCP
+from mcp.server.lowlevel.helper_types import ReadResourceContents
 from mcp.server.transport_security import TransportSecuritySettings
+from mcp.shared.exceptions import McpError
+from mcp.types import INVALID_PARAMS, ErrorData, GetPromptResult
 from notebooklm import NotebookLMClient
 from notebooklm.rpc import AudioFormat, AudioLength
+from pydantic import AnyUrl
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse
 
@@ -288,6 +293,44 @@ def _secret_equals(presented: str, expected: str) -> bool:
     return hmac.compare_digest(presented.encode("utf-8"), expected.encode("utf-8"))
 
 
+# MCP 2025-11-25 "resource not found". The 2026-07-28 era uses -32602 instead;
+# switch when this server moves to mcp v2 (blocked on fastmcp 4.x, see README).
+RESOURCE_NOT_FOUND = -32002
+
+
+class NotebookLMFastMCP(FastMCP):
+    """FastMCP that answers unknown resources and prompts with real JSON-RPC codes.
+
+    mcp 1.28.1 raises a plain exception for both, which its lowlevel server turns
+    into error code 0. That is not a JSON-RPC code, so clients cannot tell "not
+    found" from a crash. The checks below only match URIs and names against what
+    is registered; they never run a resource function (templates call Google).
+    """
+
+    async def read_resource(self, uri: AnyUrl | str) -> Iterable[ReadResourceContents]:
+        uri_str = str(uri)
+        manager = self._resource_manager
+        known = any(str(r.uri) == uri_str for r in manager.list_resources()) or any(
+            t.matches(uri_str) is not None for t in manager.list_templates()
+        )
+        if not known:
+            raise McpError(
+                ErrorData(
+                    code=RESOURCE_NOT_FOUND,
+                    message=f"Resource not found: {uri_str}",
+                    data={"uri": uri_str},
+                )
+            )
+        return await super().read_resource(uri)
+
+    async def get_prompt(
+        self, name: str, arguments: dict[str, Any] | None = None
+    ) -> GetPromptResult:
+        if self._prompt_manager.get_prompt(name) is None:
+            raise McpError(ErrorData(code=INVALID_PARAMS, message=f"Unknown prompt: {name}"))
+        return await super().get_prompt(name, arguments)
+
+
 def create_mcp_server(
     *,
     host: str = "127.0.0.1",
@@ -310,14 +353,12 @@ def create_mcp_server(
         finally:
             await client_manager.close()
 
-    mcp = FastMCP(
+    mcp = NotebookLMFastMCP(
         name=SERVER_NAME,
         instructions=SERVER_INSTRUCTIONS,
         website_url=SERVER_WEBSITE_URL,
         host=host,
         port=port,
-        sse_path="/mcp",
-        message_path="/mcp/messages",
         auth=auth_settings,
         auth_server_provider=auth_provider,
         lifespan=lifespan,
@@ -688,15 +729,12 @@ def main() -> None:
         "transport",
         nargs="?",
         default="stdio",
-        choices=["stdio", "sse", "streamable-http"],
-        help="Transport to run. Prefer 'streamable-http' over deprecated 'sse'.",
+        choices=["stdio", "streamable-http"],
+        help="Transport to run. HTTP+SSE was removed; use 'streamable-http'.",
     )
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8006)
     args = parser.parse_args()
-
-    if args.transport == "sse":
-        logger.warning("SSE is deprecated upstream; prefer streamable-http.")
 
     mcp = create_mcp_server(host=args.host, port=args.port)
     mcp.run(transport=args.transport)

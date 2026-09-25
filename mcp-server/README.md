@@ -161,6 +161,23 @@ On first connect, the client should:
 - `notebooklm://notebooks`
 - `notebooklm://notebooks/{notebook_id}`
 
+## Protocol versions
+
+The server runs on the `mcp` 1.28.1 SDK, which negotiates MCP protocol versions up
+to 2025-11-25 over stdio and Streamable HTTP. HTTP+SSE has been removed;
+`notebooklm-mcp-sse` remains as an alias that starts the Streamable HTTP server.
+
+- Unknown resource: error -32002, with the URI in `data` (the 2025-11-25 code).
+- Unknown prompt: error -32602.
+
+The 2026-07-28 protocol (stateless requests, `server/discover`, `Mcp-Method` and
+`Mcp-Name` headers, `ttlMs`/`cacheScope` cache hints, -32602 for unknown
+resources) needs `mcp` 2.x, which is blocked here. This venv also installs the
+root package's `fastmcp` pin, and fastmcp 3.x requires `mcp<2`. Moving needs
+fastmcp 4.x (which requires `mcp>=2`) in the root package, plus porting
+`server.py` from `mcp.server.fastmcp` to `mcp.server.mcpserver`, including the
+OAuth provider wiring.
+
 ## Development
 
 ```bash
