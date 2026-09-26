@@ -1,0 +1,29 @@
+{
+  "topic_id": "pocus-undifferentiated-dyspnea",
+  "title": "POCUS in Undifferentiated Dyspnea: Accuracy Without Outcomes? — 2026-09-26",
+  "audio_format": "deep-dive",
+  "rationale": "This episode is built around a genuine, evidence-grounded tension rather than a manufactured fight, which is why deep-dive beats debate here: the freshest 2026 meta-analysis (WJGnet) gives POCUS strong pooled diagnostic-accuracy numbers for undifferentiated dyspnoea, but St Emlyn's landmark RCT critique shows that a real, reproduced diagnostic-accuracy gain has never been convincingly shown to move mortality -- and NICE's own national heart-failure pathway, the guidance this listener's trust is actually built on, doesn't mention point-of-care ultrasound at all. Layering EMCrit's practical bedside algorithm and EMCases' frontline expert-panel debate on top gives the hosts a full arc: what POCUS is supposed to do at the bedside (EMCrit), how good the evidence really is (WJGnet), whether that evidence changes outcomes (St Emlyn's), how practising EM clinicians actually use it day to day (EMCases), and why the listener's own national guideline is silent on all of it (NICE). That progression -- practice, evidence, critique, real-world use, institutional gap -- rewards unpacking in one connected narrative more than it rewards two sides shouting past each other, especially since the sources mostly converge on \"POCUS is accurate\" and diverge instead on whether that accuracy matters and whether UK guidance has caught up.",
+  "case_vignette": "A 71-year-old man presents to a UK ED with acute breathlessness, a background of COPD and hypertension, and a chest X-ray reported as \"query early consolidation vs pulmonary oedema.\" His NT-proBNP comes back mildly elevated -- a result that could reflect decompensated heart failure, or simply his COPD and borderline renal function. Within the hour the registrar has to decide whether to start IV furosemide, antibiotics and bronchodilators, or both, and reaches for the ultrasound probe to look for B-lines and a plump IVC -- even though the NICE heart-failure pathway she trained on never mentions point-of-care ultrasound as part of that decision.",
+  "sources": [
+    {
+      "url": "https://emcrit.org/ibcc/chf/",
+      "title": "Acute Decompensated Heart Failure (IBCC chapter) — EMCrit",
+      "why": "Turns the diagnostic-accuracy numbers into an actual bedside algorithm: Farkas walks through using echo/lung ultrasound to split HFpEF from HFrEF and flags where BNP quietly lies -- obesity, HFpEF, RV failure."
+    },
+    {
+      "url": "https://www.stemlynsblog.org/jc-pocus-breathless-patient-game-changer/",
+      "title": "JC: POCUS for the breathless patient — St Emlyn's",
+      "why": "The accuracy-vs-outcome gap in one blog post: Carley shows the landmark Lancet Resp Med RCT's 25% jump in 4-hour diagnostic accuracy (NNT=4) came from a single-operator design riding alongside a non-significant mortality signal that ran the wrong way."
+    },
+    {
+      "url": "http://web.archive.org/web/20250926184545/https://emergencymedicinecases.com/acute-heart-failure-management-pocus-oxygenation-ppv-havoc-scape/",
+      "title": "Ep 163 Acute Heart Failure ED Management – PoCUS, Oxygenation Strategies, PPV HAVoC and SCAPE — EMCases",
+      "why": "The frontline expert-panel counterweight: Helman, Hedayati and Tillman pit POCUS against gestalt and CXR on real cases and re-litigate the C3PO NIPPV trial -- where practising clinicians say POCUS actually earns its keep."
+    },
+    {
+      "url": "http://web.archive.org/web/20250524232134/https://www.nice.org.uk/guidance/cg187/chapter/Recommendations",
+      "title": "NICE CG187: Acute heart failure -- diagnosis and management (Recommendations)",
+      "why": "The gap this UK listener actually works under: NICE's own acute heart failure pathway relies solely on natriuretic peptides plus formal echo within 48 hours and never mentions point-of-care ultrasound at all -- a striking silence against what EM societies and frontline practice already do."
+    }
+  ]
+}
