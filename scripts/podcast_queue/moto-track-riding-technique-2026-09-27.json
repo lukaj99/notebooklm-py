@@ -1,0 +1,40 @@
+{
+  "topic_id": "moto-track-riding-technique",
+  "title": "Advanced Riding Technique — Braking, Body Position, and Track Days — 2026-09-27",
+  "audio_format": "deep-dive",
+  "rationale": "This episode treats \"advanced technique\" as a genuinely contested subject rather than a settled skills checklist, which is why it's a deep-dive rather than a debate: three sources (Mackenzie, British Superbike School, Bennetts BikeSocial) walk the listener through opposite ends of the live trail-braking argument — track-only emergency tool versus everyday road skill — using a real brake-pressure graph and coach-authored reasoning on each side, so the hosts can stage the disagreement honestly instead of picking a winner. FortNine's body-position teardown adds the parallel nuance that hanging off and staying upright/counter-leaning aren't competing techniques but answers to different problems (max corner speed vs. quick evasive control), which matters directly for a Street Triple RS rider who commutes year-round and only occasionally tracks the bike. The VTech naturalistic-riding study grounds the whole conversation in what actually predicts crashes (brake smoothness, not force), and the Cochrane review is the deliberate friction point that stops the episode from treating \"get trained, get better\" as an unexamined truism — track days and coaching build skill, but the evidence that this converts to fewer real-world crashes is not settled. Together these sources let the hosts move from concrete lever-and-lean-angle coaching to the harder question of whether any of this technique work is provably protective, which is the kind of investigative arc this listener's stated preference for deep dives over adversarial debate calls for.",
+  "case_vignette": "You're on the entry to a fast, blind-ish B-road bend on the Street Triple RS, trailing a touch of front brake past turn-in because that's what the trackday coach drilled into you at your last session — except this is the commute, not Cadwell, and you're suddenly not sure whether that's a skill or a habit that will bite you on wet tarmac. Twenty minutes later, in the paddock at your next track day, the same coach tells you to hang off and get your knee down through the fast stuff, and you realize you've never actually worked out when that posture helps and when staying upright and counter-leaning would let you see and react faster.",
+  "style": "Frame this as a scenario-based discussion between two riding-obsessed co-hosts who do their own wrenching: 'what would you actually do on the road / in the garage' framing rather than a spec-sheet read-through. Include moments of genuine disagreement that get resolved by citing the sources. Keep it conversational and energetic, but always land on clear, actionable takeaways a rider can use this weekend.",
+  "sources": [
+    {
+      "url": "https://www.youtube.com/watch?v=rdx8oIgzoZk",
+      "title": "Taylor Mackenzie — \"How To MASTER BRAKING Like A Pro!\"",
+      "why": "Track coach's actual brake-pressure graph and side-by-side rider footage make the abstract 'trail off the brake as lean increases' rule concrete, including a live example of a trainee getting it wrong."
+    },
+    {
+      "url": "https://britishsuperbikeschool.com/2025/04/04/trail-braking-and-cornering/",
+      "title": "Trail Braking and Cornering – British Superbike School",
+      "why": "2025 coach-authored case for the anti-trail-braking-as-routine side: grounded in official DVSA/Roadcraft doctrine, it argues trail braking is 'totally unsuitable for road riders to use as a routine' and only a last-resort emergency tool."
+    },
+    {
+      "url": "http://web.archive.org/web/20260217192103/https://www.bennetts.co.uk/bikesocial/news-and-views/advice/biking-tips/trail-braking-explained",
+      "title": "Better Riding: Trail Braking Explained (Bennetts BikeSocial)",
+      "why": "The direct opposing pole to British Superbike School: argues a light, controlled trail-braking technique belongs in every road rider's toolbox, citing crash data on riders who ran wide because they never learned to brake into a bend."
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=U1mSavQ_DXs",
+      "title": "FortNine — \"Motorcycle Riders - You're Leaning the Wrong Way\"",
+      "why": "Physics-first case that hanging off (max lean-angle riding) and staying upright while counter-leaning (evasive, brake-loaded riding) solve genuinely different problems — the episode's key body-position nuance beyond a single 'correct' technique."
+    },
+    {
+      "url": "https://vtechworks.lib.vt.edu/items/44bb5538-de12-41b2-bdcb-2428caa7f01f/full",
+      "title": "Data-Driven Characterization of Motorcycle Riders' Kinematics and Crash Risk (Terranova, Perez & McCall, 2025)",
+      "why": "155 riders, ~400,000 naturalistic miles: abrupt initial brake jerk — not hard braking per se — is the strongest kinematic predictor of crash/near-crash involvement, reframing 'braking skill' as smoothness, not peak force."
+    },
+    {
+      "url": "https://www.cochrane.org/evidence/CD005240_motorcycle-rider-training-preventing-road-traffic-crashes",
+      "title": "Motorcycle rider training for preventing road traffic crashes (Cochrane systematic review, 2022)",
+      "why": "The necessary reality check before the episode teaches technique as self-evidently protective: after 23 studies, Cochrane still can't establish that rider training reduces crashes, injuries, or deaths."
+    }
+  ]
+}
