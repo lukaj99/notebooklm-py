@@ -1,0 +1,40 @@
+{
+  "topic_id": "photo-editing-workflow",
+  "title": "RAW Workflow — Culling at Scale, AI Denoise, and Editing Ethics — 2026-09-28",
+  "audio_format": "deep-dive",
+  "rationale": "This episode grounds a widely-hyped but poorly-defined topic — AI in the RAW workflow — in the listener's own gear and in primary sources rather than marketing claims: Nikon's own documentation and PetaPixel's measured dynamic-range data establish why the Z6 III specifically needs good noise handling, Adobe's own engineer states the party line on denoise pipeline order, Neukamp's hands-on target test and Picturestoryteller's real-shoot account supply the two sharpest documented failure cases (denoise hallucination, AI culling misjudging keepers), and World Press Photo's manipulation policy shows the debate is already partially settled institutionally even though working photographers keep re-litigating it. A deep-dive format suits this better than a debate: the throughline is investigative — what does the pipeline actually do to the sensor data — rather than two camps shouting past each other, and the sources build cumulatively (camera spec, then denoise mechanics, then real-world failure, then institutional response) more than they collide head-on.",
+  "case_vignette": "Picture a dim indoor event shot on the Z6 III at ISO 12,800 — 2,000 frames to cull down to 150 keepers before a deadline. Aftershoot flags the sharpest frames and Lightroom's AI Denoise cleans up the shadows, but the photographer later notices a shot where the denoise model has invented crisp eyelash detail that was never resolved on the sensor, and another where the culling tool 5-starred a technically sharp frame with a dead expression over the emotionally right one next to it.",
+  "style": "Frame this as a scenario-based discussion between two working photographers: 'what would you actually do on this shoot / at this edit' framing rather than a spec-sheet read-through. Include moments of genuine disagreement that get resolved by citing the sources. Keep it conversational and energetic, but always land on clear, actionable technique the listener can try on their next shoot.",
+  "sources": [
+    {
+      "url": "https://onlinemanual.nikonimglib.com/z6III/en/raw_processing_67.html",
+      "title": "RAW Processing — Nikon Z6 III Online Manual",
+      "why": "Straight from Nikon: the exact parameters (white balance, Picture Control, Active D-Lighting, High ISO NR) baked into a Z6 III NEF, framing precisely what a desktop RAW converter overrides the moment it opens the file."
+    },
+    {
+      "url": "https://petapixel.com/2024/07/03/the-nikon-z6-iiis-peak-dynamic-range-lags-far-behind-its-predecessors/",
+      "title": "The Nikon Z6 III's Peak Dynamic Range Lags Far Behind its Predecessor's",
+      "why": "Measured photonstophotos data showing the Z6 III's partially-stacked sensor costs roughly 0.8 EV of base-ISO dynamic range versus the Z6 II — the concrete engineering reason this specific camera leans harder on shadow recovery and denoise."
+    },
+    {
+      "url": "https://blog.adobe.com/en/publish/2023/04/18/denoise-demystified",
+      "title": "Denoise Demystified (Adobe Blog, 'From the ACR team')",
+      "why": "The Adobe engineer who built Lightroom/ACR Denoise explains the joint demosaic-plus-denoise neural net and states Adobe's own recommended pipeline order — denoise early, before masking and healing — a primary-source claim to test against real workflows."
+    },
+    {
+      "url": "https://neukamp.de/en/ai-denoising-fact-or-fake/",
+      "title": "AI denoising – fact or fake? (G-U Neukamp Photography)",
+      "why": "A hands-on test running DxO DeepPRIME XD2s against a text/letters target shows the model inventing plausible-but-wrong contours — the sharpest documented case of AI denoise fabricating detail rather than recovering it."
+    },
+    {
+      "url": "https://picturestoryteller.com/2026/02/20/my-follow-up-on-aftershoot-i-no-longer-recommend-it/",
+      "title": "My Follow-Up on Aftershoot: I No Longer Recommend It",
+      "why": "A working photographer's real-shoot reversal: Aftershoot 5-starred out-of-focus frames and picked the weaker expression in a series, and the required double-checking erased the promised time savings entirely."
+    },
+    {
+      "url": "https://www.worldpressphoto.org/contest/2025/verification-process/what-counts-as-manipulation",
+      "title": "World Press Photo: What Counts as Manipulation",
+      "why": "The clearest institutional line drawn so far — denoise and smart enhancement are explicitly permitted, AI upscaling and generative fill are an automatic disqualifier — giving the hosts a real rule to argue against instead of an abstract ethics debate."
+    }
+  ]
+}
