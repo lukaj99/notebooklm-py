@@ -1,0 +1,40 @@
+{
+  "topic_id": "tech-agentic-coding",
+  "title": "Agentic Coding — What Actually Makes Agents Better: The Harness Tax and the Context-File Paradox — 2026-09-29",
+  "audio_format": "deep-dive",
+  "rationale": "The old question was which model is best. The newer evidence says the wrapper around the model matters, but not where people assume. Arena's HarnessTax study and the 176-setting harness-design ablation both find that harness choice moves cost far more than pass rate, and that a thin bash-first loop competes with elaborate scaffolds. LangChain's 52.8 to 66.5 Terminal Bench jump from harness changes alone pulls the other way, so the hosts can work out when harness engineering pays and when it only burns tokens. The AGENTS.md pair (ETH: no success gain, over 20% higher cost; JAWS: about 29% faster runs) is a live disagreement that comes down to correctness versus efficiency, and it bears directly on the CLAUDE.md files the listener already keeps. The Anthropic postmortem shows the operational side: harness and prompt defaults can degrade quality silently, which is a case for pinning, evals and regression tracking. This is a deep-dive, not a debate. The studies are best read together as an investigation into what the numbers do and do not measure, and the listener prefers that to adversarial framing. METR's 2026 productivity follow-up and the Codex, Mastra and Anthropic long-running-agent posts were left out to keep the episode focused on measured harness effects.",
+  "case_vignette": "You are about to set up a nightly agent on the VPS that bumps pinned Docker image tags across your compose stacks, runs each stack's healthchecks, and opens PRs. You already have a 200-line CLAUDE.md, and you are torn between a full Claude Code setup with custom tools and a four-tool bash-only loop. Do you trim the context file, do you pin a harness version so a silent default change does not quietly wreck the run, and how would you tell whether a change helped, given that pass rates barely move but the token bill can swing 5x?",
+  "style": "Frame this as a scenario-based discussion between two opinionated engineers who run real infrastructure: 'what would you actually deploy / how would this fail' framing rather than a feature-list read-through. Include moments of genuine disagreement that get resolved by citing the sources. Keep it conversational and energetic, but always land on clear, actionable decisions the listener can apply to their own lab.",
+  "sources": [
+    {
+      "url": "https://arena.ai/blog/coding-agents-harness-tax",
+      "title": "HarnessTax: How Much Does the Harness Matter for Coding Agents? (Arena.ai)",
+      "why": "Newest evidence (16 Sept 2026): across 21 model-harness pairs, success barely moves but cost swings up to 5x, a minimal 4-tool harness is Pareto-competitive, and models often do better outside their own vendor's harness."
+    },
+    {
+      "url": "https://arxiv.org/abs/2609.20804",
+      "title": "An Empirical Study of Harness Design for Coding Agents",
+      "why": "176 matched settings show which harness parts earn their keep: context management mainly under tight windows, bash-only beating custom tools for strong models, planning acting as a cost saver."
+    },
+    {
+      "url": "https://arxiv.org/abs/2602.11988",
+      "title": "Evaluating AGENTS.md: Are Repository-Level Context Files Helpful for Coding Agents?",
+      "why": "Tests the CLAUDE.md/AGENTS.md habit directly: no general gain in success, over 20% more cost, and only non-standard instructions help."
+    },
+    {
+      "url": "https://assets.empirical-software.engineering/pdf/jaws26-agents.md-efficiency.pdf",
+      "title": "On the Impact of AGENTS.md Files on the Efficiency of AI Coding Agents",
+      "why": "The counter-study: 124 PRs across 10 repos show about 29% lower median runtime and 17% fewer output tokens with AGENTS.md. It measures efficiency, not correctness, which is why it seems to contradict the ETH paper."
+    },
+    {
+      "url": "https://www.anthropic.com/engineering/april-23-postmortem",
+      "title": "An update on recent Claude Code quality reports (Anthropic postmortem)",
+      "why": "A vendor admits three harness-level changes (effort default, thinking-clearing bug, verbosity prompt) silently degraded coding quality with the model unchanged, so your agent can regress without you touching it."
+    },
+    {
+      "url": "https://www.langchain.com/blog/improving-deep-agents-with-harness-engineering",
+      "title": "Improving Deep Agents with harness engineering (LangChain)",
+      "why": "The bullish case: with the model fixed, prompt, tool, middleware and self-verification changes lifted Terminal Bench 2.0 from 52.8 to 66.5. It is the foil to HarnessTax's cost-not-accuracy finding."
+    }
+  ]
+}
