@@ -4,14 +4,13 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import hmac
-import html
 import logging
 from collections.abc import Iterable
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
+from mcp.server.auth.provider import TokenVerifier
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.caching import CacheHint
 from mcp.server.connection import MODERN_PROTOCOL_VERSIONS
@@ -25,10 +24,7 @@ from notebooklm.rpc import AudioFormat, AudioLength
 from pydantic import AnyUrl
 from starlette.applications import Starlette
 from starlette.requests import Request
-from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse
-
-from .config import redirect_uri_matches
-from .oauth import FileBackedOAuthProvider, PendingAuthorization
+from starlette.responses import JSONResponse
 
 # Mirrors the CLI's kebab-case choices (src/notebooklm/cli/generate_cmd.py) so
 # tool callers and CLI users describe audio style the same way.
@@ -66,8 +62,9 @@ This server provides tools to interact with Google NotebookLM:
 - Ask questions against notebook contents
 - Generate NotebookLM artifacts
 
-Remote deployments use Streamable HTTP plus OAuth 2.1 authorization code flow
-with PKCE. The server itself uses your existing local NotebookLM login state.
+Remote deployments use Streamable HTTP and accept only bearer tokens issued
+by the configured OIDC provider. The server itself uses your existing local
+NotebookLM login state.
 """
 
 
@@ -160,131 +157,6 @@ async def _add_source_for_type(
         return await client.sources.add_file(notebook_id, Path(content).expanduser())
 
     raise ValueError("source_type must be one of: url, text, youtube, file")
-
-
-def _render_consent_page(
-    pending: PendingAuthorization,
-    client_name: str,
-    resource_url: str | None,
-    error: str | None = None,
-    require_password: bool = True,
-    authenticated_email: str | None = None,
-) -> str:
-    scopes_html = "".join(
-        f"<li><code>{html.escape(scope)}</code></li>" for scope in (pending.scopes or [])
-    )
-    error_html = (
-        f"<p style='color:#b42318;background:#fef3f2;padding:12px;border-radius:8px;'>"
-        f"{html.escape(error)}</p>"
-        if error
-        else ""
-    )
-    resource_html = (
-        f"<p><strong>Resource:</strong> <code>{html.escape(resource_url)}</code></p>"
-        if resource_url
-        else ""
-    )
-    identity_html = (
-        f"<p><strong>Cloudflare Access identity:</strong> <code>{html.escape(authenticated_email)}</code></p>"
-        if authenticated_email
-        else ""
-    )
-    password_html = (
-        """
-        <label for="password"><strong>Owner password</strong></label>
-        <input id="password" name="password" type="password" autocomplete="current-password" required>
-        """
-        if require_password
-        else "<p>Cloudflare Access has already authenticated this approval request.</p>"
-    )
-
-    return f"""<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Authorize NotebookLM MCP</title>
-    <style>
-      body {{
-        margin: 0;
-        background: #f7f8fb;
-        color: #111827;
-        font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }}
-      main {{
-        max-width: 640px;
-        margin: 48px auto;
-        background: white;
-        border-radius: 16px;
-        padding: 32px;
-        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
-      }}
-      h1 {{ margin-top: 0; }}
-      code {{
-        background: #f1f5f9;
-        padding: 0.15rem 0.35rem;
-        border-radius: 6px;
-      }}
-      input[type=password] {{
-        width: 100%;
-        padding: 12px;
-        border: 1px solid #cbd5e1;
-        border-radius: 10px;
-        box-sizing: border-box;
-        margin: 12px 0 20px;
-      }}
-      button {{
-        border: 0;
-        border-radius: 10px;
-        padding: 12px 18px;
-        cursor: pointer;
-        font-size: 14px;
-      }}
-      button.primary {{
-        background: #0f766e;
-        color: white;
-      }}
-      button.secondary {{
-        background: #e2e8f0;
-        color: #0f172a;
-        margin-left: 8px;
-      }}
-    </style>
-  </head>
-  <body>
-    <main>
-      <h1>Authorize NotebookLM MCP</h1>
-      <p><strong>Client:</strong> {html.escape(client_name)}</p>
-      {resource_html}
-      {identity_html}
-      <p><strong>Requested scopes:</strong></p>
-      <ul>{scopes_html or "<li><em>No scopes requested</em></li>"}</ul>
-      {error_html}
-      <form method="post">
-        <input type="hidden" name="grant_id" value="{html.escape(pending.grant_id)}">
-        {password_html}
-        <button class="primary" type="submit" name="action" value="approve">Approve</button>
-        <button class="secondary" type="submit" name="action" value="deny">Deny</button>
-      </form>
-    </main>
-  </body>
-</html>
-"""
-
-
-def _secret_equals(presented: str, expected: str) -> bool:
-    """Constant-time compare of two secrets that may contain non-ASCII.
-
-    ``hmac.compare_digest`` raises TypeError on ``str`` inputs holding
-    non-ASCII, and both sides here are attacker-reachable: header values
-    arrive decoded as latin-1 and form fields as UTF-8. Comparing the encoded
-    bytes keeps the timing property without letting a hostile header or form
-    field turn into a 500.
-    """
-
-    if not expected:
-        return False
-    return hmac.compare_digest(presented.encode("utf-8"), expected.encode("utf-8"))
 
 
 # "Resource not found" in the 2025-11-25 era. The 2026-07-28 era moved it to
@@ -385,11 +257,7 @@ def create_mcp_server(
     host: str = "127.0.0.1",
     port: int = 8006,
     auth_settings: AuthSettings | None = None,
-    auth_provider: FileBackedOAuthProvider | None = None,
-    oauth_password: str | None = None,
-    trusted_access_emails: tuple[str, ...] = (),
-    auto_approve_redirect_uris: tuple[str, ...] = (),
-    proxy_shared_secret: str = "",
+    token_verifier: TokenVerifier | None = None,
 ) -> NotebookLMServer:
     """Create the MCP server for stdio or remote HTTP transports.
 
@@ -411,7 +279,7 @@ def create_mcp_server(
         website_url=SERVER_WEBSITE_URL,
         host=host,
         auth=auth_settings,
-        auth_server_provider=auth_provider,
+        token_verifier=token_verifier,
         lifespan=lifespan,
         cache_hints=CACHE_HINTS,
     )
@@ -434,175 +302,12 @@ def create_mcp_server(
                 "endpoints": {
                     "mcp": "/mcp",
                     "health": "/health",
-                    "authorize": "/authorize" if auth_settings else None,
-                    "oauth_metadata": "/.well-known/oauth-authorization-server"
-                    if auth_settings
-                    else None,
                     "resource_metadata": "/.well-known/oauth-protected-resource/mcp"
                     if auth_settings
                     else None,
                 },
             }
         )
-
-    if auth_provider is not None and oauth_password is not None:
-        trusted_access_emails_set = {email.lower() for email in trusted_access_emails}
-
-        def _trusted_access_email(request: Request) -> str | None:
-            if not trusted_access_emails_set:
-                return None
-
-            # The identity header is only meaningful when it arrived through
-            # the fronting proxy. The proxy sets this shared secret on every
-            # request it forwards and overwrites any client-supplied copy, so
-            # a request that reaches this process by some other path cannot
-            # produce it. Checked first: an unproven request has no identity
-            # to speak of, whatever it claims.
-            presented = request.headers.get("x-auth-gate-secret", "")
-            if not _secret_equals(presented, proxy_shared_secret):
-                return None
-
-            email = request.headers.get("cf-access-authenticated-user-email")
-            if email is None:
-                return None
-            normalized = email.strip().lower()
-            if normalized in trusted_access_emails_set:
-                return normalized
-            return None
-
-        @mcp.custom_route("/oauth/consent", methods=["GET", "POST"], include_in_schema=False)
-        async def oauth_consent(request: Request):
-            if request.method == "GET":
-                grant_id = request.query_params.get("grant_id")
-                if not grant_id:
-                    return HTMLResponse("Missing grant_id", status_code=400)
-
-                pending = await auth_provider.get_pending_authorization(grant_id)
-                if pending is None:
-                    return HTMLResponse(
-                        "Authorization request expired or not found", status_code=404
-                    )
-
-                client = await auth_provider.get_client(pending.client_id)
-                client_name = (
-                    client.client_name or client.client_id or "unknown-client"
-                    if client
-                    else "unknown-client"
-                )
-                authenticated_email = _trusted_access_email(request)
-
-                # Silent approval. The owner identity is already proven for
-                # this request (the fronting proxy only sets the trusted
-                # header after an authenticated session), so the consent
-                # button would add a click without adding a decision.
-                #
-                # It is gated on the redirect_uri allowlist because a GET is
-                # reachable by cross-site navigation: without that gate, a
-                # page the owner visits could point the browser at a grant it
-                # created and have the code delivered to itself. An attacker
-                # cannot put its own callback on the allowlist, and a listed
-                # callback delivers the code to the real client instead.
-                if authenticated_email is not None and redirect_uri_matches(
-                    str(pending.redirect_uri), auto_approve_redirect_uris
-                ):
-                    # Deliberately NOT trust_client(): that would let
-                    # OAUTH_AUTO_APPROVE clear this client_id later without
-                    # the proxy identity and without the allowlist gate,
-                    # widening a grant no human ever reviewed. Trust is for
-                    # clients that passed the interactive page. Costs nothing
-                    # here — claude.ai registers a new client_id per connect,
-                    # and a repeat of this one takes this same branch again.
-                    redirect_url = await auth_provider.approve_pending_authorization(grant_id)
-                    if redirect_url is not None:
-                        logger.info(
-                            "Silently approved %s for %s (redirect_uri on allowlist)",
-                            client_name,
-                            authenticated_email,
-                        )
-                        return RedirectResponse(
-                            redirect_url,
-                            status_code=302,
-                            headers={"Cache-Control": "no-store"},
-                        )
-
-                return HTMLResponse(
-                    _render_consent_page(
-                        pending=pending,
-                        client_name=client_name,
-                        resource_url=pending.resource,
-                        require_password=not trusted_access_emails_set,
-                        authenticated_email=authenticated_email,
-                    )
-                )
-
-            form = await request.form()
-            grant_id_raw = form.get("grant_id")
-            action_raw = form.get("action")
-            password_raw = form.get("password")
-
-            grant_id = grant_id_raw if isinstance(grant_id_raw, str) else ""
-            action = action_raw if isinstance(action_raw, str) else "approve"
-            password = password_raw if isinstance(password_raw, str) else ""
-
-            pending = await auth_provider.get_pending_authorization(grant_id)
-            if pending is None:
-                return HTMLResponse("Authorization request expired or not found", status_code=404)
-
-            client = await auth_provider.get_client(pending.client_id)
-            client_name = (
-                client.client_name or client.client_id or "unknown-client"
-                if client
-                else "unknown-client"
-            )
-            authenticated_email = _trusted_access_email(request)
-
-            if action == "deny":
-                redirect_url = await auth_provider.deny_pending_authorization(grant_id)
-                if redirect_url is None:
-                    return HTMLResponse(
-                        "Authorization request expired or not found", status_code=404
-                    )
-                return RedirectResponse(
-                    redirect_url, status_code=302, headers={"Cache-Control": "no-store"}
-                )
-
-            if trusted_access_emails_set:
-                if authenticated_email is None:
-                    return HTMLResponse(
-                        _render_consent_page(
-                            pending=pending,
-                            client_name=client_name,
-                            resource_url=pending.resource,
-                            error="Cloudflare Access authentication required",
-                            require_password=False,
-                            authenticated_email=None,
-                        ),
-                        status_code=403,
-                    )
-            elif not _secret_equals(password, oauth_password):
-                return HTMLResponse(
-                    _render_consent_page(
-                        pending=pending,
-                        client_name=client_name,
-                        resource_url=pending.resource,
-                        error="Incorrect password",
-                        require_password=True,
-                    ),
-                    status_code=403,
-                )
-
-            # Owner identity (password or Cloudflare Access) verified for this
-            # client_id — remember it so OAUTH_AUTO_APPROVE can skip consent
-            # on future reconnects without ever skipping it on first contact.
-            await auth_provider.trust_client(pending.client_id)
-
-            redirect_url = await auth_provider.approve_pending_authorization(grant_id)
-            if redirect_url is None:
-                return HTMLResponse("Authorization request expired or not found", status_code=404)
-
-            return RedirectResponse(
-                redirect_url, status_code=302, headers={"Cache-Control": "no-store"}
-            )
 
     async def _client() -> NotebookLMClient:
         return await client_manager.get_client()

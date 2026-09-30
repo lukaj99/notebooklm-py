@@ -9,15 +9,11 @@ from urllib.parse import urlparse
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8006
-DEFAULT_SCOPE = "notebooklm:access"
-DEFAULT_STORE_PATH = Path("~/.notebooklm/mcp-oauth.json")
-DEFAULT_ACCESS_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 365  # 365 days
-DEFAULT_REFRESH_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 365  # 365 days
-DEFAULT_AUTHORIZATION_CODE_TTL_SECONDS = 600
+DEFAULT_ISSUER = "https://auth.jovanovic.org.uk"
 LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 
 
-def _parse_int(name: str, default: int) -> int:
+def _parse_port(name: str, default: int) -> int:
     raw = os.environ.get(name)
     if raw is None or raw == "":
         return default
@@ -32,189 +28,51 @@ def _parse_int(name: str, default: int) -> int:
     return value
 
 
-def _split_scopes(value: str | None) -> tuple[str, ...]:
-    if not value:
-        return (DEFAULT_SCOPE,)
-
-    scopes = tuple(scope for scope in value.replace(",", " ").split() if scope)
-    if not scopes:
-        raise ValueError("NOTEBOOKLM_MCP_REQUIRED_SCOPES cannot be empty")
-    return scopes
-
-
-def _split_emails(value: str | None) -> tuple[str, ...]:
+def _split_subs(value: str | None) -> tuple[str, ...]:
     if not value:
         return ()
-    emails = tuple(
-        email.strip().lower() for email in value.replace(";", ",").split(",") if email.strip()
-    )
-    return tuple(dict.fromkeys(emails))
+    subs = (sub.strip() for sub in value.split(","))
+    return tuple(dict.fromkeys(sub for sub in subs if sub))
 
 
-def _split_redirect_uris(value: str | None) -> tuple[str, ...]:
-    if not value:
-        return ()
-    uris = tuple(uri.strip() for uri in value.replace(";", ",").split(",") if uri.strip())
-    for uri in uris:
-        parsed = urlparse(uri.replace("*", "0", 1) if ":*" in uri else uri)
-        if parsed.scheme not in {"http", "https"}:
-            raise ValueError(
-                "NOTEBOOKLM_MCP_AUTO_APPROVE_REDIRECT_URIS entries must be http or https URLs"
-            )
-        # A wildcard the matcher does not understand would sit in the
-        # allowlist matching nothing, and the operator would see an
-        # unexplained consent page rather than a configuration error.
-        if "*" in uri:
-            if ":*" not in uri or uri.count("*") != 1:
-                raise ValueError(
-                    "NOTEBOOKLM_MCP_AUTO_APPROVE_REDIRECT_URIS supports `*` only as the "
-                    "port, for example http://localhost:*/callback"
-                )
-            if parsed.hostname not in LOOPBACK_HOSTS:
-                raise ValueError(
-                    "NOTEBOOKLM_MCP_AUTO_APPROVE_REDIRECT_URIS port wildcards are allowed "
-                    "only for loopback hosts (localhost, 127.0.0.1, ::1), since they exist "
-                    "for local clients that bind an ephemeral port"
-                )
-    return tuple(dict.fromkeys(uris))
+def _expand_path(value: str | None) -> Path | None:
+    return Path(value).expanduser() if value else None
 
 
-def _normalize_redirect_uri(value: str) -> str:
-    """Give a path-less URL the explicit ``/`` that URL types add.
-
-    ``PendingAuthorization.redirect_uri`` is a pydantic ``AnyUrl``, and
-    stringifying one appends ``/`` when the URL has no path. Patterns are
-    hand-written and usually omit it, so without normalising both sides a
-    path-less entry such as ``http://localhost:*`` could never match.
-    """
-
-    probe = value.replace(":*", ":0", 1) if ":*" in value else value
-    return value + "/" if not urlparse(probe).path else value
-
-
-def redirect_uri_matches(candidate: str, patterns: tuple[str, ...]) -> bool:
-    """Return True if ``candidate`` is covered by the allowlist ``patterns``.
-
-    A pattern matches exactly, except that ``*`` may stand in for the port of
-    a loopback host (``http://localhost:*/callback``) because local OAuth
-    clients bind an ephemeral port on every run.
-    """
-
-    candidate = _normalize_redirect_uri(candidate)
-    for pattern in map(_normalize_redirect_uri, patterns):
-        if pattern == candidate:
-            return True
-        if ":*" not in pattern:
-            continue
-
-        prefix, _, suffix = pattern.partition(":*")
-        if not candidate.startswith(prefix + ":") or not candidate.endswith(suffix):
-            continue
-
-        port = candidate[len(prefix) + 1 : len(candidate) - len(suffix) or None]
-        if not port.isdigit():
-            continue
-
-        if urlparse(prefix + ":0").hostname in LOOPBACK_HOSTS:
-            return True
-    return False
-
-
-def _normalize_public_base_url(value: str) -> str:
+def _normalize_resource_url(value: str) -> str:
     parsed = urlparse(value)
-    if parsed.scheme not in {"http", "https"}:
-        raise ValueError("NOTEBOOKLM_MCP_PUBLIC_URL must use http or https")
-    if not parsed.netloc:
-        raise ValueError("NOTEBOOKLM_MCP_PUBLIC_URL must include a hostname")
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ValueError("MCP_RESOURCE_URL must be an absolute http(s) URL")
+    if parsed.scheme != "https" and parsed.hostname not in LOOPBACK_HOSTS:
+        raise ValueError("MCP_RESOURCE_URL must use https outside localhost")
     if parsed.params or parsed.query or parsed.fragment:
-        raise ValueError("NOTEBOOKLM_MCP_PUBLIC_URL cannot include params, query, or fragment")
-    if parsed.path not in {"", "/"}:
-        raise ValueError("NOTEBOOKLM_MCP_PUBLIC_URL must not include a path")
-
-    is_localhost = parsed.hostname in {"localhost", "127.0.0.1", "::1"}
-    if parsed.scheme != "https" and not is_localhost:
-        raise ValueError("NOTEBOOKLM_MCP_PUBLIC_URL must use https outside localhost")
-
-    return f"{parsed.scheme}://{parsed.netloc}"
+        raise ValueError("MCP_RESOURCE_URL cannot include params, query, or fragment")
+    return value.rstrip("/")
 
 
-def _expand_path(value: str | Path | None, default: Path | None = None) -> Path | None:
-    if value is None:
-        if default is None:
-            return None
-        return default.expanduser()
-    return Path(value).expanduser()
-
-
-@dataclass(slots=True, frozen=True)
+@dataclass(frozen=True)
 class RemoteServerConfig:
-    """Environment-driven configuration for remote HTTP deployment."""
+    """Environment-driven configuration for remote HTTP deployment.
+
+    This process is an OAuth resource server only. ``issuer`` (Pocket ID) is
+    the sole authorization server; ``resource_url`` is the audience every
+    token must carry; ``allowed_subs`` is who may use the owner's NotebookLM
+    login. An empty ``allowed_subs`` rejects every request.
+    """
 
     host: str
     port: int
-    public_base_url: str
-    oauth_password: str
-    oauth_store_path: Path
-    required_scopes: tuple[str, ...]
-    service_documentation_url: str | None
-    access_token_ttl_seconds: int
-    refresh_token_ttl_seconds: int
-    authorization_code_ttl_seconds: int
-    client_secret_expiry_seconds: int | None
+    resource_url: str
+    issuer: str
+    allowed_subs: tuple[str, ...]
     tls_certfile: Path | None
     tls_keyfile: Path | None
-    trusted_access_emails: tuple[str, ...] = ()
-    auto_approve_redirect_uris: tuple[str, ...] = ()
-    proxy_shared_secret: str = ""
-
-    @property
-    def issuer_url(self) -> str:
-        return self.public_base_url
-
-    @property
-    def resource_server_url(self) -> str:
-        return f"{self.public_base_url}/mcp"
 
     @classmethod
     def from_env(cls) -> RemoteServerConfig:
-        public_base_url_raw = os.environ.get("NOTEBOOKLM_MCP_PUBLIC_URL")
-        if not public_base_url_raw:
-            raise ValueError("NOTEBOOKLM_MCP_PUBLIC_URL is required for remote HTTP mode")
-
-        oauth_password = os.environ.get("NOTEBOOKLM_MCP_OAUTH_PASSWORD", "")
-        trusted_access_emails = _split_emails(
-            os.environ.get("NOTEBOOKLM_MCP_TRUSTED_ACCESS_EMAILS")
-        )
-        if not oauth_password and not trusted_access_emails:
-            raise ValueError(
-                "Set NOTEBOOKLM_MCP_OAUTH_PASSWORD or NOTEBOOKLM_MCP_TRUSTED_ACCESS_EMAILS"
-            )
-
-        auto_approve_redirect_uris = _split_redirect_uris(
-            os.environ.get("NOTEBOOKLM_MCP_AUTO_APPROVE_REDIRECT_URIS")
-        )
-        if auto_approve_redirect_uris and not trusted_access_emails:
-            raise ValueError(
-                "NOTEBOOKLM_MCP_AUTO_APPROVE_REDIRECT_URIS requires "
-                "NOTEBOOKLM_MCP_TRUSTED_ACCESS_EMAILS, which supplies the owner identity "
-                "that silent approval is granted on behalf of"
-            )
-
-        client_secret_expiry_raw = os.environ.get("NOTEBOOKLM_MCP_CLIENT_SECRET_EXPIRY_SECONDS")
-        client_secret_expiry_seconds: int | None
-        if client_secret_expiry_raw in {None, ""}:
-            client_secret_expiry_seconds = None
-        else:
-            try:
-                client_secret_expiry_seconds = int(client_secret_expiry_raw)
-            except ValueError as exc:
-                raise ValueError(
-                    "NOTEBOOKLM_MCP_CLIENT_SECRET_EXPIRY_SECONDS must be an integer"
-                ) from exc
-            if client_secret_expiry_seconds <= 0:
-                raise ValueError(
-                    "NOTEBOOKLM_MCP_CLIENT_SECRET_EXPIRY_SECONDS must be greater than 0"
-                )
+        resource_url_raw = os.environ.get("MCP_RESOURCE_URL")
+        if not resource_url_raw:
+            raise ValueError("MCP_RESOURCE_URL is required for remote HTTP mode")
 
         tls_certfile = _expand_path(os.environ.get("NOTEBOOKLM_MCP_TLS_CERTFILE"))
         tls_keyfile = _expand_path(os.environ.get("NOTEBOOKLM_MCP_TLS_KEYFILE"))
@@ -223,63 +81,12 @@ class RemoteServerConfig:
                 "NOTEBOOKLM_MCP_TLS_CERTFILE and NOTEBOOKLM_MCP_TLS_KEYFILE must be set together"
             )
 
-        host = os.environ.get("NOTEBOOKLM_MCP_HOST", DEFAULT_HOST)
-        if trusted_access_emails and host not in {"127.0.0.1", "localhost", "::1"}:
-            # trusted_access_emails is enforced by trusting the
-            # cf-access-authenticated-user-email header, which is only safe
-            # if this process is unreachable except through a fronting proxy
-            # that strips any client-supplied copy of that header and sets it
-            # itself from an authenticated session. Binding anywhere else
-            # would let a direct request forge it and bypass authorization.
-            raise ValueError(
-                "NOTEBOOKLM_MCP_TRUSTED_ACCESS_EMAILS requires NOTEBOOKLM_MCP_HOST to be "
-                "a loopback address (127.0.0.1, localhost, or ::1), since it trusts a "
-                "header that only a fronting authenticating proxy may set safely"
-            )
-
-        proxy_shared_secret = os.environ.get("NOTEBOOKLM_MCP_PROXY_SHARED_SECRET", "")
-        if trusted_access_emails and not proxy_shared_secret:
-            # Without this the owner identity rests entirely on a header any
-            # client can send. The fronting proxy is supposed to strip a
-            # client-supplied copy, but nothing here can verify that it did,
-            # so a proxy misconfiguration would fail open and silently. A
-            # shared secret the proxy also sets makes the identity header
-            # unusable on its own, which fails closed instead.
-            raise ValueError(
-                "NOTEBOOKLM_MCP_TRUSTED_ACCESS_EMAILS requires "
-                "NOTEBOOKLM_MCP_PROXY_SHARED_SECRET. Set it to a random value and have "
-                "the fronting proxy send it as the X-Auth-Gate-Secret header on every "
-                "proxied request (Caddy: `header_up X-Auth-Gate-Secret {$SECRET}`)"
-            )
-
         return cls(
-            host=host,
-            port=_parse_int("NOTEBOOKLM_MCP_PORT", DEFAULT_PORT),
-            public_base_url=_normalize_public_base_url(public_base_url_raw),
-            oauth_password=oauth_password,
-            trusted_access_emails=trusted_access_emails,
-            auto_approve_redirect_uris=auto_approve_redirect_uris,
-            proxy_shared_secret=proxy_shared_secret,
-            oauth_store_path=_expand_path(
-                os.environ.get("NOTEBOOKLM_MCP_OAUTH_STORE_PATH"),
-                DEFAULT_STORE_PATH,
-            )
-            or DEFAULT_STORE_PATH.expanduser(),
-            required_scopes=_split_scopes(os.environ.get("NOTEBOOKLM_MCP_REQUIRED_SCOPES")),
-            service_documentation_url=os.environ.get("NOTEBOOKLM_MCP_SERVICE_DOCUMENTATION_URL"),
-            access_token_ttl_seconds=_parse_int(
-                "NOTEBOOKLM_MCP_ACCESS_TOKEN_TTL_SECONDS",
-                DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
-            ),
-            refresh_token_ttl_seconds=_parse_int(
-                "NOTEBOOKLM_MCP_REFRESH_TOKEN_TTL_SECONDS",
-                DEFAULT_REFRESH_TOKEN_TTL_SECONDS,
-            ),
-            authorization_code_ttl_seconds=_parse_int(
-                "NOTEBOOKLM_MCP_AUTHORIZATION_CODE_TTL_SECONDS",
-                DEFAULT_AUTHORIZATION_CODE_TTL_SECONDS,
-            ),
-            client_secret_expiry_seconds=client_secret_expiry_seconds,
+            host=os.environ.get("NOTEBOOKLM_MCP_HOST", DEFAULT_HOST),
+            port=_parse_port("NOTEBOOKLM_MCP_PORT", DEFAULT_PORT),
+            resource_url=_normalize_resource_url(resource_url_raw),
+            issuer=(os.environ.get("OAUTH_ISSUER") or DEFAULT_ISSUER).rstrip("/"),
+            allowed_subs=_split_subs(os.environ.get("MCP_ALLOWED_SUBS")),
             tls_certfile=tls_certfile,
             tls_keyfile=tls_keyfile,
         )

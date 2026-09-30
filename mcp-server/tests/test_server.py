@@ -4,12 +4,8 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from starlette.testclient import TestClient
 
-from notebooklm_mcp.config import RemoteServerConfig
-from notebooklm_mcp.oauth import FileBackedOAuthProvider
-from notebooklm_mcp.remote import build_auth_settings
-from notebooklm_mcp.server import _add_source_for_type, create_mcp_server
+from notebooklm_mcp.server import _add_source_for_type
 
 
 class RecordingSources:
@@ -55,24 +51,6 @@ class RecordingClient:
         self.sources = RecordingSources()
 
 
-def _remote_config(tmp_path: Path) -> RemoteServerConfig:
-    return RemoteServerConfig(
-        host="127.0.0.1",
-        port=8006,
-        public_base_url="https://notebooklm.example.com",
-        oauth_password="secret-password",
-        oauth_store_path=tmp_path / "oauth-state.json",
-        required_scopes=("notebooklm:access",),
-        service_documentation_url="https://docs.example.com/notebooklm-mcp",
-        access_token_ttl_seconds=3600,
-        refresh_token_ttl_seconds=86400,
-        authorization_code_ttl_seconds=600,
-        client_secret_expiry_seconds=None,
-        tls_certfile=None,
-        tls_keyfile=None,
-    )
-
-
 @pytest.mark.asyncio
 async def test_add_source_dispatches_to_correct_client_methods(tmp_path: Path) -> None:
     client = RecordingClient()
@@ -112,41 +90,3 @@ async def test_add_source_dispatches_to_correct_client_methods(tmp_path: Path) -
         ("add_url", ("nb-1", "https://youtube.com/watch?v=abc123")),
         ("add_file", ("nb-1", Path(tmp_path / "sample.txt").expanduser())),
     ]
-
-
-def test_remote_server_exposes_http_and_oauth_metadata(tmp_path: Path) -> None:
-    config = _remote_config(tmp_path)
-    provider = FileBackedOAuthProvider(config)
-    app = create_mcp_server(
-        host=config.host,
-        port=config.port,
-        auth_settings=build_auth_settings(config),
-        auth_provider=provider,
-        oauth_password=config.oauth_password,
-    ).streamable_http_app()
-
-    client = TestClient(app)
-
-    root = client.get("/")
-    health = client.get("/health")
-    healthz = client.get("/healthz")
-    auth_metadata = client.get("/.well-known/oauth-authorization-server")
-    resource_metadata = client.get("/.well-known/oauth-protected-resource/mcp")
-    unauthorized = client.post(
-        "/mcp", json={"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}
-    )
-
-    assert root.status_code == 200
-    assert root.json()["transport"] == "streamable-http"
-    assert root.json()["oauth_enabled"] is True
-    assert health.status_code == 200
-    assert healthz.status_code == 200
-    assert auth_metadata.status_code == 200
-    assert auth_metadata.json()["issuer"] == "https://notebooklm.example.com"
-    assert resource_metadata.status_code == 200
-    assert resource_metadata.json()["resource"] == "https://notebooklm.example.com/mcp"
-    # RFC 9728 -> RFC 8414 link: a client follows authorization_servers[0] to
-    # the AS metadata and requires its issuer to match exactly.
-    assert resource_metadata.json()["authorization_servers"] == [auth_metadata.json()["issuer"]]
-    assert unauthorized.status_code == 401
-    assert "resource_metadata=" in unauthorized.headers["www-authenticate"]

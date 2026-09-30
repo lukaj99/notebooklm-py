@@ -10,9 +10,8 @@ dependencies = [
     # fastmcp for the root package's own MCP server (`notebooklm-mcp`), pinned
     # to fastmcp 3.4.x, which requires mcp<2. This server is built on mcp
     # itself, so sharing a venv with that pin would hold it on mcp 1.x and the
-    # 2025-11-25 protocol. It does not need fastmcp: its OAuth tokens come from
-    # FileBackedOAuthProvider, whose lifetimes are set in config, not from
-    # fastmcp's in-memory provider. Consequence: the root `notebooklm-mcp`
+    # 2025-11-25 protocol. It does not need fastmcp: it validates Pocket ID
+    # tokens itself (auth.py) rather than issuing any. Consequence: the root `notebooklm-mcp`
     # console script still gets installed here but cannot start. Run it from a
     # venv with notebooklm-py[mcp] instead.
     "notebooklm-py>=0.8.0",
@@ -20,6 +19,9 @@ dependencies = [
     # 2026-07-28 stateless), cache hints and Mcp-Method/Mcp-Name checks.
     # Capped below the next major, which will break the API again.
     "mcp>=2.2.0,<3",
+    # RS256 verification of Pocket ID access tokens (auth.py). mcp already pulls
+    # it in; declared because this package imports it directly.
+    "pyjwt[crypto]>=2.8.0",
     "starlette>=0.37.0",
     "uvicorn[standard]>=0.30.0",
 ]
