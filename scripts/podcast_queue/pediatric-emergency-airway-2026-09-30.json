@@ -1,0 +1,34 @@
+{
+  "topic_id": "pediatric-emergency-airway",
+  "title": "Pediatric Emergency Airway Management — 2026-09-30",
+  "audio_format": "deep-dive",
+  "rationale": "This episode asks a practical question for the UK ED doctor who intubates children rarely: after the 2025 ERC and RCUK paediatric life support updates, what does a good emergency paediatric intubation look like, and is video laryngoscopy now the default? The guidelines give a fairly prescriptive bundle (cuffed tubes, a two-attempt cap of 30-60 seconds, no routine atropine, oxygenation throughout, SGA and front-of-neck access as rescue) and deliberately leave the choice of blade to local protocol and operator experience. The pooled ED evidence favours VL for first-pass success but rests on observational data with moderate-to-serious bias, and the FOAMed critique argues that first-pass success is a surrogate and that the benefit shrinks with experience. The EMCrit piece adds the equipment reality that paediatric hyperangulated kit is poor. We chose a deep-dive over a debate: the sources mostly converge on the bundle and disagree on how much weight VL evidence can bear, which suits an investigative walk-through better than adversarial sides. Not covered by these sources: paediatric RCT data, neonatal-specific trials, and drug choice (ketamine vs etomidate, suxamethonium vs rocuronium), so hosts should flag those as evidence gaps rather than cite figures.",
+  "case_vignette": "A 9-month-old with severe bronchiolitis is tiring in a district general ED. Sats are falling despite high-flow nasal oxygen, and she is now drowsy with a GCS of 9. The paediatric anaesthetist is 20 minutes away, so you are drafting a plan to intubate with the ED consultant. Do you reach for the video laryngoscope you use on adults, or the Macintosh blade you trained on? After 45 seconds and one failed attempt with sats at 80%, what do the guidelines say you should do next?",
+  "sources": [
+    {
+      "url": "https://www.erc.edu/media/03xnpjmj/gl2025-09-pls-e.pdf",
+      "title": "European Resuscitation Council Guidelines 2025: Paediatric Life Support",
+      "why": "The newest prescriptive intubation bundle: cuffed tubes for all, max two attempts of 30-60s, no routine atropine, apnoeic oxygenation/HFNO, front-of-neck access only as a last resort."
+    },
+    {
+      "url": "https://www.resus.org.uk/professional-library/2025-resuscitation-guidelines/paediatric-basic-life-support-guidelines",
+      "title": "Resuscitation Council UK 2025 Paediatric Life Support (basic and advanced)",
+      "why": "The UK-applicable version for this listener: intubation checklist, SGA as rescue, age-scaled ventilation rates (25/20/15/10) and what to do when ventilation is doubtful."
+    },
+    {
+      "url": "https://www.frontiersin.org/journals/medicine/articles/10.3389/fmed.2024.1373460/full",
+      "title": "Videolaryngoscopy vs direct laryngoscopy for intubation in the paediatric emergency department: systematic review and meta-analysis (Frontiers in Medicine)",
+      "why": "Best pooled ED evidence on VL vs DL in children: 10 observational studies, 5,586 intubations, first-pass OR 1.64, no difference in adverse events, but moderate-to-serious bias. Anchors the central controversy."
+    },
+    {
+      "url": "https://first10em.com/the-device-trial-not-as-convincing-as-you-think/",
+      "title": "The DEVICE trial: Not as convincing as you think? (First10EM)",
+      "why": "Adult RCT critique that challenges first-pass success as a surrogate outcome and shows the VL benefit shrinking with operator experience, which matters for the low-volume paediatric operator."
+    },
+    {
+      "url": "https://emcrit.org/emcrit/hyperangulated-blade-tips/",
+      "title": "EMCrit 390 - Hyperangulated Video Laryngoscopy (HAVL)",
+      "why": "Blade geometry and technique in practice, plus the practical caveat that paediatric hyperangulated kit and stylets are poor, so operators fall back to DL."
+    }
+  ]
+}
