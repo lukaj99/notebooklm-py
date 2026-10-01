@@ -1,0 +1,40 @@
+{
+  "topic_id": "moto-safety-gear-evidence",
+  "title": "Motorcycle Safety Gear — What the Evidence Actually Shows — 2026-10-01",
+  "audio_format": "deep-dive",
+  "rationale": "The helmet, armour and airbag bases are settled: a certified lid and abrasion-resistant kit work. This episode covers the extras that the marketing oversells, in three live disputes. First, whether ECE 22.06 changes measured protection at all. The independent Certimoov data say barely, and the Stapp 2025 paper says the oblique test misses rotational brain injury risk and that standard helmets raise it about 30% over a bare head. Second, whether CE limb armour prevents fractures or only abrasion, with FortNine's sceptical take set against the certification thresholds. Third, airbag trigger engineering: tether versus electronic, the crash types an ECU will not fire for, the subscription lock-in, and the IRCOBI simulation of inflating under a jacket. The sources mix peer-reviewed biomechanics, independent hands-on lab-style testing and two well-known rider-facing videos, so the hosts can separate hard evidence from gear-shop opinion. Deep-dive suits this best. The sources are about calibrating what each number means (kN thresholds, HIC against rotational injury, trigger latency), not about two sides arguing. That calibration suits a rider who does his own upgrades and has to decide what to spend on next. I left out the 2016 back-protector systematic review because PubMed efetch links tend to fail the queue writer, and the FortNine armour video already carries the sceptical evidence on armour.",
+  "case_vignette": "You are in the garage in October, Street Triple on the paddock stand, with a new ECE 22.06 helmet and a Tech-Air-style vest in the basket. Tomorrow's commute includes the wet roundabout where you nearly lowsided last winter on cold tyres. Do you spend the money on the helmet's new sticker, the airbag that may not fire in a slow lowside, or the CE2 armour that may only be saving your skin?",
+  "style": "Frame this as a scenario-based discussion between two riding-obsessed co-hosts who do their own wrenching: 'what would you actually do on the road / in the garage' framing rather than a spec-sheet read-through. Include moments of genuine disagreement that get resolved by citing the sources. Keep it conversational and energetic, but always land on clear, actionable takeaways a rider can use this weekend.",
+  "sources": [
+    {
+      "url": "https://www.ircobi.org/wordpress/downloads/irc24/pdf-files/2469.pdf",
+      "title": "Comparative Evaluation of Motorcycle Helmets Complying to R22-06 with Helmets Complying to R22-05 (IRCOBI 2024)",
+      "why": "An independent Certimoov test of 47 ECE 22.05 and 16 ECE 22.06 helmets across 1,134 impacts found almost no measured improvement, which is the sharpest check on the new standard's marketing."
+    },
+    {
+      "url": "https://stapp.org/3400/",
+      "title": "Traumatic Head and Brain Injuries in Helmeted Motorcycle Crashes (Stapp Car Crash Journal, 2025)",
+      "why": "364 helmet impact tests show about a 92% HIC cut but roughly 30% higher rotational brain injury risk than a bare head, and argue ECE 22.06's oblique test does not measure what it claims to."
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=nINIJ1cAbYM",
+      "title": "Why I Stopped Wearing Motorcycle Body Armour (FortNine)",
+      "why": "The contrarian case on CE1/CE2 limb armour: 18/9 kN pass thresholds against roughly 4 kN bone tolerance, fracture studies showing no benefit, and a regulatory-capture argument."
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=moQ08uyiYls",
+      "title": "Hidden Motorcycle Airbags in Backpacks and Jeans - Review (FortNine)",
+      "why": "The engineering argument for tether over electronic triggering (real-world deployment rate, GPS and arming-delay gaps) plus the subscription-cartridge lock-in problem."
+    },
+    {
+      "url": "http://web.archive.org/web/20251215055421/https://www.bennetts.co.uk/bikesocial/reviews/products/motorcycle-armour-and-base-layers/alpinestars-tech-air-3-v2-canvas-review-best-electronic-airbag",
+      "title": "Alpinestars Tech-Air 3 V2 review (Bennetts BikeSocial)",
+      "why": "Hands-on detail on an electronic airbag: 3-axis accelerometer and gyro ECU, which crashes it will not fire for (low-speed direct impacts, some low-sides), and Level 2 at 2.5 kN against 9 kN for a passive back protector."
+    },
+    {
+      "url": "https://www.ircobi.org/wordpress/downloads/irc24/pdf-files/2477.pdf",
+      "title": "Investigating the Effects of Inflating a Wearable Airbag Under a Motorcycle Jacket (IRCOBI 2024)",
+      "why": "A finite-element simulation of rib-fracture risk when an airbag inflates under a jacket, the caveat that fit and layering can undercut 'airbag equals safer'."
+    }
+  ]
+}
