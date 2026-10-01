@@ -6,8 +6,8 @@ Remote and local MCP server for Google NotebookLM, built on FastMCP.
 
 - `stdio` for local Claude / MCP clients
 - Streamable HTTP for remote Anthropic-compatible connectors
-- OAuth 2.1 authorization-code flow with PKCE
-- Dynamic client registration, refresh tokens, and revocation
+- OAuth 2.1 resource server: bearer tokens issued by an external OIDC provider
+  (Pocket ID), validated here; this server issues no tokens
 - NotebookLM tools for notebooks, sources, chat, and artifact generation
 
 The server itself uses your existing `notebooklm login` session on the host machine.
@@ -55,21 +55,17 @@ Claude / MCP client config:
 
 ## Remote Usage
 
-The remote entrypoint is Streamable HTTP plus OAuth 2.1:
+The remote entrypoint is Streamable HTTP behind bearer-token auth:
 
 ```bash
-export NOTEBOOKLM_MCP_PUBLIC_URL="https://notebooklm.example.com"
-export NOTEBOOKLM_MCP_OAUTH_PASSWORD="choose-a-strong-password"
-export NOTEBOOKLM_MCP_REQUIRED_SCOPES="notebooklm:access"
+export MCP_RESOURCE_URL="https://notebooklm.example.com/mcp"
+export OAUTH_ISSUER="https://auth.example.com"
+export MCP_ALLOWED_SUBS="<pocket-id-user-id>[,<another>]"
 
 notebooklm-mcp-remote
 ```
 
-This serves the MCP endpoint at:
-
-```text
-https://notebooklm.example.com/mcp
-```
+This serves the MCP endpoint at `MCP_RESOURCE_URL`.
 
 If you want the process itself to terminate TLS instead of using a reverse proxy:
 
@@ -79,27 +75,27 @@ export NOTEBOOKLM_MCP_TLS_KEYFILE=/path/to/privkey.pem
 notebooklm-mcp-remote
 ```
 
-### Required environment variables
+### Environment variables
 
-- `NOTEBOOKLM_MCP_PUBLIC_URL`
-  - Public base URL for the server, for example `https://notebooklm.example.com`
+- `MCP_RESOURCE_URL` (required)
+  - Canonical public URL of the MCP endpoint. Every token's `aud` must contain it.
   - Must be HTTPS outside localhost
-- `NOTEBOOKLM_MCP_OAUTH_PASSWORD`
-  - Password shown on the local consent screen when approving a new MCP client
+- `OAUTH_ISSUER`
+  - The authorization server. Defaults to `https://auth.jovanovic.org.uk`
+- `MCP_ALLOWED_SUBS`
+  - Comma-separated `sub` claims allowed to use this server's NotebookLM login.
+    Unset or empty rejects every request
+- `NOTEBOOKLM_MCP_HOST`, `NOTEBOOKLM_MCP_PORT`
+- `NOTEBOOKLM_MCP_TLS_CERTFILE`, `NOTEBOOKLM_MCP_TLS_KEYFILE`
 
-### Optional environment variables
+### Token requirements
 
-- `NOTEBOOKLM_MCP_HOST`
-- `NOTEBOOKLM_MCP_PORT`
-- `NOTEBOOKLM_MCP_REQUIRED_SCOPES`
-- `NOTEBOOKLM_MCP_SERVICE_DOCUMENTATION_URL`
-- `NOTEBOOKLM_MCP_OAUTH_STORE_PATH`
-- `NOTEBOOKLM_MCP_ACCESS_TOKEN_TTL_SECONDS`
-- `NOTEBOOKLM_MCP_REFRESH_TOKEN_TTL_SECONDS`
-- `NOTEBOOKLM_MCP_AUTHORIZATION_CODE_TTL_SECONDS`
-- `NOTEBOOKLM_MCP_CLIENT_SECRET_EXPIRY_SECONDS`
-- `NOTEBOOKLM_MCP_TLS_CERTFILE`
-- `NOTEBOOKLM_MCP_TLS_KEYFILE`
+`Authorization: Bearer <JWT>` on every `/mcp` request. The JWT must be RS256-signed
+by the issuer's JWKS (`<issuer>/.well-known/jwks.json`), carry `iss`, `aud`, `sub`
+and `exp`, have `aud` containing `MCP_RESOURCE_URL`, have scope `mcp:use` (`scp`
+array or space-separated `scope`), and have a `sub` in `MCP_ALLOWED_SUBS`.
+Anything else gets `401` with a `WWW-Authenticate: Bearer resource_metadata=...`
+challenge. No request header other than `Authorization` grants access.
 
 ## Anthropic / Claude Setup
 
@@ -122,28 +118,20 @@ Or with Claude Code:
 claude mcp add --transport http notebooklm https://notebooklm.example.com/mcp
 ```
 
-On first connect, the client should:
-
-1. Hit `/mcp`
-2. Receive an OAuth challenge with protected-resource metadata
-3. Discover the server OAuth metadata
-4. Register dynamically
-5. Open the browser to `/authorize`
-6. Land on the local consent screen
-7. Exchange the authorization code for tokens
+On first connect, the client hits `/mcp`, receives the `401` challenge, reads the
+protected-resource metadata, and runs the authorization flow against the issuer
+directly.
 
 ## Endpoints
 
 - MCP: `/mcp`
 - Health: `/health`
 - Health alias: `/healthz`
-- OAuth metadata: `/.well-known/oauth-authorization-server`
-- Protected resource metadata: `/.well-known/oauth-protected-resource/mcp`
-- Authorization endpoint: `/authorize`
-- Token endpoint: `/token`
-- Dynamic registration: `/register`
-- Revocation: `/revoke`
-- Consent UI: `/oauth/consent`
+- Protected resource metadata: `/.well-known/oauth-protected-resource` and
+  `/.well-known/oauth-protected-resource/mcp`
+
+There is no `/authorize`, `/token`, `/register`, `/revoke` or authorization-server
+metadata here.
 
 ## Available tools
 
@@ -160,6 +148,32 @@ On first connect, the client should:
 
 - `notebooklm://notebooks`
 - `notebooklm://notebooks/{notebook_id}`
+
+## Protocol versions
+
+The server runs on the `mcp` 2.x SDK (`MCPServer`) and serves both protocol eras
+over stdio and Streamable HTTP. HTTP+SSE has been removed; `notebooklm-mcp-sse`
+remains as an alias that starts the Streamable HTTP server.
+
+- **2025-11-25**: the `initialize` handshake with an `Mcp-Session-Id`, as used by
+  today's connectors. An unknown resource returns -32002 with the URI in `data`.
+- **2026-07-28**: stateless requests with no handshake, `server/discover`, and
+  `Mcp-Method`/`Mcp-Name` headers that must match the body (-32020 otherwise).
+  An unknown resource returns -32602 with the URI in `data`.
+- Either era: an unknown prompt returns -32602. A `GET /mcp` without a session is
+  refused with a 4xx; it never opens a stream.
+- Cache hints: `server/discover` and the tool, prompt, resource and template lists
+  carry `ttlMs` 300000 with `cacheScope` `private` (every remote request is
+  authenticated). `resources/read` carries none, because both resources are live
+  NotebookLM data.
+- No Tasks extension: `generate_artifact` already returns a task id at once and
+  `get_artifact_status` polls it, so no tool blocks for long.
+
+This package depends on plain `notebooklm-py`, not its `[mcp]` extra. That extra
+installs standalone `fastmcp` 3.x for the root package's own MCP server, and
+fastmcp 3.x requires `mcp<2`. As a result the root `notebooklm-mcp` console
+script is installed in this venv but cannot start; run it from a venv with
+`notebooklm-py[mcp]`.
 
 ## Development
 

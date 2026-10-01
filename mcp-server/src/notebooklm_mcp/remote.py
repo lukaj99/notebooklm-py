@@ -2,39 +2,45 @@
 
 from __future__ import annotations
 
+import json
 import logging
-import os
 
 import uvicorn
-from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions, RevocationOptions
+from mcp.server.auth.provider import TokenVerifier
+from mcp.server.auth.settings import AuthSettings
 from starlette.middleware.cors import CORSMiddleware
 from starlette.types import ASGIApp
 
+from .auth import REQUIRED_SCOPE, PocketIdTokenVerifier
 from .config import RemoteServerConfig
-from .oauth import FileBackedOAuthProvider
 from .server import create_mcp_server
 
 logger = logging.getLogger(__name__)
 
-OAUTH_DISABLED = os.getenv("OAUTH_DISABLED", "").lower() in ("true", "1")
-
 
 def build_auth_settings(config: RemoteServerConfig) -> AuthSettings:
-    """Build FastMCP auth settings from environment config."""
+    """Build MCP auth settings: Pocket ID is the authorization server."""
 
     return AuthSettings(
-        issuer_url=config.issuer_url,
-        service_documentation_url=config.service_documentation_url,
-        client_registration_options=ClientRegistrationOptions(
-            enabled=True,
-            client_secret_expiry_seconds=config.client_secret_expiry_seconds,
-            valid_scopes=list(config.required_scopes),
-            default_scopes=list(config.required_scopes),
-        ),
-        revocation_options=RevocationOptions(enabled=True),
-        required_scopes=list(config.required_scopes),
-        resource_server_url=config.resource_server_url,
+        issuer_url=config.issuer,
+        required_scopes=[REQUIRED_SCOPE],
+        resource_server_url=config.resource_url,
+        # The token verifier checks `aud` itself (and the SDK's resource
+        # check reads a field it sets to the same value), so leave the
+        # SDK-side check off rather than run two that can disagree.
+        validate_token_resource=False,
     )
+
+
+def protected_resource_metadata(config: RemoteServerConfig) -> dict[str, object]:
+    """RFC 9728 document naming Pocket ID as the authorization server."""
+
+    return {
+        "resource": config.resource_url,
+        "authorization_servers": [config.issuer],
+        "scopes_supported": [REQUIRED_SCOPE],
+        "bearer_methods_supported": ["header"],
+    }
 
 
 class Mcp400DiagnosticMiddleware:
@@ -95,29 +101,31 @@ class Mcp400DiagnosticMiddleware:
             )
 
 
-class BareProtectedResourceMetadataMiddleware:
-    """Serve RFC 9728 Protected Resource Metadata at the bare well-known path too.
+class ProtectedResourceMetadataMiddleware:
+    """Serve RFC 9728 metadata at the bare and the resource-suffixed path.
 
-    The mcp SDK only registers the metadata at the resource-path-suffixed
-    location (``/.well-known/oauth-protected-resource/mcp`` — RFC 9728 §3.1,
-    correct when a host serves multiple resources). This server has exactly
-    one resource, and in practice the claude.ai connector requests the bare
-    root path (``/.well-known/oauth-protected-resource``, no suffix) directly
-    rather than following the ``resource_metadata`` hint in the 401
-    ``WWW-Authenticate`` header — confirmed from live connector logs, every
-    attempt hits the bare path and 404s. Since there's only one resource
-    here, serving identical metadata at both locations is spec-safe and
-    fixes discovery for clients that skip the hint.
+    RFC 9728 §3.1 puts the document at
+    ``/.well-known/oauth-protected-resource/mcp``, which the 401 challenge
+    points at. The claude.ai connector also requests the bare path directly
+    without following that hint (every attempt in live logs), so both serve
+    the same document. It is rendered here from the config rather than by
+    the SDK's model so ``authorization_servers`` carries the issuer
+    verbatim: clients compare it to Pocket ID's issuer as an exact string,
+    and URL types append a ``/`` to a path-less URL.
     """
 
-    def __init__(self, app, metadata_json: bytes):
+    PATHS = frozenset(
+        {"/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/mcp"}
+    )
+
+    def __init__(self, app, metadata: dict[str, object]):
         self.app = app
-        self.metadata_json = metadata_json
+        self.metadata_json = json.dumps(metadata).encode()
 
     async def __call__(self, scope, receive, send):
         if (
             scope["type"] == "http"
-            and scope["path"] == "/.well-known/oauth-protected-resource"
+            and scope["path"] in self.PATHS
             and scope["method"] in ("GET", "OPTIONS")
         ):
             await send(
@@ -137,11 +145,9 @@ class BareProtectedResourceMetadataMiddleware:
 
 
 def build_asgi_app(mcp, config: RemoteServerConfig | None = None) -> ASGIApp:
-    """Wrap the FastMCP Starlette app with CORS covering every route.
+    """Wrap the MCP Starlette app with CORS covering every route.
 
-    FastMCP's ``streamable_http_app()`` only wires CORS onto the OAuth
-    routes (register/authorize/token/revoke) via the mcp SDK's own per-route
-    ``cors_middleware()`` — the ``/mcp`` route itself is wrapped directly by
+    The SDK's ``streamable_http_app()`` wraps the ``/mcp`` route directly in
     ``RequireAuthMiddleware`` with no CORS handling. A browser OPTIONS
     preflight to ``/mcp`` therefore hits the auth check first (no
     Authorization header on a preflight) and gets a bare 401 with no
@@ -152,7 +158,7 @@ def build_asgi_app(mcp, config: RemoteServerConfig | None = None) -> ASGIApp:
     ``RequireAuthMiddleware`` ever sees them.
 
     ``allow_origins="*"`` mirrors the mcp SDK's own ``cors_middleware()``
-    (used for /register, /authorize, /token, /revoke) and is safe here
+    and is safe here
     because auth is a bearer token attached explicitly by the client, not
     an ambient credential like a cookie — ``allow_credentials`` is left at
     its default (False), so a wildcard origin cannot be combined with
@@ -179,62 +185,43 @@ def build_asgi_app(mcp, config: RemoteServerConfig | None = None) -> ASGIApp:
     app = Mcp400DiagnosticMiddleware(app)
 
     if config is not None:
-        # Reuse the SDK's own model + serialization (exclude_none, pydantic
-        # AnyHttpUrl normalization) so this exactly matches what the
-        # resource-path-suffixed endpoint already returns — no hand-rolled
-        # JSON to drift out of sync with it.
-        from mcp.shared.auth import ProtectedResourceMetadata
-
-        metadata = ProtectedResourceMetadata(
-            resource=config.resource_server_url,
-            authorization_servers=[config.issuer_url],
-            scopes_supported=list(config.required_scopes),
-        )
-        metadata_json = metadata.model_dump_json(exclude_none=True).encode()
-        app = BareProtectedResourceMetadataMiddleware(app, metadata_json)
+        app = ProtectedResourceMetadataMiddleware(app, protected_resource_metadata(config))
 
     return app
 
 
+def build_remote_app(
+    config: RemoteServerConfig, *, token_verifier: TokenVerifier | None = None
+) -> ASGIApp:
+    """The full remote app: MCP server behind Pocket ID bearer-token auth."""
+
+    verifier = token_verifier or PocketIdTokenVerifier(
+        issuer=config.issuer,
+        resource_url=config.resource_url,
+        allowed_subs=config.allowed_subs,
+    )
+    mcp = create_mcp_server(
+        host=config.host,
+        port=config.port,
+        auth_settings=build_auth_settings(config),
+        token_verifier=verifier,
+    )
+    return build_asgi_app(mcp, config)
+
+
 def main() -> None:
-    """Run the MCP server over Streamable HTTP with OAuth 2.1 enabled."""
+    """Run the MCP server over Streamable HTTP as a Pocket ID resource server."""
 
     try:
         config = RemoteServerConfig.from_env()
     except ValueError as exc:
         raise SystemExit(str(exc)) from exc
 
-    if OAUTH_DISABLED:
-        logger.info("OAuth DISABLED (OAUTH_DISABLED=true) — no auth on MCP endpoints")
-        mcp = create_mcp_server(
-            host=config.host,
-            port=config.port,
-        )
-    else:
-        auth_provider = FileBackedOAuthProvider(config)
-        mcp = create_mcp_server(
-            host=config.host,
-            port=config.port,
-            auth_settings=build_auth_settings(config),
-            auth_provider=auth_provider,
-            oauth_password=config.oauth_password,
-            trusted_access_emails=config.trusted_access_emails,
-            auto_approve_redirect_uris=config.auto_approve_redirect_uris,
-            proxy_shared_secret=config.proxy_shared_secret,
-        )
+    logger.info("NotebookLM MCP resource URL: %s", config.resource_url)
+    logger.info("NotebookLM MCP authorization server: %s", config.issuer)
 
-    logger.info("NotebookLM MCP resource URL: %s", config.resource_server_url)
-    logger.info("NotebookLM MCP issuer URL: %s", config.issuer_url)
-
-    # workers=1 (uvicorn's default when unset) is load-bearing here, not
-    # just a performance choice: FileBackedOAuthProvider guards its state
-    # with an in-process asyncio.Lock and read-modify-write's a single JSON
-    # file. Multiple worker processes would each keep their own in-memory
-    # copy and race on the file, silently losing concurrent token issuance/
-    # revocation. Do not add --workers/-w > 1 to this entrypoint without
-    # first moving the OAuth state to a real datastore.
     uvicorn.run(
-        build_asgi_app(mcp, config if not OAUTH_DISABLED else None),
+        build_remote_app(config),
         host=config.host,
         port=config.port,
         log_level="info",

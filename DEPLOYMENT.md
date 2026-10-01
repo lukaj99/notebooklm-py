@@ -16,12 +16,13 @@ All services are running via systemd and auto-start on boot (lingering enabled).
 - 30+ REST API endpoints for notebooks, sources, chat, artifacts
 
 ### 2. NotebookLM MCP Server
-- **URL**: https://notebooklm-mcp.jovanovic.org.uk
+- **URL**: https://notebook.jovanovic.org.uk/mcp
 - **Local**: http://127.0.0.1:8005
-- **Systemd**: `notebooklm-mcp.service`
-- **Tunnel**: `cloudflared-notebooklm-mcp.service`
+- **Systemd**: `notebooklm-mcp.service` (runs `mcp-server/.venv/bin/notebooklm-mcp-remote`)
+- **Proxy**: Cloudflare (proxied DNS) to Caddy's `notebook.jovanovic.org.uk` site, which forwards to `localhost:8005`. There is no MCP tunnel.
 
-**Transport**: SSE (Server-Sent Events) for HTTPS MCP protocol
+**Transport**: Streamable HTTP with OAuth 2.1. HTTP+SSE has been removed. See
+[mcp-server/README.md](mcp-server/README.md) for supported MCP protocol versions.
 
 ## Management Commands
 
@@ -30,7 +31,6 @@ All services are running via systemd and auto-start on boot (lingering enabled).
 systemctl --user status notebooklm-api.service
 systemctl --user status notebooklm-mcp.service
 systemctl --user status cloudflared-notebooklm.service
-systemctl --user status cloudflared-notebooklm-mcp.service
 ```
 
 ### Restart Services
@@ -44,23 +44,14 @@ systemctl --user restart notebooklm-mcp.service
 journalctl --user -u notebooklm-api.service -f
 journalctl --user -u notebooklm-mcp.service -f
 journalctl --user -u cloudflared-notebooklm.service -f
-journalctl --user -u cloudflared-notebooklm-mcp.service -f
 ```
 
 ## Claude Configuration
 
-Add to `~/.claude/settings.json` or `.mcp.json`:
+Add the remote server over HTTP. Claude Code runs the OAuth flow on first use:
 
-```json
-{
-  "mcpServers": {
-    "notebooklm": {
-      "transport": "sse",
-      "url": "https://notebooklm-mcp.jovanovic.org.uk/sse",
-      "timeout": 30
-    }
-  }
-}
+```bash
+claude mcp add --transport http notebooklm https://notebook.jovanovic.org.uk/mcp
 ```
 
 ## MCP Tools Available
@@ -87,18 +78,17 @@ Add to `~/.claude/settings.json` or `.mcp.json`:
 ~/.config/systemd/user/
 ├── notebooklm-api.service
 ├── notebooklm-mcp.service
-├── cloudflared-notebooklm.service
-└── cloudflared-notebooklm-mcp.service
+└── cloudflared-notebooklm.service
 
 ~/.cloudflared/
 ├── notebooklm-api.yml
-├── notebooklm-api.json
-├── notebooklm-mcp.yml
-└── notebooklm-mcp.json
+└── notebooklm-api.json
+
+/etc/caddy/Caddyfile   # notebook.jovanovic.org.uk site for the MCP server
 
 ~/projects/notebooklm-py/
 ├── backend/          # REST API (FastAPI)
-└── mcp-server/       # MCP Server (FastMCP + SSE)
+└── mcp-server/       # MCP Server (FastMCP, Streamable HTTP)
 ```
 
 ## Cloudflare DNS Records
@@ -106,7 +96,7 @@ Add to `~/.claude/settings.json` or `.mcp.json`:
 | Subdomain | Target | Purpose |
 |-----------|--------|---------|
 | `notebooklm-api` | Tunnel ID | REST API |
-| `notebooklm-mcp` | Tunnel ID | MCP Server |
+| `notebook` | Proxied to this host (Caddy) | MCP Server |
 
 ## Troubleshooting
 
@@ -132,9 +122,10 @@ notebooklm status
                               |
                      +--------+--------+
                      |                 |
-              notebooklm-api    notebooklm-mcp
+              notebooklm-api       notebook
+                 (tunnel)          (Caddy)
                      |                 |
-                  (FastAPI)          (SSE/MCP)
+                  (FastAPI)   (Streamable HTTP MCP)
                      |                 |
                 127.0.0.1:8004   127.0.0.1:8005
 ```
