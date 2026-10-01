@@ -88,7 +88,7 @@ claude mcp add --transport http notebooklm https://notebook.jovanovic.org.uk/mcp
 
 ~/projects/notebooklm-py/
 ├── backend/          # REST API (FastAPI)
-└── mcp-server/       # MCP Server (FastMCP, Streamable HTTP)
+└── mcp-server/       # MCP Server (MCP SDK 2.x MCPServer; stdio + Streamable HTTP)
 ```
 
 ## Cloudflare DNS Records
