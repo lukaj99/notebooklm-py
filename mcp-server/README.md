@@ -1,6 +1,7 @@
 # NotebookLM MCP Server
 
-Remote and local MCP server for Google NotebookLM, built on FastMCP.
+Remote and local MCP server for Google NotebookLM, built on the Python MCP SDK 2.x
+(`MCPServer`). It serves both protocol eras; see [Protocol versions](#protocol-versions).
 
 ## What it supports
 
