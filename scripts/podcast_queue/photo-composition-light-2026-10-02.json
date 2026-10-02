@@ -1,0 +1,40 @@
+{
+  "topic_id": "photo-composition-light",
+  "title": "Composition and Light — Seeing Better Photographs — 2026-10-02",
+  "audio_format": "deep-dive",
+  "rationale": "The episode asks which matters more, composition or light, and what to do about it with a Nikon Z6 III. The new material is the 2025-26 pushback against golden-hour dogma, set against older physics. McCreery's two-part series gives a practical framework for reading light, and Clark supplies the reason it works: source angle and size, not time of day. The August 2026 midday-sun piece tests that framework on the hardest case. On the composition side, the Digital Camera World teacher and the Fstoppers story-first piece show that the 'rule of thirds as law' debate is settled. What remains open is whether to teach the rules first, and that is the live argument the hosts can work through. Part Two connects the theory to RAW exposure and editing decisions, so the listener leaves with habits rather than slogans. I left out the 'Stop Judging Light' piece because it is secondary commentary on a video and overlaps with the midday article. I did not choose debate because the sources lean toward convergence ('guidelines, learn then ignore'; 'direction over time of day'), with disagreement about emphasis and teaching order rather than a real adversarial split. A deep-dive suits the listener's preference and lets the hosts trace where the claims agree, where they strain, and what a Z6 III shooter should do differently on the next outing. Caveats for the hosts: Clark is from 2015 and the sources are mostly practitioner opinion, not controlled studies, so they should say so when claims rest on one author's experience.",
+  "case_vignette": "It's 1:30 pm in early October and you're standing in a market square with the Z6 III, flat overhead sun, hard shadows under every awning, and a nagging belief that you should come back at golden hour. Instead you walk to the shaded side, wait for a figure to step into a bar of side light against a dark doorway, and shoot it, with the highlights held just under clipping so the RAW has room to recover. At home you wonder whether the frame worked because of the light, because of where you put the figure, or because you stopped checking it against the rule of thirds.",
+  "style": "Frame this as a scenario-based discussion between two working photographers: 'what would you actually do on this shoot / at this edit' framing rather than a spec-sheet read-through. Include moments of genuine disagreement that get resolved by citing the sources. Keep it conversational and energetic, but always land on clear, actionable technique the listener can try on their next shoot.",
+  "sources": [
+    {
+      "url": "https://fstoppers.com/landscapes/its-light-stupid-part-one-696005",
+      "title": "It's the Light, Stupid (Part One) - Nathan McCreery, Fstoppers",
+      "why": "A working vocabulary for reading light (quantity, quality, direction, spread, color) that replaces 'good light / bad light' with five things you can check before raising the camera."
+    },
+    {
+      "url": "https://clarkvision.com/articles/lighting.part6/",
+      "title": "Lighting, Composition and Subject Lighting Part 6: Angle of Light, Harsh vs Soft Light and Color of Light (Roger N. Clark)",
+      "why": "The physics anchor: angle and angular size of the source, not clock time, decide impact, with phase-angle examples where side light and fill rescue 'harsh' light."
+    },
+    {
+      "url": "https://fstoppers.com/landscapes/its-light-stupid-part-two-696165",
+      "title": "It's the Light, Stupid (Part Two) - Nathan McCreery, Fstoppers",
+      "why": "Moves from seeing light to capturing it: tonal range, histogram and clipping, and mixed light qualities in one frame, which bear directly on how a Z6 III shooter exposes and edits RAW."
+    },
+    {
+      "url": "https://fstoppers.com/education/six-ways-turn-brutal-midday-sun-better-photos-904377",
+      "title": "Six Ways to Turn Brutal Midday Sun Into Better Photos (Fstoppers, Alex Cooke on Sean Dalton)",
+      "why": "Newest evidence in the golden-hour argument (Aug 2026): midday is not one moment, and reflected light, colour bounce and grading give a stills shooter concrete options."
+    },
+    {
+      "url": "https://www.digitalcameraworld.com/photography/composition/i-ignored-every-rule-of-photographic-composition-that-i-teach-the-world-did-not-end",
+      "title": "I ignored every rule of photographic composition that I teach (Digital Camera World)",
+      "why": "A composition teacher admits he can't find a rule-of-thirds image in his own archive and names the contest-judging problem: rules as scaffolding, not law."
+    },
+    {
+      "url": "https://fstoppers.com/education/building-composition-without-using-common-composition-rules-683246",
+      "title": "Building a Composition Without Using Common Composition Rules (Fstoppers)",
+      "why": "The middle position: start from subject and story and a 'rule' emerges anyway, while forced rule-breaking is just another rule. The comment pushback gives a live view of the teaching-order fight."
+    }
+  ]
+}
