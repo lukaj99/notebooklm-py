@@ -1,0 +1,40 @@
+{
+  "topic_id": "tech-linux-workstation",
+  "title": "The Linux Workstation — Tooling Worth the Switching Cost — 2026-10-03",
+  "audio_format": "deep-dive",
+  "rationale": "The theme this week is that the real switching cost of a workstation tool is rarely the headline feature and is almost always compatibility, debuggability and the cost of being wrong. Ubuntu is moving core userland to Rust (uutils coreutils and sudo-rs) while Arch still ships GNU. The sources show what that costs in practice: an audit with 113 findings, TOCTOU bugs that kept cp/mv/rm on GNU, and a sudo-rs retrospective that is open about dropped features and the difficulty of swapping it into Arch. The declarative-versus-imperative argument gets two first-hand NixOS verdicts that disagree (Zemb's three-year endorsement against Seyfi's return to Arch), so the hosts can ask whether reproducibility pays off for one machine or only for a fleet. Marco Nett's 2026 latency rig tests the Wayland and X11 switching-cost story with real numbers, and Neovim 0.12's built-in vim.pack tests whether a plugin-manager layer is still worth carrying. The format is deep-dive because the listener prefers investigation. The sources do contain a live NixOS disagreement, but the episode works better as a cost-benefit audit than as a staged argument.",
+  "case_vignette": "You run Ubuntu on part of the VPS fleet, and the next release swaps in Rust coreutils across the board. Your nightly backup, media-sync and deploy scripts lean on cp, mv and rm semantics you have never had to think about. At the same time your Arch workstation just ate a bad kernel update, and you are wondering whether NixOS rollbacks or a stricter snapshot-and-chezmoi routine would have saved the afternoon. Which of these switches is worth the pain, and which is just novelty?",
+  "style": "Frame this as a scenario-based discussion between two opinionated engineers who run real infrastructure: 'what would you actually deploy / how would this fail' framing rather than a feature-list read-through. Include moments of genuine disagreement that get resolved by citing the sources. Keep it conversational and energetic, but always land on clear, actionable decisions the listener can apply to their own lab.",
+  "sources": [
+    {
+      "url": "https://discourse.ubuntu.com/t/an-update-on-rust-coreutils/80773",
+      "title": "An update on rust-coreutils (Ubuntu Community Hub)",
+      "why": "Canonical's own account of a commissioned audit with 113 issues, cp/mv/rm kept on GNU over TOCTOU bugs, and a 100% uutils target for 26.10, so the hosts can price a core-userland swap from the vendor's side."
+    },
+    {
+      "url": "https://trifectatech.org/blog/three-years-of-rusty-sudo/",
+      "title": "Three years of Rusty sudo (Trifecta Tech Foundation)",
+      "why": "Maintainer retrospective on sudo-rs as Ubuntu 26.04's default, with five security advisories, deliberately dropped features, and why Arch and Debian cannot cleanly swap it in."
+    },
+    {
+      "url": "https://pierrezemb.fr/posts/nixos-good-bad-ugly/",
+      "title": "Three Years of Nix and NixOS: The Good, the Bad, and the Ugly",
+      "why": "The pro-declarative case from a three-year user: rollbacks and one-command rebuilds justify the learning curve, with a note on LLMs lowering the Nix barrier."
+    },
+    {
+      "url": "https://rugu.dev/en/blog/leaving-nixos/",
+      "title": "Why I'm Leaving NixOS After a Year",
+      "why": "The direct counterweight, from someone who went back to Arch: leaky FHS abstractions, an extra debugging layer, and reproducibility that paid nothing on a single machine."
+    },
+    {
+      "url": "https://marco-nett.de/blog/measuring-input-latency-on-linux-x11-vs-wayland-vrr-dxvk/",
+      "title": "Measuring input latency on Linux: X11 vs Wayland, VRR, and DXVK",
+      "why": "A 2026 hardware-rig measurement (300 clicks, 500Hz OLED) showing a 3.13 ms XWayland penalty and that VRR and flip-mode settings matter more than X11 versus Wayland."
+    },
+    {
+      "url": "https://neovim.io/doc/user/news-0.12/",
+      "title": "Neovim 0.12 news (official :help news)",
+      "why": "Maintainer changelog for the built-in vim.pack manager with lockfile, Undotree and DiffTool, showing the plugin-manager layer of an editor config shrinking."
+    }
+  ]
+}
