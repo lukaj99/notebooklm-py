@@ -1,0 +1,75 @@
+name: Upstream sync
+
+# Weekly merge of teng-lin/notebooklm-py into this fork's main.
+# Pushes only if the mcp-server test suite passes; opens an issue on
+# merge conflict or test failure so a human can intervene.
+
+on:
+  schedule:
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge upstream
+        id: merge
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://github.com/teng-lin/notebooklm-py.git 2>/dev/null || true
+          git fetch upstream main
+          if git merge-base --is-ancestor upstream/main HEAD; then
+            echo "status=uptodate" >> "$GITHUB_OUTPUT"
+          elif git merge upstream/main --no-edit -m "chore: weekly sync from teng-lin/notebooklm-py"; then
+            echo "status=merged" >> "$GITHUB_OUTPUT"
+          else
+            git merge --abort
+            echo "status=conflict" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-python@v7
+        if: steps.merge.outputs.status == 'merged'
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v7
+        if: steps.merge.outputs.status == 'merged'
+
+      - name: Test mcp-server
+        if: steps.merge.outputs.status == 'merged'
+        run: |
+          cd mcp-server
+          uv sync --frozen --extra dev
+          uv run pytest tests -q -p no:cacheprovider
+
+      - name: Push
+        if: steps.merge.outputs.status == 'merged'
+        run: git push origin HEAD:main
+
+      - name: File issue on conflict or test failure
+        if: steps.merge.outputs.status == 'conflict' || failure()
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const title = 'Upstream sync needs attention (' + context.runId + ')';
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'upstream-sync',
+            });
+            if (open.data.length > 0) return;
+            await github.rest.issues.create({
+              owner: context.repo.owner, repo: context.repo.repo,
+              title, labels: ['upstream-sync'],
+              body: 'Weekly sync from teng-lin/notebooklm-py hit a merge conflict or test failure.\nRun: ' + context.serverUrl + '/' + context.repo.owner + '/' + context.repo.repo + '/actions/runs/' + context.runId,
+            });
