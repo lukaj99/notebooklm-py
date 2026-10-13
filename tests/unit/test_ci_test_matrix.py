@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import ast
+import os
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -51,7 +53,7 @@ PR_LIFECYCLE_CONTRACTS = {
 PUBLISH_WORKFLOW = PROJECT_ROOT / ".github" / "workflows" / "publish.yml"
 TESTPYPI_PUBLISH_WORKFLOW = PROJECT_ROOT / ".github" / "workflows" / "testpypi-publish.yml"
 SUPPORTED_OSES = ["ubuntu-latest", "macos-latest", "windows-latest"]
-SUPPORTED_PYTHONS = ["3.10", "3.11", "3.12", "3.13", "3.14"]
+SUPPORTED_PYTHONS = ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
 GENERATION_E2E = Path(__file__).resolve().parents[1] / "e2e" / "test_generation.py"
 E2E_DIR = Path(__file__).resolve().parents[1] / "e2e"
 
@@ -146,7 +148,7 @@ def test_test_matrix_is_independent_and_preserves_ci_contract() -> None:
         },
         {
             "os": "ubuntu-latest",
-            "python-version": "3.14",
+            "python-version": "3.15",
             "canonical": False,
             "windows_playwright": False,
             "selection": "full",
@@ -262,6 +264,10 @@ def test_pr_matrix_runs_once_without_coverage_and_canonical_owns_reality() -> No
         "tests/unit/test_windows_compatibility.py::TestPlaywrightSmokeTest::"
         "test_playwright_initializes_with_context_manager"
     ) in smoke_command
+    assert (
+        "tests/unit/test_windows_compatibility.py::TestPlaywrightSmokeTest::"
+        "test_playwright_initializes_after_selector_opt_in"
+    ) in smoke_command
     assert "-m requires_playwright" in smoke_command
     assert "-n 0" in smoke_command
     assert "--no-cov" in smoke_command
@@ -364,7 +370,11 @@ def test_refactor_qualification_is_out_of_prs_and_in_manual_nightly_release_lane
         build = release["jobs"]["build-and-test"]
         assert build["outputs"]["candidate_sha"] == "${{ steps.candidate.outputs.sha }}"
         resolved = str(_step(build, "Resolve candidate commit")["run"])
-        assert "${GITHUB_SHA}^{commit}" in resolved
+        if release_path == PUBLISH_WORKFLOW:
+            assert "git rev-parse HEAD" in resolved
+            assert build["steps"][0]["with"]["ref"] == ("${{ needs.resolve-release.outputs.sha }}")
+        else:
+            assert "${GITHUB_SHA}^{commit}" in resolved
         release_qualification = release["jobs"]["offline-qualification"]
         assert release_qualification["uses"] == "./.github/workflows/offline-qualification.yml"
         assert release_qualification["needs"] == "build-and-test"
@@ -381,8 +391,14 @@ def test_auth_patch_coverage_delta_is_release_gated_and_manually_dispatchable() 
     workflow = yaml.safe_load(AUTH_PATCH_AUDIT_WORKFLOW.read_text(encoding="utf-8"))
     triggers = workflow.get("on", workflow.get(True))
     assert set(triggers) == {"workflow_call", "workflow_dispatch"}
+    assert set(triggers["workflow_call"]["inputs"]) == {
+        "custom_branch",
+        "base_ref",
+        "release_audit",
+        "release_allowances_json",
+    }
+    assert set(triggers["workflow_dispatch"]["inputs"]) == {"custom_branch", "base_ref"}
     for trigger in triggers.values():
-        assert set(trigger["inputs"]) == {"custom_branch", "base_ref"}
         assert trigger["inputs"]["custom_branch"]["default"] == ""
         assert trigger["inputs"]["base_ref"]["default"] == ""
 
@@ -396,7 +412,10 @@ def test_auth_patch_coverage_delta_is_release_gated_and_manually_dispatchable() 
 
     base_resolution = _step(job, "Resolve comparison base")
     assert base_resolution["id"] == "base"
-    assert base_resolution["env"] == {"REQUESTED_BASE": "${{ inputs.base_ref }}"}
+    assert base_resolution["env"] == {
+        "REQUESTED_BASE": "${{ inputs.base_ref }}",
+        "RELEASE_AUDIT": "${{ inputs.release_audit }}",
+    }
     base_command = str(base_resolution["run"])
     assert 'if [ -n "$REQUESTED_BASE" ]' in base_command
     assert 'elif [ "$GITHUB_REF_TYPE" = "tag" ]' in base_command
@@ -446,8 +465,75 @@ def test_auth_patch_coverage_delta_is_release_gated_and_manually_dispatchable() 
     publish = yaml.safe_load(PUBLISH_WORKFLOW.read_text(encoding="utf-8"))
     release_gate = publish["jobs"]["auth-patch-audit"]
     assert release_gate["uses"] == "./.github/workflows/auth-patch-audit.yml"
-    assert publish["jobs"]["build-and-test"]["needs"] == "auth-patch-audit"
+    assert set(publish["jobs"]["build-and-test"]["needs"]) == {
+        "resolve-release",
+        "auth-patch-audit",
+    }
+    assert release_gate["with"]["release_audit"] is True
     assert set(publish["jobs"]["publish"]["needs"]) == {"build-and-test", "offline-qualification"}
+
+
+@pytest.mark.parametrize(
+    ("dispatch_ref", "requested_tag", "succeeds"),
+    [
+        ("refs/heads/main", "v0.1.0", True),
+        ("refs/heads/feature", "v0.1.0", False),
+        ("refs/heads/main", "v0.2.0", False),
+        ("refs/heads/main", "v0.1.0;echo injected", False),
+    ],
+)
+def test_release_recovery_resolves_only_existing_tags_from_main(
+    tmp_path: Path, dispatch_ref: str, requested_tag: str, succeeds: bool
+) -> None:
+    workflow = yaml.safe_load(PUBLISH_WORKFLOW.read_text(encoding="utf-8"))
+    script = _step(workflow["jobs"]["resolve-release"], "Validate release target")["run"]
+
+    def git(*args: str) -> str:
+        return subprocess.check_output(["git", *args], cwd=tmp_path, text=True).strip()
+
+    git("init", "--initial-branch=main")
+    git(
+        "-c",
+        "user.name=Test",
+        "-c",
+        "user.email=test@example.com",
+        "commit",
+        "--allow-empty",
+        "-m",
+        "candidate",
+    )
+    candidate = git("rev-parse", "HEAD")
+    git("tag", "v0.1.0")
+    git(
+        "-c",
+        "user.name=Test",
+        "-c",
+        "user.email=test@example.com",
+        "commit",
+        "--allow-empty",
+        "-m",
+        "workflow fix",
+    )
+    git("update-ref", "refs/remotes/origin/main", "HEAD")
+    output = tmp_path / "output"
+    result = subprocess.run(
+        ["bash", "-c", script],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        env={
+            **os.environ,
+            "GITHUB_EVENT_NAME": "workflow_dispatch",
+            "GITHUB_REF": dispatch_ref,
+            "REQUESTED_TAG": requested_tag,
+            "GITHUB_OUTPUT": str(output),
+        },
+    )
+    assert (result.returncode == 0) is succeeds, result.stderr
+    if succeeds:
+        assert output.read_text() == f"release_tag=v0.1.0\nsha={candidate}\n"
+    else:
+        assert not output.exists()
 
 
 def test_nightly_runs_full_sha_pinned_compatibility_matrix() -> None:

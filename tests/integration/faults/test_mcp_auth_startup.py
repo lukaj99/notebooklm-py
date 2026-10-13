@@ -27,14 +27,6 @@ _READ = Route.rpc("wXbhsf")
 _ROTATE = Route("POST", "accounts.google.com", "/RotateCookies")
 
 
-@pytest.fixture
-def event_loop_policy() -> asyncio.AbstractEventLoopPolicy:
-    """Subprocess ownership requires the Proactor loop on Windows."""
-    if sys.platform == "win32":
-        return asyncio.WindowsProactorEventLoopPolicy()
-    return asyncio.get_event_loop_policy()
-
-
 async def _observe(path: Path, predicate, *, timeout: float = 10):
     async def poll():
         while True:
@@ -85,7 +77,7 @@ async def _mcp_connection(directory: Path, port: int, transport: str):
 
                 url = await asyncio.wait_for(ready(), 10)
                 async with (
-                    streamable_http_client(url) as (reader, writer, _),
+                    streamable_http_client(url) as (reader, writer),
                     ClientSession(reader, writer) as session,
                 ):
                     yield session
@@ -243,7 +235,9 @@ async def _exercise_stored_auth(
             assert upstream.journal[1].cookie_values["__Secure-1PSIDTS"] == "synthetic-rotated"
             result.require("synthetic_auth_routed", True)
             if fault != "shutdown":
-                request_id = session._request_id
+                # mcp 2.x hands out 1-based ids by incrementing ``_next_id`` first, so
+                # the next request gets ``_next_id + 1``.
+                request_id = session._dispatcher._next_id + 1
                 first_call = asyncio.create_task(session.call_tool("notebook_list", {}))
                 calls.append(first_call)
                 await _observe(report, lambda state: state["waiters"] >= 1)
@@ -253,11 +247,9 @@ async def _exercise_stored_auth(
                     await _observe(report, lambda state: state["waiters"] >= 2)
                     # Native task cancellation does not send MCP cancellation.
                     await session.send_notification(
-                        types.ClientNotification(
-                            types.CancelledNotification(
-                                params=types.CancelledNotificationParams(
-                                    requestId=request_id, reason="fault waiter departed"
-                                )
+                        types.CancelledNotification(
+                            params=types.CancelledNotificationParams(
+                                requestId=request_id, reason="fault waiter departed"
                             )
                         )
                     )

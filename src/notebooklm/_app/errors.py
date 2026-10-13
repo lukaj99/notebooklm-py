@@ -161,7 +161,7 @@ CATEGORY_HINTS: dict[ErrorCategory, str | None] = {
     ErrorCategory.NETWORK: "Transient connectivity issue; retry.",
     ErrorCategory.NOTEBOOK_LIMIT: "Notebook quota is exhausted; delete an existing notebook first.",
     ErrorCategory.ARTIFACT_TIMEOUT: (
-        "Generation is still running; poll the task status with the task_id."
+        "Generation outcome is unresolved; poll the task status with the task_id."
     ),
     ErrorCategory.TIMEOUT: "The operation did not finish in time; retry or poll for completion.",
     ErrorCategory.SERVER: "Upstream NotebookLM error; retry after a short delay.",
@@ -233,6 +233,12 @@ def unconfirmed_hint(exc: BaseException) -> str:
     """Return operation-aware recovery guidance for an uncertain write."""
     metadata = getattr(exc, "operation_metadata", None)
     operation = None if metadata is None else metadata.operation
+    if operation is not None and operation.startswith("sharing."):
+        return (
+            "Inspect the notebook's current sharing permissions before retrying. "
+            "Some changes or invitation emails may already have been applied; "
+            "do not blindly repeat the sharing request."
+        )
     if (
         operation == "chat"
         and metadata is not None

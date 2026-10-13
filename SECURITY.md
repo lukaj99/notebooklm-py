@@ -105,6 +105,11 @@ long-lived and written `0600` under the OAuth state file (default
 `NOTEBOOKLM_MCP_OAUTH_STATE_PATH`). Treat that file as a full-account secret, same
 tier as `master_token.json`.
 
+Issued access tokens are bound to the canonical `<base-url>/mcp` resource. An
+authorization request for another resource is rejected, and an unbound or
+cross-server token fails verification. Refresh rotation preserves the original
+resource binding across restarts.
+
 Rotating `NOTEBOOKLM_MCP_OAUTH_PASSWORD` does not revoke already-issued refresh
 tokens. Real revocation is delete that file + restart. A legacy profile-dir
 `oauth_state.json` that was migrated once is renamed `.migrated` and is never
@@ -115,6 +120,10 @@ without the login password. Registering a client does not bypass the login
 password: phishing still requires the owner to authenticate on `/login`. The
 login page shows the (escaped) redirect target so a rogue client is visible
 before the password is typed.
+
+Signed MCP upload URLs are normally reusable after validation or transport
+failures. If source registration has an unconfirmed outcome, the URL is frozen
+until expiry because the source may already exist and retrying can duplicate it.
 
 ### Stdio `source_add(path=...)`
 

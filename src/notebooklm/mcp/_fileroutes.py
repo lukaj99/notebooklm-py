@@ -303,7 +303,7 @@ def register_file_routes(mcp: FastMCP, config: FileTransferConfig) -> None:
         if spec is None:  # pragma: no cover - tokens are minted only for known types
             return PlainTextResponse("Unknown artifact type.", status_code=400)
         try:
-            client = await get_client_from_app(request)
+            client = await get_client_from_app(request, profile=payload.get("profile"))
         except Exception:  # noqa: BLE001 - not-bound, shutting down, or a failed lazy open
             # The client is opened lazily (#2330), so this now also covers an
             # auth/network failure on the open. Never echo the cause: an auth error
@@ -512,6 +512,7 @@ def register_file_routes(mcp: FastMCP, config: FileTransferConfig) -> None:
 
     @mcp.custom_route("/files/ul/{token}", methods=["POST", "PUT"])
     async def upload_route(request: Request) -> Response:
+        """Validate and consume a signed upload request, freezing uncertain registrations."""
         token = request.path_params["token"]
         try:
             payload = config.signer.verify(token, op="ul")
@@ -537,7 +538,7 @@ def register_file_routes(mcp: FastMCP, config: FileTransferConfig) -> None:
             except ValueError:
                 pass
         try:
-            client = await get_client_from_app(request)
+            client = await get_client_from_app(request, profile=payload.get("profile"))
         except Exception:  # noqa: BLE001 - not-bound, shutting down, or a failed lazy open
             # Same widening as the download route (#2330), and it carries the CORS
             # header like every other /files/ul error response — a bare 500 would be
@@ -768,20 +769,37 @@ def register_file_routes(mcp: FastMCP, config: FileTransferConfig) -> None:
                         )
                     # An UNCONFIRMED registration (#2220) reaches neither branch
                     # above: its idempotency probe could not say whether the
-                    # register committed, so there is no ``source_id`` to name —
-                    # and the "your file uploaded" note below would be flatly
-                    # false, because registration failed BEFORE the resumable
-                    # upload started. Worse, it invites the retry that duplicates.
+                    # register committed, so there is no confirmed ``source_id``.
+                    # Report that uncertainty instead of asserting either a
+                    # successful upload or an absence of upstream changes.
                     if getattr(exc, "unconfirmed", False):
-                        return _upstream_error_response(
+                        # The registration may already have committed upstream.
+                        # Freeze this capability until its signed expiry instead
+                        # of releasing it for a retry that can create a duplicate.
+                        config.jti_store.commit(
+                            jti,
+                            payload["exp"],
+                            result={
+                                "status": "unconfirmed",
+                                "hint": "The upload link is frozen. Check source_list to reconcile "
+                                "the uncertain registration before requesting a new link.",
+                            },
+                        )
+                        committed = True
+                        response = _upstream_error_response(
                             exc,
                             note=(
-                                "Nothing was uploaded. The source registration could "
-                                "not be confirmed, so it may or may not exist — check "
-                                "the notebook's source list before retrying, or a "
-                                "retry may add it twice."
+                                "The source registration could "
+                                "not be confirmed, so it may or may not exist. This "
+                                "upload link is frozen to prevent a duplicate; check "
+                                "the notebook's source list before requesting a new link."
                             ),
                         )
+                        response.headers["X-NotebookLM-Upload-Status"] = "unconfirmed"
+                        response.headers["Access-Control-Expose-Headers"] = (
+                            "X-NotebookLM-Upload-Status"
+                        )
+                        return response
                     return _upstream_error_response(
                         exc,
                         note="Your file uploaded, but adding it as a source failed "
@@ -803,9 +821,10 @@ def register_file_routes(mcp: FastMCP, config: FileTransferConfig) -> None:
                 _inflight_uploads -= 1
         finally:
             # Release a claimed-but-not-committed jti so the link can be retried: this
-            # covers the 429, the validation / upstream / OSError returns, and a
+            # covers the 429, confirmed validation / upstream / OSError returns, and a
             # mid-stream disconnect (``CancelledError`` ⊂ ``BaseException``, which
             # ``finally`` still runs on — an ``except Exception`` would miss it and wedge
-            # the jti in the active set). A committed upload keeps the jti burned.
+            # the jti in the active set). A successful or unconfirmed registration keeps
+            # the jti burned; the latter may already have committed upstream.
             if not committed:
                 config.jti_store.rollback(jti)

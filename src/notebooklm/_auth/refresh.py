@@ -18,6 +18,7 @@ import httpx
 
 from .._env import get_base_url
 from .._request_context import has_bound_policy, policy_child_environment, policy_env, policy_key
+from .._url_utils import is_notebooklm_app_host
 from ..paths import get_storage_path, resolve_profile
 from . import cookies as _auth_cookies
 from . import extraction as _auth_extraction
@@ -52,6 +53,8 @@ extract_session_id_from_html = _auth_extraction.extract_session_id_from_html
 # hand-rolled pre-check this module used to carry, and message formatting now
 # lives entirely behind the classifier.
 _url_only_extraction_failure = _auth_extraction._url_only_extraction_failure
+_login_probe_url = _auth_extraction._login_probe_url
+_signed_out_probe_failure = _auth_extraction._signed_out_probe_failure
 
 # Env-var names live in ``_auth.paths``; aliased so the refresh bodies can
 # reference them without an extra hop.
@@ -769,7 +772,7 @@ async def _fetch_tokens_with_exact_baseline(
         pair = await asyncio.to_thread(_auth_cookies._build_cookie_pair_from_storage, path)
         return pair.live, snapshot_cookie_jar(pair.live), pair.baseline
 
-    result = await _fetch_tokens_with_refresh_core(
+    csrf, session_id, _, _, baseline = await _fetch_tokens_with_refresh_core(
         cookie_jar,
         storage_path,
         profile,
@@ -779,10 +782,9 @@ async def _fetch_tokens_with_exact_baseline(
         env_auth=env_auth,
         allow_headless=allow_headless,
     )
-    baseline = result[4]
     if baseline is None:  # pragma: no cover - typed initial baseline is always retained
         raise AssertionError("typed token load lost its persistence baseline")
-    return result[0], result[1], baseline
+    return csrf, session_id, baseline
 
 
 async def _fetch_tokens_with_refresh_core(
@@ -813,18 +815,19 @@ async def _fetch_tokens_with_refresh_core(
         )
         return csrf, session_id, False, None, initial_baseline
     except ValueError as err:
-        return await _cold_fallbacks(
-            err,
-            cookie_jar,
-            storage_path,
-            profile,
-            env_auth=env_auth,
-            allow_headless=allow_headless,
-            resolve_route=resolve_route,
-            load_replacement=load_replacement,
-            baseline=initial_baseline,
-            deps=deps,
-        )
+        with _auth_extraction._auth_error_boundary():
+            return await _cold_fallbacks(
+                err,
+                cookie_jar,
+                storage_path,
+                profile,
+                env_auth=env_auth,
+                allow_headless=allow_headless,
+                resolve_route=resolve_route,
+                load_replacement=load_replacement,
+                baseline=initial_baseline,
+                deps=deps,
+            )
 
 
 async def _cold_fallbacks(
@@ -924,6 +927,38 @@ async def _cold_fallbacks(
     )
 
 
+async def _probe_signed_out_session(
+    client: Any, token_url: str, final_url: str
+) -> ValueError | None:
+    """Classify a token-less app page by where the app's ``/login`` lands.
+
+    Runs only after the app host answered without a CSRF token, so every caller
+    path raises before copying ``client.cookies`` (including any probe
+    Set-Cookie) back to its jar. Like the homepage GET it follows, this is a
+    plain GET, so the passive path stays free of rotation POSTs and disk writes.
+    An unconfirmed outcome keeps the caller's original diagnostic and is
+    logged, so a retired ``/login`` is not silent.
+    """
+    probe_url = _login_probe_url(token_url)
+    safe_url = _auth_extraction._safe_url
+    try:
+        probe = await client.get(probe_url, follow_redirects=True, timeout=30.0)
+    except httpx.HTTPError as exc:
+        logger.warning("Sign-in check %s failed: %s", safe_url(probe_url), type(exc).__name__)
+        return None
+    failure = _signed_out_probe_failure(
+        final_url, str(probe.url), tuple(str(hop.url) for hop in probe.history)
+    )
+    if failure is None:
+        logger.warning(
+            "Sign-in check %s ended at %s (HTTP %s) without confirming sign-out",
+            safe_url(probe_url),
+            safe_url(str(probe.url)),
+            probe.status_code,
+        )
+    return failure
+
+
 async def _fetch_tokens_with_jar(
     cookie_jar: httpx.Cookies,
     storage_path: Path | None = None,
@@ -1008,6 +1043,15 @@ async def _fetch_tokens_with_jar(
         if url_failure is not None:
             raise url_failure
 
+        # A signed-out session now lands on a token-less app page instead of a
+        # login redirect; ask ``/login`` before reporting a structure change.
+        if _auth_extraction.extract_wiz_field(
+            response.text, "SNlM0e", strict=False
+        ) is None and is_notebooklm_app_host(final_url):
+            signed_out = await _probe_signed_out_session(client, url, final_url)
+            if signed_out is not None:
+                raise signed_out
+
         csrf = extract_csrf_from_html(response.text, final_url, redirect_urls=redirect_urls)
         session_id = extract_session_id_from_html(
             response.text, final_url, redirect_urls=redirect_urls
@@ -1054,6 +1098,7 @@ async def fetch_tokens(
 
     Raises:
         httpx.HTTPError: If request fails
+        AuthError: If authentication is expired and recovery is exhausted
         ValueError: If tokens cannot be extracted from response
         RuntimeError: If ``NOTEBOOKLM_REFRESH_CMD`` is set but fails
     """
@@ -1067,8 +1112,7 @@ async def fetch_tokens(
         force_authuser_query=authuser is not None,
     )
     if refreshed:
-        fresh = _cookie_map_from_jar(jar)
-        _update_cookie_input(cookies, fresh)
+        _update_cookie_input(cookies, _cookie_map_from_jar(jar))
     return csrf, session_id
 
 
@@ -1094,7 +1138,7 @@ async def fetch_tokens_with_domains(
     account_email: str | None = None,
     allow_headless: bool = False,
 ) -> tuple[str, str]:
-    """Fetch tokens with domain-preserving cookies and persist their observation."""
+    """Fetch and persist domain-preserving tokens; exhausted login recovery raises AuthError."""
     storage_path = _auth_cookies.resolve_auth_storage_path(path, profile)
     pair = await asyncio.to_thread(_auth_cookies._build_cookie_pair_from_storage, storage_path)
     live = pair.live

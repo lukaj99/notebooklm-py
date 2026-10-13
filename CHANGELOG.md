@@ -7,6 +7,170 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **The Windows CLI runs on asyncio's default event loop (#2485).** The
+  `notebooklm` CLI no longer installs `WindowsSelectorEventLoopPolicy` at
+  startup (#79). On CPython 3.12–3.14 that loop could drop chunks of large file
+  uploads (`AssertionError: Data should not be empty`, then `NETWORK_ERROR …
+  (upload_finalize)`), and it had already broken Playwright login (#89, #2011).
+  Commands now use the Proactor loop, like `notebooklm-mcp`,
+  `notebooklm-server` and the Python API. If commands hang inside a sandbox
+  such as Sandboxie-Plus (#75), set `NOTEBOOKLM_WINDOWS_EVENT_LOOP=selector`;
+  an unknown value fails before the command starts. On Python 3.11+ the CLI no
+  longer uses the event-loop policy API that Python 3.16 removes,
+  `login --master-token` now runs through the same loop selection, and the CLI
+  hides curl_cffi's Proactor warning, whose advice to install the selector
+  policy no longer applies.
+
+### Fixed
+
+- **Windows CLI uploads on the selector loop no longer lose data (#2485).** On
+  Python 3.12–3.14, asyncio's selector loop drops a chunk of the request body
+  when a Windows socket send would block, so multi-megabyte uploads failed
+  with a flood of `AssertionError: Data should not be empty` and left the
+  source stuck in `preparing`. When `NOTEBOOKLM_WINDOWS_EVENT_LOOP=selector`
+  selects that loop, the CLI now installs the fix from Python 3.15, only on
+  interpreters that have the bug. The default Proactor loop, the Python API,
+  `notebooklm-mcp` and `notebooklm-server` leave asyncio unpatched.
+
+## [0.8.5] - 2026-10-12
+
+### Added
+
+- **Python 3.15 support (#2480).** Add Python 3.15 classifier, documentation,
+  and testing across CI matrices.
+
+### Fixed
+
+- **Expired cold-start authentication (#2461, #2464).** Exhausted login-redirect
+  recovery raises `AuthError`, so Python callers can catch it, CLI commands
+  return `AUTH_ERROR` with exit 1, and MCP tools preserve the re-login hint.
+  Read-only Android auth loading reports the same error without running Web
+  recovery or persisting cookies.
+
+- **Signed-out sessions misreported as a page-structure change (#2479, #2481).**
+  The app host now answers a signed-out request with a token-less landing page
+  instead of a sign-in redirect. When the CSRF token is missing, token loading
+  now asks the app's `/login` endpoint whether the session is signed in. A
+  stale session reports `Authentication expired` and enters the existing login
+  recovery, instead of `CSRF token not found ... page structure has changed`.
+
+- **Headless and CDP re-auth no longer capture a signed-out browser session
+  (#2482, #2483).** An app-host landing with a `SID` cookie is no longer enough: the
+  capture first asks the app's `/login`, through the browser context's own
+  cookies, whether the session is signed in. A signed-out session is refused
+  with `HeadlessLoginRequiredError` and the saved authentication is kept,
+  instead of being overwritten with another expired set. If the check cannot
+  be answered, capture proceeds as before.
+
+- **Browser session capture validation and auth doctor (#2472).** Validate
+  captured browser storage cookies across SPA navigation, refuse anonymous
+  captures, and clarify diagnostic warnings in `notebooklm doctor`.
+
+- **Tokenless Web auth recovery and generation journal (#2465).** Recover
+  tokenless Web authentication and journal generation at submission time.
+
+- **Release archives packaging (#2463).** Exclude internal repository assets
+  from release distribution archives.
+
+- **CI resilience and recovery (#2458, #2460, #2462, #2473, #2475).** Install
+  impersonate extra for package verification, recover tagged publishes with
+  release-scoped auth allowances, allow scheduler delays in upload and
+  download fault scenarios, and reconcile auth repository lint guardrails.
+
+- **MCP test isolation (#2459).** Isolate MCP backend flag tests from ambient
+  user profiles.
+
+### Changed
+
+- **FastMCP 4.1.0 and MCP 2.x upgrade (#2480).** Bump FastMCP to 4.1.0 and adapt
+  MCP tool annotations and tool result handling for Python 3.15 compatibility.
+- **Android protobuf toolchain upgrade (#2480).** Upgrade pinned toolchain to
+  grpcio 1.84.0 and protobuf 7.36.2 for Python 3.15 wheel support.
+- **Dependency updates.** Bump pyjwt to 2.15.0 (#2456), beartype to 0.23.1 (#2480),
+  and librt (#2480).
+
+## [0.8.4] - 2026-10-01
+
+### Added
+
+- **Android multi-profile REST and MCP serving (#1901).** Serve several Android
+  accounts with `--profiles`, route each request by profile, and isolate profile
+  startup failures and recovery.
+
+- **Web multi-profile REST and MCP serving (#1901).** `notebooklm-server --profiles
+  work,personal` and `notebooklm-mcp --profiles work,personal` now serve several
+  profiles on the default Web backend, with the same `X-NotebookLM-Profile` /
+  per-tool `profile` routing, per-profile isolation, `503 profile_unavailable`
+  degradation, and recovery cooldown as Android multi-profile mode. Each profile
+  opens its own `storage_state.json` by explicit path; a profile with only a
+  `master_token.json` mints its own session first. A profile that shares either
+  session cookie (`__Secure-1PSID` or `SID`) with another configured profile, such
+  as a copied `storage_state.json`, is refused while siblings keep serving;
+  diagnostics report `session_conflict`. Web profile opens
+  take turns, and waiting for a turn does not count against the startup timeout. Web
+  multi-profile mode refuses `NOTEBOOKLM_AUTH_JSON` and a non-blank
+  `NOTEBOOKLM_HEADLESS_REAUTH_CDP_URL`. Copies made after both profiles are serving
+  are detected only when one reopens. Single-profile and Android behavior are
+  unchanged.
+- **MCP inspection and retry metadata (#1925).** Studio summary and single-item
+  responses include decoded media duration, slide count, and source count;
+  unavailable metadata stays `null`. MCP errors preserve known retry delays as
+  `retry_after_seconds` in both structured results and tool-error messages.
+- **Opt-in URL recovery (#2110).** CLI `source add --fallback-fetch` and
+  MCP/REST `fallback_fetch` can import eligible failed web pages as static text,
+  using a bounded, public-address-only browser-impersonating fetch. Results and
+  content preserve provenance. Optional `cleanup_on_failure` removes only an
+  attributable ERROR stub after replacement readiness; ambiguous rows remain.
+  Requires the `impersonate` and `markdown` extras. Android URL commit failures
+  with code 9 retain their original `ClientError`/`RPCError` type and carry the
+  correlated tentative `source_id` as operation metadata for recovery.
+
+- **Bulk note deletion (#1999).** `notes.delete(notebook_id, note_ids)` accepts a
+  list and sends one delete request on Web and Android. MCP `studio_delete(items=...)`
+  previews an explicit subset, batches text notes, routes artifacts and mind maps
+  by kind, and reports `deleted` / `not_found` results. Confirmed batches require
+  the canonical IDs from the preview.
+- **Bulk MCP sharing (#2000).** `share_set_user(grants=[...])` accepts 1–100 mixed
+  editor/viewer grants through the existing `sharing.set_users()` batch API.
+  Confirmation previews include every grantee; notification and welcome-message
+  settings apply to the whole batch. Together with the existing
+  `sources.add_urls_batch()` / `source_add(urls=...)` support (#1998), these expose
+  the verified batch-capable operations without adding MCP tools.
+
+### Fixed
+
+- **Authentication across rebranded hosts (#2443, #2444).** Recognize
+  `notebook.google` landing redirects and enterprise hosts, and report access
+  gates without misclassifying them as expired sessions.
+- **Mutation rejection handling (#2446).** Note deletion and sharing reject
+  explicit backend failures instead of reporting success.
+
+- **Android RPC health baseline.** Add the missing reviewed schema baseline,
+  using matching fingerprints from three consecutive protected-main runs, so
+  the canary can enforce drift checks after its bootstrap grace period.
+
+### Changed
+
+- Allow FileLock 4.x (#2450). Keep FastMCP pinned to the validated 3.4.2 release;
+  the 4.0.9 upgrade (#2451) is deferred because it breaks MCP imports and types.
+
+### Security
+
+- Update locked urllib3 to 2.8.0 and virtualenv to 21.7.13, resolving the
+  advisories reported by the release dependency audit.
+
+### Documentation
+
+- **Master-token re-mint guidance (#1901).** The auth cookie lifecycle guide no
+  longer calls Web re-minting "single-consumer per account", and ADR-0023 gains
+  an amendment recording why. Live testing found that sessions minted from copies
+  of one master token stay independent. The guidance now warns against two
+  consumers actively using the same cookie session at once instead.
+
+## [0.8.3] - 2026-09-25
+
 ### Added
 
 - **Web vs Android public-behavior inventory.**
@@ -51,6 +215,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   live lane.
 
 ### Fixed
+
+- **Research import no longer hangs on unclosed Markdown links (#2434).**
+  Citation URL extraction no longer triggers catastrophic regex backtracking
+  on long URLs in malformed Markdown links or images. Cited-only research
+  imports can process these reports without blocking the MCP event loop,
+  which previously caused connector and OAuth requests to time out.
+
+- **Artifact polling preserves unresolved absence (#2432).** Repeated listing
+  misses no longer produce a terminal `REMOVED` or fabricated quota error.
+  Waiters keep the original ID until completion, explicit failure, or timeout;
+  a completed sibling never substitutes for the requested artifact. Web listing
+  errors carried by null RPC responses now propagate, with bounded retries for
+  transient polling reads. The public `max_not_found` and
+  `min_not_found_window` arguments are deprecated and ignored; non-default
+  values warn. Permanently missing IDs now reach the caller's timeout. The
+  `REMOVED` enum remains available for compatibility.
 
 - **MCP stdio `source_add` host-path file-add is default-deny.**
   `source_add(source_type="file", path=...)` over stdio now requires
@@ -2753,7 +2933,10 @@ This is the initial public release of `notebooklm-py`. While core functionality 
 - **Authentication expiry**: CSRF tokens expire after some time. Re-run `notebooklm login` if you encounter auth errors.
 - **Large file uploads**: Files over 50MB may fail or timeout. Split large documents if needed.
 
-[Unreleased]: https://github.com/teng-lin/notebooklm-py/compare/v0.8.2...HEAD
+[Unreleased]: https://github.com/teng-lin/notebooklm-py/compare/v0.8.5...HEAD
+[0.8.5]: https://github.com/teng-lin/notebooklm-py/compare/v0.8.4...v0.8.5
+[0.8.4]: https://github.com/teng-lin/notebooklm-py/compare/v0.8.3...v0.8.4
+[0.8.3]: https://github.com/teng-lin/notebooklm-py/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/teng-lin/notebooklm-py/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/teng-lin/notebooklm-py/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/teng-lin/notebooklm-py/compare/v0.7.3...v0.8.0

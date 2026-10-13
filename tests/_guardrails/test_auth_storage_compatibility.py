@@ -1118,6 +1118,10 @@ def test_all_remaining_facade_inventory_callables_are_exact_identity_reexports()
 
 
 EXPECTED_DIRECT_CALLERS = {
+    "_load_storage_state": ["src/notebooklm/_app/doctor.py"],
+    "_load_storage_state_from_env_value": ["src/notebooklm/_app/doctor.py"],
+    "_sanitized_auth_entries": ["src/notebooklm/_app/doctor.py"],
+    "_storage_has_routable_cookie": ["src/notebooklm/_app/doctor.py"],
     "AuthTokens": [
         "src/notebooklm/__init__.py",
         "src/notebooklm/_client_assembly.py",
@@ -1198,6 +1202,7 @@ EXPECTED_ALIAS_CALLERS = {
     "_sanitized_auth_entries": [
         "src/notebooklm/_app/auth_check.py",
         "src/notebooklm/_app/login_cookie.py",
+        "src/notebooklm/_app/web_profiles.py",
     ],
     "_storage_entry_to_cookie": [
         "src/notebooklm/_app/auth_check.py",
@@ -2205,12 +2210,12 @@ def test_first_party_facade_callers_are_frozen_in_both_import_idioms() -> None:
     assert aliases == EXPECTED_ALIAS_CALLERS
     union = {(name, path) for name, paths in direct.items() for path in paths}
     union |= {(name, path) for name, paths in aliases.items() for path in paths}
-    assert len(direct) == 18
-    assert sum(map(len, direct.values())) == 46
+    assert len(direct) == 22
+    assert sum(map(len, direct.values())) == 50
     assert len(aliases) == 28
-    assert sum(map(len, aliases.values())) == 33
-    assert len({name for name, _path in union}) == 42
-    assert len(union) == 79
+    assert sum(map(len, aliases.values())) == 34
+    assert len({name for name, _path in union}) == 45
+    assert len(union) == 84
 
 
 @pytest.mark.skipif(not hasattr(ast, "TryStar"), reason="exception-group AST requires 3.11+")

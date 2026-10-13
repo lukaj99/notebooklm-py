@@ -8,7 +8,7 @@
 > **Note (July 2026):** Google rebranded **NotebookLM** to **[Gemini Notebook](https://blog.google/innovation-and-ai/products/gemini-notebook/notebooklm-gemini-notebook/)**. It remains the same standalone product (now also reachable inside the Gemini app), existing links redirect automatically, and this library drives the same underlying service and works unchanged. The package keeps the `notebooklm-py` name.
 
 [![PyPI version](https://img.shields.io/pypi/v/notebooklm-py.svg)](https://pypi.org/project/notebooklm-py/)
-[![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)](https://pypi.org/project/notebooklm-py/)
+[![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14%20%7C%203.15-blue)](https://pypi.org/project/notebooklm-py/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests](https://github.com/teng-lin/notebooklm-py/actions/workflows/test.yml/badge.svg)](https://github.com/teng-lin/notebooklm-py/actions/workflows/test.yml)
 <p>
@@ -80,6 +80,11 @@ These combine ordinary library primitives — see the [CLI Reference](docs/cli-r
 | **MCP Server** | Claude Desktop/Code, Codex, etc. — locally via stdio, or as a self-hosted remote connector (behind a Cloudflare/Tailscale tunnel) reachable from claude.ai and ChatGPT, mobile included. |
 | **REST Server** | Local automation over guarded HTTP routes without spawning a CLI process per call |
 | **Agent Integration** | Claude Code, Codex, LLM agents, natural language automation |
+
+REST and MCP servers support multiple profiles on either backend with `--profiles`
+(see the [MCP guide](docs/mcp-guide.md)). URL ingestion can optionally recover
+failed web pages with `source add --fallback-fetch`; install the `impersonate` and
+`markdown` extras and see the [CLI reference](docs/cli-reference.md#opt-in-url-recovery).
 
 ### API backends
 
@@ -209,7 +214,7 @@ Fetches the canonical [SKILL.md](SKILL.md) directly from GitHub.
 ## Quick Start
 
 <p align="center">
-  <a href="https://asciinema.org/a/767284" target="_blank"><img src="https://asciinema.org/a/767284.svg" width="600" /></a>
+  <a href="https://asciinema.org/a/767284" target="_blank"><img src="https://raw.githubusercontent.com/teng-lin/notebooklm-py/main/docs/demo.png" alt="NotebookLM Session Demo" width="600" /></a>
   <br>
   <em>16-minute session compressed to 30 seconds</em>
 </p>

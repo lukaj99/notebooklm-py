@@ -139,7 +139,20 @@ On Windows, both credential paths can leave you without `__Secure-1PSIDTS` (the 
 - **`notebooklm login --browser chrome` (Playwright flow).** The interactive browser completes Google sign-in, but Google may serve an automation-detected session *without* the token-binding cookie (and sometimes without the secondary-binding cookies `OSID` / `APISID` + `SAPISID` the automatic `RotateCookies` recovery needs to re-mint it). When that happens the saved `storage_state.json` is genuinely incomplete and re-running the same flow reproduces it.
 - **`notebooklm login --browser-cookies chrome` (or `edge`) → `Could not decrypt chrome cookies`.** Chrome 127+ (and current Edge) protect the cookie database with **App-Bound Encryption (ABE)**: the decryption key is bound to the browser process via a Windows service, so no external process can read it. This blocks every cookie-extraction library (`rookie-cookies`, `browser-cookie3`, `pycookiecheat`), not just `notebooklm-py`. There is no flag that bypasses ABE.
 
-Note that `notebooklm doctor` may still say the auth check passed with an older client — the check historically only looked for `SID`. Current versions surface a **warn** row when `__Secure-1PSIDTS` is missing (`auth check --test` has always reported the real error). Trust `notebooklm auth check --test` / `notebooklm list` over a green `doctor` for "is this session actually usable".
+`notebooklm doctor` checks local auth material, not whether Google accepts the session.
+It reports a **warn** row when `__Secure-1PSIDTS` is missing, expired, empty, or
+cannot be sent to the configured NotebookLM URL. A usable local `SID` does not
+guarantee successful recovery or an accepted server session. Use
+`notebooklm auth check --test --passive` to test token fetching without refreshing
+or writing credentials when the required cookie names remain structurally usable.
+Absent, empty, malformed, or disallowed-domain PSIDTS stops the passive check
+locally before contacting Google. For incomplete file-backed auth, use
+`notebooklm auth check --test` for best-effort recovery; it may refresh, rotate,
+or update stored cookies. Incomplete inline auth needs a complete export, or
+unsetting `NOTEBOOKLM_AUTH_JSON` to use stored profile recovery.
+Keep the same `--profile` / `--storage` selector and inline auth environment as
+the failing command; doctor prints guidance for that source. On Windows, paste
+doctor's labeled commands into PowerShell so quoted selectors stay literal.
 
 Workarounds, most reliable first:
 
@@ -238,13 +251,15 @@ Or re-run `notebooklm login` if session cookies are also expired. If the failure
 
 #### "NotebookLM redirected this request to its region / anti-abuse access gate"
 
-**Cause:** The request to the personal app host — `notebook.google.com` by default since #2067, or whichever host `NOTEBOOKLM_BASE_URL` selects — was redirected to **`notebooklm.google/?location=unsupported`** — Google's region / anti-abuse risk-control gate (the marketing/landing page, which has no CSRF token). This is **not** a library bug, expired login, or page-structure change, and **re-running `notebooklm login` will not fix it** (the cookies are fine). It is driven by the *access environment*, not just the account's country, and fires even for accounts in supported regions when Google sees:
+**Cause:** The request to the personal app host — `notebook.google.com` by default since #2067, or whichever host `NOTEBOOKLM_BASE_URL` selects — was redirected to **`notebooklm.google/?location=unsupported`** — Google's region / anti-abuse risk-control gate (the marketing/landing page, which has no CSRF token). The response is a landing page rather than the authenticated app, so it cannot supply app tokens. The redirect alone does not establish cookie validity or the underlying cause. The gate can depend on the *access environment*, not just the account's country, and can affect accounts in supported regions when Google sees:
 
 - a **VPN / proxy / datacenter / shared IP** (especially previously-abused ones),
 - an **IP ↔ timezone ↔ browser-language mismatch**, or
 - a **non-browser / automated access pattern** (a raw HTTP client without a real browser fingerprint).
 
-**Confirm:** open the same host the client is using (`https://notebook.google.com` unless you set `NOTEBOOKLM_BASE_URL`) in a normal browser, signed in to the same account, on the same network. If it also redirects to `notebooklm.google/?location=unsupported`, the gate is environmental. Test the host that actually failed — the two personal hosts are gated by the same risk-control system, but diagnosing against the host you are not using is how a working setup gets misread as broken.
+The rebranded landing page is **`https://notebook.google/`** (without `.com`); `notebooklm.google` now redirects there. It is a marketing site, not a new authenticated app endpoint. A redirect there alone does not establish that cookies expired or identify why Google declined app access. Do not set `NOTEBOOKLM_BASE_URL` to that landing host or copy cookies to it. Issue [#2441](https://github.com/teng-lin/notebooklm-py/issues/2441) exposed a missing landing-host alias in the redirect diagnostic; recognizing it improves the error but does not bypass Google's access gate or establish the cause of an RPC `PERMISSION_DENIED` response.
+
+**Confirm:** open the same host the client is using (`https://notebook.google.com` unless you set `NOTEBOOKLM_BASE_URL`) in a normal browser, signed in to the same account, on the same network. If it also redirects to `notebooklm.google/?location=unsupported` or `notebook.google/`, compare the result on another network to investigate the access environment. Test the host that actually failed — the two personal hosts are gated by the same risk-control system, but diagnosing against the host you are not using is how a working setup gets misread as broken.
 
 **Solution:** access from a **residential connection in a supported region**, keep your system **timezone/language consistent** with the IP's country, and avoid shared/datacenter VPN exit IPs. When the trigger is the **non-browser fingerprint** (a raw HTTP client) rather than the IP, the opt-in browser-TLS-impersonation transport can help: set `NOTEBOOKLM_TRANSPORT=curl_cffi` (requires the `curl_cffi` package) so requests carry a real browser's TLS fingerprint. (See issue [#1630](https://github.com/teng-lin/notebooklm-py/issues/1630).)
 
@@ -272,9 +287,9 @@ notebooklm login --browser chrome --storage <path>
 
 ### Configuration Errors
 
-#### `ValueError: NOTEBOOKLM_BASE_URL must use https and one of: ...` lists a host that is not documented
+#### `ValueError: NOTEBOOKLM_BASE_URL must use https and one of: ...`
 
-**Cause:** The error message enumerates every host the base-URL validator currently accepts. That list is not the same as the list of *supported* values in [configuration.md](configuration.md) — it now also names the Gemini Notebook rebrand host, `notebook.google.com`.
+**Cause:** `NOTEBOOKLM_BASE_URL` does not match an accepted HTTPS app origin. The error lists the supported hosts documented in [configuration.md](configuration.md): `notebook.google.com` (default), `notebooklm.google.com` (legacy personal), `notebook.cloud.google.com` (enterprise), and `notebooklm.cloud.google.com` (legacy enterprise). Non-root paths, query strings, credentials, and explicit ports are rejected. The marketing hosts `notebook.google` and `notebooklm.google` are not authenticated app endpoints.
 
 **Status:** `notebook.google.com` is **the default** since #2067. A live probe on 2026-08-04 reached `batchexecute` on **both** personal hosts, so the endpoint is dual-served, not rebrand-host-only or legacy-only. The cassettes in `tests/cassettes/` now record requests against the rebrand host. The pre-rebrand host `notebooklm.google.com` remains a valid, still-served value and is the documented rollback lever; switching back is normally just the variable, with the caveats described below. See [ADR-0028](adr/0028-gemini-notebook-rename.md).
 
@@ -287,7 +302,10 @@ export NOTEBOOKLM_BASE_URL=https://notebook.google.com
 # Personal, pre-rebrand host (still served; rollback lever)
 export NOTEBOOKLM_BASE_URL=https://notebooklm.google.com
 
-# Enterprise
+# Enterprise (origin only; project/region routing is not configured here)
+export NOTEBOOKLM_BASE_URL=https://notebook.cloud.google.com
+
+# Legacy enterprise
 export NOTEBOOKLM_BASE_URL=https://notebooklm.cloud.google.com
 ```
 
@@ -355,9 +373,9 @@ from notebooklm import NotebookLMClient
 - The override is applied at BOTH the URL `rpcids=` query parameter AND the
   request body `f.req` payload, so the wire format stays consistent.
 - The override is gated on the configured base host being a known Google
-  NotebookLM endpoint (`notebook.google.com`, `notebooklm.google.com`, or
-  `notebooklm.cloud.google.com`). Overrides do NOT apply to non-Google
-  hosts, so this env var cannot be weaponised to leak custom RPC IDs to a
+  NotebookLM endpoint (`notebook.google.com`, `notebooklm.google.com`,
+  `notebook.cloud.google.com`, or `notebooklm.cloud.google.com`). Overrides do NOT
+  apply to non-Google hosts, so this env var cannot be weaponised to leak custom RPC IDs to a
   hostile endpoint.
 - Method names not listed in the override map continue to use the canonical
   IDs from `notebooklm.rpc.types.RPCMethod`.
@@ -816,22 +834,41 @@ playwright install chromium
 
 **CLI hangs indefinitely (issue #75):**
 
-On certain Windows environments (particularly when running inside Sandboxie or similar sandboxing software), the CLI may hang indefinitely at startup. This is caused by the default `ProactorEventLoop` blocking at the IOCP (I/O Completion Ports) layer.
+The CLI runs on asyncio's default Windows event loop, `ProactorEventLoop`, like `notebooklm-mcp`, `notebooklm-server` and the Python API. One user running the CLI inside a Sandboxie-Plus box reported commands hanging at the IOCP (I/O Completion Ports) layer with that loop.
 
 **Symptoms:**
-- CLI starts but never responds
+- `notebooklm login` works, but `notebooklm list` and other network commands never return
 - Process appears frozen with no output
-- Happens consistently in sandboxed environments
+- Ctrl+C shows a traceback ending in `_overlapped.GetQueuedCompletionStatus`
 
-**Solution:** The library automatically sets `WindowsSelectorEventLoopPolicy` at CLI startup to avoid this issue. If you're using the Python API directly and encounter hanging, add this before any async code:
+**Solution:** Switch the CLI to the selector event loop:
+
+```powershell
+$env:NOTEBOOKLM_WINDOWS_EVENT_LOOP = "selector"   # PowerShell
+```
+
+```bat
+set NOTEBOOKLM_WINDOWS_EVENT_LOOP=selector
+```
+
+Only do this if the default loop hangs. On Python 3.12–3.14 asyncio's selector loop has a bug that drops data from large uploads ([#2485](https://github.com/teng-lin/notebooklm-py/issues/2485)). When this variable selects it, the CLI installs the fix from Python 3.15 for the run, so `source add` uploads are safe. Python 3.10, 3.11 and 3.15 do not have the bug.
+
+The variable accepts only `selector` or `proactor` (case-insensitive). Any other value makes every CLI command, even `status`, fail before it starts with `Unknown NOTEBOOKLM_WINDOWS_EVENT_LOOP=...` (`CONFIG_ERROR` with `--json`). If you set it persistently, for example in your user environment variables, fix or remove it there.
+
+Earlier releases forced the selector loop on every Windows machine (#79). If you added a workaround for #2485, such as a `.pth` hook that aliases `WindowsSelectorEventLoopPolicy` to the Proactor policy, you can remove it.
+
+For the Python API in such an environment, run your code on a selector loop. The library does not patch asyncio, so on Python 3.12–3.14 large uploads on that loop can fail with `NETWORK_ERROR … (upload_finalize)` after a flood of `AssertionError: Data should not be empty`; use Python 3.11 or 3.15 if you upload large files there:
 
 ```python
 import asyncio
-import sys
 
-if sys.platform == "win32":
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+asyncio.run(main(), loop_factory=asyncio.SelectorEventLoop)  # Python 3.12+
+
+with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:  # Python 3.11
+    runner.run(main())
 ```
+
+On Python 3.10, set `asyncio.WindowsSelectorEventLoopPolicy()` with `asyncio.set_event_loop_policy` before calling `asyncio.run`.
 
 **Unicode encoding errors on non-English Windows (issue #75, #80):**
 

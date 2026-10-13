@@ -1,6 +1,6 @@
 # MCP server guide
 
-**Last Updated:** 2026-09-06
+**Last Updated:** 2026-09-29
 
 > **Experimental / preview.** The MCP server ships behind the optional `mcp` extra. Its
 > tool surface (names, parameters, output shapes) is **not** covered by the library's semver
@@ -159,6 +159,9 @@ full-account credential. Multi-tenant hosting is out of scope for this single-te
 the OAuth state file. Rotating `NOTEBOOKLM_MCP_OAUTH_PASSWORD` does not revoke them; real
 revocation is delete that file and restart. Open DCR (registering a client) does **not**
 bypass the login password — phishing still requires the owner to authenticate.
+OAuth access tokens are audience-bound to the canonical `<base-url>/mcp`
+resource; requests for another resource are rejected and refresh rotation keeps
+the binding. Existing unbound tokens require reauthorization after upgrade.
 
 **Where OAuth state lives.** The registered clients + issued tokens persist to a
 deployment-scoped file keyed on `NOTEBOOKLM_MCP_OAUTH_BASE_URL` (the OAuth issuer), **not**
@@ -227,6 +230,13 @@ bearer-only deploy → the two file tools return a clear "not configured" error
   stream against it and rejects a corrupted transfer with a clean 400 (retryable) *before*
   adding the source.
 - Links use HMAC-URL authentication (not bearer/OAuth) and expire on server restart.
+- An upload link is frozen after an unconfirmed source registration. Check
+  `source_list` before requesting a new link so an uncertain commit is not duplicated.
+  `await_upload` reports `unconfirmed` for that link instead of asking you to poll
+  again. The upload widget retires the frozen link and shows the same reconciliation
+  guidance without claiming that nothing was uploaded; confirmed transient
+  failures remain retryable. In a mixed batch, retrying another file does not clear
+  the unconfirmed warning; reconcile every frozen upload with `source_list`.
   Ordinary upload links last 15 minutes, widget upload pools last 60 minutes, and
   download links last 30 minutes. A leaked link is a timed capability; see
   [ADR-0024](adr/0024-mcp-remote-file-transfer.md) and [SECURITY.md](../SECURITY.md).
@@ -322,7 +332,10 @@ These conventions hold across every tool:
   `retriable` flag tells an agent whether a retry could succeed (e.g. `RATE_LIMITED`, `TIMEOUT`,
   `NETWORK`). Many errors also carry an actionable `hint` (e.g. `AUTH → run notebooklm login`); a
   near-miss name lookup puts its `Did you mean: …` candidates (title + id) in that hint (see
-  **Name *or* ID** above).
+  **Name *or* ID** above). When a rate-limit error carries a known retry delay, it also includes
+  `retry_after_seconds` in structured batch errors and in the tool-error message, for example
+  `RATE_LIMITED: … (retriable=true retry_after_seconds=300)`. Zero is preserved; unknown delays
+  are omitted. A delay does not override `retriable=false` for an unconfirmed mutation.
 
 ## Workflows
 
@@ -650,14 +663,65 @@ Client-actionable follow-ups are tracked in
 | **Sources** | `source_list(notebook, status?, label?, detail?, limit?, offset?)` (each source has string `kind`/`status_label`, plus `drive_status_label` + `is_drive_degraded` — a **separate** axis, `null`/`false` on non-Drive sources: a Drive file that was deleted or unshared keeps reading `status_label="ready"` because ingestion did finish, so answers grounded on it may be stale; `status` filters to one of unknown\|processing\|ready\|error\|preparing — e.g. `status="error"` finds failed imports; `detail=compact` returns a low-token roster of just `id`/`title`/`kind`/`status_label`/`drive_status_label`/`created_at`) · `source_read(notebook, source, detail?, output_format?, max_chars?, offset?)` (`detail=full` (default) → metadata + a bounded slice of the indexed text: `max_chars` caps `content` (default 10k), `offset` pages, plus a `truncated` flag and the full `char_count`; `detail=summary` → low-token triage: AI summary **+ keywords**, not the body; `output_format`: text\|markdown) · `source_rename(notebook, source, new_title)` · `source_delete(notebook, source, confirm)` · `source_wait(notebook, source?, timeout, interval)` (a READY web page with thin/empty text, or a short body matching a dead-link / soft-404 or bot-challenge / WAF interstitial pattern, carries a non-blocking `warning`) · `source_add(notebook, source_type, ..., bytes_base64?, filename?, wait?, timeout?, interval?, allow_internal?)` (single; echoes `kind`/`status_label`, flags a failed import inline with a `warning`. `bytes_base64`/`filename` add a small `file` in-channel (no signed URL). `wait=true` folds in `source_wait` → the aggregate plus a top-level `source_id`; single-source only, not a remote `file` upload) / `source_add(notebook, urls=[...], allow_internal?)` (batch → per-item `results`; a synchronously-ready web-page item may also carry the same content-sanity `warning`) · `source_add_drive_file(notebook, document_id, title?, wait?)` (downloads an upload-only Drive file — epub/docx/pptx/txt/md/rtf/odt/csv/tsv/pdf — server-side and uploads it; a Google-native Doc/Slides/Sheet returns a pointer error, use `source_add(source_type='drive')` for those) · `source_list_play_books(limit?, offset?)` (the account's Google Play Books library (Expert Intelligence, US only, 18+); returns every title, addable or not; each row has `content_id`/`title`/`authors`/`export_disabled`/`reason`/`store_url`; supported on Web and Android) · `source_add_play_book(notebook, content_id, wait?)` (add a Play Book by its `content_id`; a non-exportable title is refused; reads back as an `expert_intelligence` source; supported on Web and Android) · `await_upload(upload_link, timeout?)` (poll a remote `source_add(source_type='file')` signed-URL upload to completion) |
 | **Chat** | `chat_ask(notebook, question?, conversation_id?, references?, source_ids?, history?, suggest_followups?)` (`references`: lite\|full; never returns the raw debug blob; `source_ids` scopes to specific sources — list, JSON-array string, or comma string; omit for all; `history`>0 also returns up to N prior `{question, answer}` pairs — omit `question` to recall only; `suggest_followups=true` also returns `suggested_prompts` (3 questions to ask — works question-less too)) · `chat_start(notebook, question, conversation_id?, references?, source_ids?)` (detached background ask for long generations — returns `{status, task_id}` immediately; an identical repeat attaches to the running task; a finished ask is never replayed — asking again re-asks and appends a new turn, like `chat_ask`; the finished payload stays pollable by `task_id` for ~30 min) · `chat_status(task_id?, notebook?, conversation_id?)` (READ_ONLY; exactly one mode: `task_id` takes one id, a list, or a comma string and polls detached tasks in one call; `notebook` reads Google's live `idle`/`generating` session state, optionally for a specific conversation. Detached-task states are `pending` (`state`: queued\|generating), `completed`, `failed`, `cancelled`, or `unknown`; completed results include the full answer plus timings. Submissions past `NOTEBOOKLM_MCP_CHAT_CONCURRENCY` (default 3) queue FIFO; `NOTEBOOKLM_MCP_CHAT_JOB_TIMEOUT` optionally bounds queue plus generation from acceptance; `server_info.chat_tasks` shows load) · `chat_cancel(notebook, conversation_id?, task_id?)` (stop the selected/latest Google generation; with a detached `task_id`, cancel the MCP-owned task first, cancel its known Google session when one exists, and return `already_finished` without touching a newer session when the task is terminal) · `chat_configure(notebook, chat_mode?, goal?, response_length?)` (`chat_mode`: default\|learning-guide\|concise\|detailed — a preset, mutually exclusive with `goal`/`response_length`; a **partial** custom call sets just `goal` or just `response_length` and **merges** with the current settings — the omitted field is preserved, not reset; only a bare call, no preset and neither field, is rejected) · `suggest_prompts(notebook, surface?, source_ids?, query?)` (READ_ONLY; `surface`: ask\|audio-deep-dive\|audio-brief\|audio-critique\|audio-debate\|video-explainer\|video-short\|quiz\|flashcards — returns `{title, prompt}` suggestions to steer that studio surface; `ask` (default) = chat questions) |
 | **Notes** | `note_save(notebook, note?, title?, content?)` (upsert: omit `note` to **create** — `title` AND `content` required; pass a `note` ref to **update** — `title` and/or `content`, title-only = rename). Reading and deleting notes fold into the Studio row below. |
-| **Studio** | `studio_list(notebook, item?, kind?, detail?, limit?, offset?)` (the unified Studio panel — **notes AND artifacts** merged into one `items` list; each item has `id`/`title`/`type` where `type` is `note` or a hyphenated artifact kind; artifacts add `status_label`/`url`; `detail=summary` (default) gives each note a bounded `content_preview` + full-body `char_count` to keep a discovery listing low-token and each **artifact** its `created_at` + `generation_prompt` (the free-text prompt it was generated from, `null` if none), `detail=full` returns the whole note `content`, `detail=compact` collapses every item to `id`/`title`/`type`/`status_label`/`created_at`; `kind` filters to one `type`; `item` fetches one note-or-artifact by ref as a 1-element list, always with the note's full `content` — or, for an artifact, its `generation_prompt`) · `studio_generate(notebook, artifact_type, …)` · `studio_status(notebook, task_id)` · `studio_download(notebook, artifact? \| artifact_type?, path?, output_format?, artifact_id?)` (target by `artifact` name-or-id ref **or** by `artifact_type` [+ `artifact_id` for a specific one, else latest]) · `studio_rename(notebook, item, new_title)` (cross-type: renames a note OR an artifact resolved from the merged list) · `studio_retry(notebook, artifact)` (re-run a failed artifact in place; task_id == artifact_id) · `studio_delete(notebook, item, confirm)` (cross-type: deletes a note OR an artifact resolved from the merged list) |
+| **Studio** | `studio_list(notebook, item?, kind?, detail?, limit?, offset?)` (the unified Studio panel — **notes AND artifacts** merged into one `items` list; each item has `id`/`title`/`type` where `type` is `note` or a hyphenated artifact kind; artifacts add `status_label`/`url`; `detail=summary` (default) gives each note a bounded `content_preview` + full-body `char_count` to keep a discovery listing low-token and each **artifact** its `created_at`, `generation_prompt`, `duration_seconds`, `slide_count`, and `source_count` (unavailable values are `null`), `detail=full` returns the whole note `content`, `detail=compact` collapses every item to `id`/`title`/`type`/`status_label`/`created_at`; `kind` filters to one `type`; `item` fetches one note-or-artifact by ref as a 1-element list, always with the note's full `content` — or, for an artifact, its summary metadata) · `studio_generate(notebook, artifact_type, …)` · `studio_status(notebook, task_id)` · `studio_download(notebook, artifact? \| artifact_type?, path?, output_format?, artifact_id?)` (target by `artifact` name-or-id ref **or** by `artifact_type` [+ `artifact_id` for a specific one, else latest]) · `studio_rename(notebook, item, new_title)` (cross-type: renames a note OR an artifact resolved from the merged list) · `studio_retry(notebook, artifact)` (re-run a failed artifact in place; task_id == artifact_id) · `studio_delete(notebook, item? \| items?, confirm)` (cross-type: deletes an explicit note/artifact subset; notes batch into one write) |
 | **Research** | `research_start(notebook, query, source, mode)` (returns `poll_task_id` — the one id status/import/cancel drive off) · `research_status(notebook, poll_task_id?, include_report?, report_max_chars?, source_limit?, source_offset?)` (report + per-source `report_markdown` omitted unless `include_report`; always returns `status_code` and `termination_reason` — `no_results`\|`cancelled`\|`unknown` partition the coarse `failed`, alongside `completed`\|`in_progress`; both are `null` when the poll carries no backend code (a `no_research`/`not_found` response) — plus `reason_message`/`hint` when the run did not succeed, so an empty Drive search is distinguishable from a real error) · `research_import(notebook, poll_task_id?, max_sources?, cited_only?, allow_duplicate?)` (timeout-tolerant; idempotent for URL-addressed entries when the baseline snapshot succeeds; `cited_only` narrows to report-cited sources, `max_sources` caps the count, `allow_duplicate` re-adds sources already present instead of skipping them as `already_present`) · `research_cancel(notebook, poll_task_id)` (sends the cancel unless the run is already terminal → `cancel_requested`). The old `task_id` / `run_id` param names are deprecated aliases for `poll_task_id`, removed in v0.9.0 |
-| **Sharing** | `share_status(notebook)` (is_public/access/share_url/shared_users; enums as string labels; `view_level` omitted — the read API can't report it; plus `max_individuals_share_limit` (the enforced collaborator cap) and `is_public_sharing_allowed` (the tenant policy gate on going public) — both `null` when the backend made no claim, so test `is_public_sharing_allowed === false` for a real denial) · `share_set_access(notebook, public?, view_level?, confirm)` (link settings; `view_level`: full\|chat, echoed back only when set; `confirm` gates public widening restricted→public) · `share_set_user(notebook, email, permission?, notify?, message?, confirm)` (upsert grant; `permission`: editor\|viewer; `notify` defaults `false`; `confirm` gates every grant) · `share_remove_user(notebook, email, confirm)` |
+| **Sharing** | `share_status(notebook)` (is_public/access/share_url/shared_users; enums as string labels; `view_level` omitted — the read API can't report it; plus `max_individuals_share_limit` (the enforced collaborator cap) and `is_public_sharing_allowed` (the tenant policy gate on going public) — both `null` when the backend made no claim, so test `is_public_sharing_allowed === false` for a real denial) · `share_set_access(notebook, public?, view_level?, confirm)` (link settings; `view_level`: full\|chat, echoed back only when set; `confirm` gates public widening restricted→public) · `share_set_user(notebook, email?, permission?, notify?, message?, confirm, grants?)` (upsert grant; `permission`: editor\|viewer; `notify` defaults `false`; `confirm` gates every grant) · `share_remove_user(notebook, email, confirm)` |
 | **Server** | `server_info(include_account?)` — version + local auth health; `include_account=true` adds an `account` block: signed-in identity (`email`, `authuser`) plus notebook/source limits, the subscription `tier` (opaque enum, e.g. `1`=Free/`2`=Pro, `null` on legacy responses; per-tier limits in [quota-limits.md](quota-limits.md)), and global `output_language` for quota pacing + language context (`null` with `output_language_is_default: true` when the account uses NotebookLM's default rather than an explicit code; best-effort; identity is network-free from the profile, the quota fields need a live session). `email` is real account PII, returned only under this opt-in flag |
+
+Studio `slide_count` and `source_count` count populated decoded collections from the listing;
+empty collections produce `null` because the SDK also uses them for absent metadata. These
+counts describe returned slides and source references, not an inferred total or current notebook
+source count. Duration comes from the audio/video duration field, not generation time.
 
 Tools that only read are annotated read-only; the destructive tools (the three `*_delete` tools plus `share_remove_user`) are annotated destructive
 and require `confirm`. A host that honors MCP annotations can auto-allow the read-only calls and
 gate the destructive ones.
+
+### Batch mutations
+
+`source_add(notebook=..., urls=[...])` uses the existing batch-capable source API
+and returns one ordered outcome per URL, including any partial failures (#1998).
+
+`studio_delete` accepts either `item` or an explicit `items` subset (1–100 refs).
+Preview with names or IDs, then submit the preview's canonical `notebook_id` and
+`item_id` values in `items` with `confirm=true`. Batch confirmation rejects names
+and prefixes, so a renamed or newly created item cannot become a new target.
+Text notes use one delete request; artifacts, including explicitly selected mind
+maps, use their existing kind-aware delete paths. The result contains `deleted`
+and `not_found` arrays with counts. Missing IDs never become claimed deletions;
+repeated references, including missing IDs, count once. Ambiguous names abort the
+plan before any write. Omitting both selectors is an error.
+An incomplete Studio inventory also aborts before any write. Batch steps share the
+configured operation deadline. Deleting a mix of notes and artifacts is not atomic,
+and an interrupted note batch can leave only some deletions applied. Web returns no
+per-note receipt; operation metadata may be absent or lack mutation entries and does
+not prove each selected note's final state. After an error or cancellation, refresh `studio_list`
+and compare the selected IDs before retrying any remaining items.
+
+`share_set_user` accepts either `email` + `permission` or a `grants` array of 1–100 users:
+
+```json
+{
+  "notebook": "11111111-1111-1111-1111-111111111111",
+  "grants": [
+    {"email": "editor@example.com", "permission": "editor"},
+    {"email": "viewer@example.com", "permission": "viewer"}
+  ],
+  "notify": false
+}
+```
+
+The preview lists every grantee and permission. Re-submit the same grants and
+canonical notebook ID with `confirm=true` to apply them in one write. Each grant
+defaults to `viewer`; set mixed permissions inside `grants`. `notify` (default
+`false`) and `message` apply to the whole call. Empty or oversized batches and duplicate
+email entries are rejected before opening the client. Split larger recipient sets into
+separately reviewed batches; this per-call cap does not change the notebook's collaborator
+limit. The result uses the existing updated sharing-status shape. On Web, every
+requested recipient and permission must appear in the readback before the tool
+reports `updated`. A mismatch raises an unconfirmed, non-retriable error; inspect
+`share_status` before issuing another grant, because invitations may already have
+been sent.
 
 ## Troubleshooting
 
@@ -676,10 +740,21 @@ gate the destructive ones.
   is often *not* enough (some hosts, notably ChatGPT, keep the cached manifest across reconnects). The
   server's live manifest is correct; only *removed/renamed tools* ghost — newly-added *optional* parameters
   on existing tools forward through the stale schema and keep working. See [troubleshooting.md](troubleshooting.md#unknown-tool-from-an-mcp-host-claudeai-chatgpt--after-upgrading-the-server).
-- **Wrong account.** The server binds one profile per process. Start it with `--profile <name>`, or set
-  `NOTEBOOKLM_PROFILE`. See [configuration.md](configuration.md#multiple-accounts).
+- **Wrong account.** Single-profile mode uses `--profile <name>` or `NOTEBOOKLM_PROFILE`.
+  For several accounts, use `--profiles work,personal` (Web) or
+  `--backend android --profiles work,personal` and include `profile` in every tool call.
+  Reconnect or refresh the host manifest when changing modes.
+  See [multi-profile setup](installation.md#android-multi-profile-mcp) and
+  [Web multi-profile MCP](installation.md#web-multi-profile-mcp).
+- **`Selected Web profile is unavailable` for one profile.** In Web multi-profile mode,
+  check `server_info(profile=...)`. `session_conflict: true` means that profile's
+  `storage_state.json` is a copy of another configured profile's session: log it in
+  separately (`notebooklm -p <name> login`), or delete the copy and keep
+  `master_token.json` so a fresh session is minted. Otherwise check `storage_exists` /
+  `master_token_present` (neither file usable), then the server log for an expired
+  session, startup timeout, or network failure. Other profiles keep serving.
 - **`RATE_LIMITED`.** NotebookLM enforces per-account quotas; the error is `retriable=true` — back off
-  and retry.
+  and retry, honoring `retry_after_seconds` when present. Its absence means the delay is unknown.
 - **`CONNECT_TIMEOUT` / "connection timed out after 30000ms" on connect.** Fixed: the server used to
   finish Google's auth round-trip before answering the MCP handshake, so slow or rate-limited auth
   looked like a dead server. The client is now opened lazily in the background — the handshake answers
@@ -692,3 +767,17 @@ gate the destructive ones.
 - [`desktop-extension/README.md`](../desktop-extension/README.md) — one-click Claude Desktop `.mcpb` bundle (prebuilt, attached to each stable release)
 - [configuration.md](configuration.md) — profiles, multi-account, storage
 - [cli-reference.md](cli-reference.md) — the equivalent CLI commands
+
+### URL fallback fetching
+
+`source_add(source_type="url", url="https://example.com/article", fallback_fetch=True)`
+opts into the [static-text recovery workflow](cli-reference.md#opt-in-url-recovery).
+Install the `impersonate` and `markdown` extras on the MCP host. Optional
+`cleanup_on_failure=True` requests attributable-stub cleanup after replacement
+readiness. Both options are single-web-URL only; they cannot be used with `urls`.
+The response includes `fallback` provenance when recovery ran, including with
+`wait=True`. Private destinations remain prohibited regardless of `allow_internal`.
+
+REST exposes the same booleans on `POST /v1/notebooks/{id}/sources/url`; its returned
+source gains a `fallback` object only after recovery. Both options default to
+`False`. Low-level SDK `sources.add_url()` remains a direct backend operation.

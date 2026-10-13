@@ -496,6 +496,16 @@
       "idiom": "patch.object",
       "owner": "notebooklm._auth.mint_service.MintService",
       "owner_kind": "test",
+      "owner_qualname": "test_signed_out_landing_reaches_cold_master_token_recovery",
+      "package": "notebooklm._auth",
+      "path": "tests/unit/test_auth_cold_start_recovery.py"
+    },
+    {
+      "attribute": "mint",
+      "count": 1,
+      "idiom": "patch.object",
+      "owner": "notebooklm._auth.mint_service.MintService",
+      "owner_kind": "test",
       "owner_qualname": "test_reauth_returns_false_on_revoked_token",
       "package": "notebooklm._auth",
       "path": "tests/unit/test_auth_session_master_token.py"
@@ -509,6 +519,16 @@
       "owner_qualname": "test_reauth_success_remints_and_reloads",
       "package": "notebooklm._auth",
       "path": "tests/unit/test_auth_session_master_token.py"
+    },
+    {
+      "attribute": "mint_oauth",
+      "count": 1,
+      "idiom": "monkeypatch.setattr",
+      "owner": "notebooklm._auth.mint_service.MintService",
+      "owner_kind": "test",
+      "owner_qualname": "test_real_clients_allow_copied_tokens_without_web_bootstrap",
+      "package": "notebooklm._auth",
+      "path": "tests/server/test_profiles.py"
     },
     {
       "attribute": "read",
@@ -1655,7 +1675,7 @@
     "assignments": 0,
     "helper_or_fixture": 23,
     "private": 34,
-    "total": 189
+    "total": 191
   },
   "version": 1
 }

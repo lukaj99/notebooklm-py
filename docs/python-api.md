@@ -485,13 +485,29 @@ is reported this way instead of surfacing as schema drift or a failed
 `GenerationStatus`.
 
 `client.artifacts.wait_for_completion(...)` raises
-`ArtifactPendingTimeoutError` when a task stays queued and never reaches
+`ArtifactPendingTimeoutError` when a task stays queued or absent and never reaches
 `in_progress`, or `ArtifactInProgressTimeoutError` when it starts but does not
 finish before `timeout`. Both subclass `ArtifactTimeoutError` and built-in
 `TimeoutError`. The exception exposes `task_id`, `notebook_id`,
 `timeout_seconds`, `last_status`, `stalled_phase`, `status_history`, and
 `status_transitions` so callers can retry, fail soft, or log upstream queueing
 patterns without parsing the message.
+
+An artifact missing from the listing remains unresolved: the waiter keeps the
+original task ID until completion, explicit failure, or timeout. It never infers
+`REMOVED` or a quota failure from repeated absence, and never substitutes a
+completed sibling. A timeout does not prove generation failed; retry polling the
+same ID rather than automatically starting another generation.
+
+`max_not_found` and `min_not_found_window` are deprecated and ignored. Use
+`timeout` to bound the wait. Non-default values emit a `DeprecationWarning`;
+explicit values equal to the historical defaults (`5` and `10.0`) remain silent
+because the compatibility signature cannot distinguish them from omission.
+Permanently missing IDs therefore wait until timeout instead of failing early.
+
+Web artifact listings preserve non-OK null-response statuses as exceptions.
+Transient polling read errors receive bounded retries within the wait budget;
+exhausted retries propagate the read error without inventing an artifact outcome.
 
 The CLI defaults to longer wait budgets for media generation (`audio`: 1200s,
 `video`: 1800s, `cinematic-video`: 3600s). In Python, pass the same budget
@@ -2293,9 +2309,20 @@ concrete mind-map facades, and first-party strict orchestration.
 | `get(notebook_id, note_id)` | `str, str` | `Note` | Get note by ID; raises `NoteNotFoundError` on a miss. After `delete`, Android projects absence; Web can still return a cleared tombstone `Note`. See [Web vs Android inventory](web-android-public-behavior.md). |
 | `get_or_none(notebook_id, note_id)` | `str, str` | `Note \| None` | Optional lookup; returns `None` when absent |
 | `update(notebook_id, note_id, content, title)` | `str, str, str, str` | `None` | Update note content and title |
-| `delete(notebook_id, note_id)` | `str, str` | `None` | Delete note (idempotent; returns `None` whether or not it existed) |
+| `delete(notebook_id, note_id)` | `str, str \| list[str]` | `None` | Delete one or several notes with one delete request (idempotent). Duplicate IDs are removed; an empty list is a no-op. |
 | `list_mind_maps(notebook_id)` | `str` | `list[Any]` | List mind maps in the notebook. Android returns minimal `[id, content]` compatibility rows; Web returns full note rows. See [Web vs Android inventory](web-android-public-behavior.md). |
 | `delete_mind_map(notebook_id, mind_map_id)` | `str, str` | `None` | Delete a mind map (idempotent; returns `None` whether or not it existed) |
+
+Batch deletion returns no per-note receipt. After an error or cancellation, re-read
+`notes.list(notebook_id)` and compare the selected IDs to identify surviving notes
+before retrying. Web listings exclude deleted tombstones. Error operation metadata
+may be absent or contain no mutation entries or note IDs, so it cannot establish
+each note's final state.
+Web note reads and deletes propagate explicit server rejections, including permission
+denials. An already-missing single note remains a successful delete. A batch reporting
+not-found succeeds only if a fresh inventory confirms every selected note is absent.
+That verification requires the entire inventory to be parseable: an unrelated malformed
+row also raises `DecodingError`, because an incomplete read cannot prove absence.
 
 **Example:**
 ```python
@@ -2308,6 +2335,9 @@ await client.notes.update(nb_id, note.id, "Updated content", "New Title")
 
 # Delete a note
 await client.notes.delete(nb_id, note.id)
+
+# Delete an explicit batch in one write (Web and Android)
+await client.notes.delete(nb_id, [item.id for item in notes])
 
 # Save a chat answer as a citation-rich note (preserves [N] hover links).
 # Use ``client.chat.save_answer_as_note(...)`` — the chat-owned canonical
@@ -2417,6 +2447,13 @@ knowing before you build on this:
   whole request — including the users that are present — and reports no failure.
   A plural removal therefore needs a share-status preflight and post-verification,
   not a wider entry list, so it is deliberately not offered as a one-liner.
+
+The Web backend verifies every requested user permission against the sharing-status
+readback. A missing recipient, wrong permission, or incomplete permission row raises
+an `RPCError` with `unconfirmed=True` and `inspect_and_reconcile` recovery guidance.
+This also applies to `add_user()` and `update_user()`. Inspect `get_status()` before
+retrying: some grants or invitation emails may already have been applied. Matching
+preserves local-part case and ignores domain case; it does not infer email aliases.
 
 **Example:**
 ```python
@@ -3028,30 +3065,17 @@ class GenerationStatus:
     def is_not_found(self) -> bool:
         """Check if the artifact is absent from the poll response.
 
-        Distinct from ``is_pending``: a *pending* artifact exists in the
-        artifact list and is queued, while *not_found* means the artifact
-        has either not yet appeared (brief lag after creation) or was
-        silently removed server-side (e.g. after a daily-quota rejection).
-        ``wait_for_completion`` treats a sustained run of ``not_found``
-        responses as a *removal* — see its ``max_not_found`` parameter and
-        ``is_removed``.
+        A pending artifact is listed and queued; not_found is an unresolved
+        absence. wait_for_completion keeps polling the original ID until
+        completion, explicit failure, or timeout.
         """
 
     @property
     def is_removed(self) -> bool:
-        """Check if the artifact was delisted by the server.
+        """Check for the legacy client-synthesized removal status.
 
-        Set by ``wait_for_completion`` when an artifact disappears from the
-        listing for a *sustained* run of polls (``max_not_found``). The absence
-        must be sustained: a transient/flapping omission where the artifact
-        reappears resets the not-found window, so a still-progressing artifact is
-        never fabricated into a terminal *removed* and instead polls through to
-        completion (or timeout). Kept *distinct* from ``is_failed``: a *failed*
-        artifact still exists in the listing with a terminal FAILED status,
-        whereas a *removed* artifact vanished from the listing and stayed gone —
-        typically a daily-quota rejection, occasionally a longer-lived server-
-        side omission. Branch on this when a delisting and a real terminal
-        failure warrant different handling.
+        Retained for stored statuses and older callers. Current polling no
+        longer infers removal from listing absence.
         """
 
     @property
@@ -3076,7 +3100,7 @@ working unchanged. **Prefer the `.is_*` predicates** (`status.is_complete`,
 | `UNKNOWN` | `"unknown"` | status code 0, plus any code outside the backend enum (future-proofing) |
 | `SUGGESTED` | `"suggested"` | status code 5 — a suggestion row; listings filter these out server-side |
 | `PENDING_REVIEW` | `"pending_review"` | status code 6 — backend state with unconfirmed semantics ([#2127](https://github.com/teng-lin/notebooklm-py/issues/2127)) |
-| `REMOVED` | `"removed"` | `wait_for_completion` after a sustained delisting |
+| `REMOVED` | `"removed"` | Legacy compatibility value; no longer emitted by polling |
 
 `GenerationState.is_terminal` is the single authority for "generation ended":
 it is `True` for exactly `COMPLETED`, `FAILED` and `REMOVED`. Everything else —
@@ -3094,9 +3118,9 @@ if not status.is_terminal:
 
 `NOT_FOUND` is non-terminal but is *not* interchangeable with the others: it
 means the artifact is absent from the listing (post-create lag, or a delisting)
-rather than reporting an outcome, and `wait_for_completion` escalates a
-sustained run of it to the terminal `REMOVED`. Branch on `is_not_found` when
-that difference matters.
+rather than reporting an outcome. `wait_for_completion` keeps it unresolved
+until the original ID reappears or the caller's timeout expires. Branch on
+`is_not_found` when that difference matters.
 
 > **Note:** because `status` is now typed `GenerationState`, constructing
 > `GenerationStatus(..., status="completed")` with a bare string literal is a
@@ -4165,3 +4189,21 @@ class NotebookSourceIdProvider(Protocol):
     async def get_source_ids(self, notebook_id: str) -> list[str]:
         """Return source IDs for a notebook."""
 ```
+
+### Experimental source failure diagnostics
+
+`Source.experimental_failure_code` exposes a provisional fetch-error scalar under
+SourceSettings tags 3 → 7 → 1 on ERROR rows only. It is separate from `Source.status` and
+is not a quota indicator. Missing fields, healthy rows and unrecognized wire
+shapes return `None`. The backend may change or stop populating this field;
+applications must not treat its values as a stable public enum. The opt-in
+adapter URL fallback recognizes only value `1`; other values disable recovery.
+Both Web and Android decode this diagnostic. Android URL precondition failures
+preserve their original `ClientError`/`RPCError` and attach the correlated
+tentative `source_id` and `stage="source commit"` as operation metadata. Existing
+exception handlers keep working, and recovery can identify and optionally clean
+up an ERROR row even when it has no URL. See the
+[live backend evidence](android/source-url-recovery-evidence.md).
+
+`notebooklm.utils.html_to_markdown(html)` reuses the source HTML converter and
+preserves supported math notation. It requires the `markdown` extra.

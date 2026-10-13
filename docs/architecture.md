@@ -1145,9 +1145,10 @@ ADR-0033 constrains consolidation; and ADR-0034 defines the current storage obje
 | [`_auth/cookie_policy.py`](../src/notebooklm/_auth/cookie_policy.py) | Domain allowlist, cookie-domain builder (`build_cookie_domain_allowlist`), and cookie policy decisions. |
 | [`_auth/cookie_semantics.py`](../src/notebooklm/_auth/cookie_semantics.py) | Shared cookie-shape and expiry semantics used by sanitized auth loaders and persistence boundaries. |
 | [`_auth/cookie_types.py`](../src/notebooklm/_auth/cookie_types.py) | The canonical `Cookie` / `CookieJar` types (ADR-0031 Stage 1): constructors from every input shape, converters to httpx/storage-state, cookie-set policy questions as methods, the pure RFC 6265 PSIDTS routing/expiry helpers, and the shared one-sample live `httpx`/typed `CookieJar` projection consumed by `ProfileStore` and the compatibility loader. Each successfully converted live cookie supplies identity/value/runtime fields while SameSite comes from that same sanitized raw row, preserving first-successful duplicate behavior in the typed baseline. Policy still lives in `cookie_policy`; file I/O stays with the path-owning callers. |
-| [`_browser/browser_capture.py`](../src/notebooklm/_browser/browser_capture.py) | **One deep module for the browser launch→navigate→capture→filter→heal→persist core** (ADR-0033 sanctioned merge — absorbed `browser_state_validation.py` and `login_wait_trace.py`), lazy `playwright`; shared by the interactive `_app/login_browser.py` flow and the layer-3 headless re-auth layer (ADR-0021/ADR-0036). Both capture arms construct `RemintWriteRequest` and consume `ProfileStore.replace_from_remint() -> ReplaceResult` directly. The headless arm classifies the landing URL (authenticated→capture, redirected-to-login→`HeadlessLoginRequiredError`). `run_cdp_capture` is an alternative credential source: attach to an operator-pointed already-running Chrome over CDP (`connect_over_cdp`, disconnect-only teardown) using the SAME landing classification + cookie-domain allowlist. Absorbed sections: (1) **login-wait DEBUG tracing** — `log_observed_navigations` logs each main-frame navigation observed during the five-minute interactive wait at DEBUG so `notebooklm -vv login` is self-diagnosing when a login never lands; inert unless DEBUG is enabled (no listener attached) and it swallows every listener exception, so it can never destabilise the wait. Redaction goes through its own `trace_url`, which keeps **only** scheme + host — deliberately stricter than `extraction._safe_url` (which preserves the path outside a Google-OAuth allowlist), because this traces arbitrary SSO redirects where a federated IdP can carry a one-time assertion in the path. The two redactors are **kept distinct on purpose**. (2) **captured-state heal** — `heal_captured_state`, a best-effort in-memory PSIDTS heal for Playwright-captured state that preserves cookie attributes, returns `(state, error)` and never raises, so a failed heal cannot discard a completed sign-in. `browser_launch_errors.py` stays a separate leaf for cohesion — a channel registry plus a pure classifier, testable without a browser. |
+| [`_browser/browser_capture.py`](../src/notebooklm/_browser/browser_capture.py) | **One deep module for the browser launch→navigate→capture→filter→heal→persist core** (ADR-0033 sanctioned merge — absorbed `browser_state_validation.py` and `login_wait_trace.py`), lazy `playwright`; shared by the interactive `_app/login_browser.py` flow and the layer-3 headless re-auth layer (ADR-0021/ADR-0036). Both capture arms construct `RemintWriteRequest` and consume `ProfileStore.replace_from_remint() -> ReplaceResult` directly. Both capture arms require a committed app landing with a URL-routable `SID`; anonymous same-host pages fail before replacing saved authentication. Interactive login briefly settles cookies, then offers one Google sign-in continuation for an anonymous app landing. The exported SID must route to both the configured RPC root and the final browser URL; missing PSIDTS still permits a capture with a best-effort heal warning. `run_cdp_capture` is an alternative credential source: attach to an operator-pointed already-running Chrome over CDP (`connect_over_cdp`, disconnect-only teardown) using the SAME landing classification + cookie-domain allowlist. Absorbed sections: (1) **login-wait DEBUG tracing** — `log_observed_navigations` logs each main-frame navigation observed during the five-minute interactive wait at DEBUG so `notebooklm -vv login` is self-diagnosing when a login never lands; inert unless DEBUG is enabled (no listener attached) and it swallows every listener exception, so it can never destabilise the wait. Redaction goes through its own `trace_url`, which keeps **only** scheme + host — deliberately stricter than `extraction._safe_url` (which preserves the path outside a Google-OAuth allowlist), because this traces arbitrary SSO redirects where a federated IdP can carry a one-time assertion in the path. The two redactors are **kept distinct on purpose**. (2) **captured-state heal** — `heal_captured_state`, a best-effort in-memory PSIDTS heal for Playwright-captured state that preserves cookie attributes, returns `(state, error)` and never raises, so a failed heal cannot discard a completed sign-in. `browser_launch_errors.py` stays a separate leaf for cohesion — a channel registry plus a pure classifier, testable without a browser. |
 | [`_browser/navigation_errors.py`](../src/notebooklm/_browser/navigation_errors.py) | Transport-neutral leaf for `browser_capture`: classifies a Playwright navigation failure from its message. `navigation_error_code` extracts the `net::ERR_*` token (anchored, so it cannot return arbitrary text after a stray `net::`) — used to log a failure without logging the credential-bearing URL Playwright embeds in it. |
 | [`_browser/browser_launch_errors.py`](../src/notebooklm/_browser/browser_launch_errors.py) | Transport-neutral leaf for `browser_capture`: the `CHANNEL_BROWSERS` channel registry plus `classify_launch_failure`, which maps a Playwright launch failure to actionable help or to `None` so the original exception propagates. |
+| [`_browser/playwright_event_loop.py`](../src/notebooklm/_browser/playwright_event_loop.py) | Leaf for `browser_capture`: `windows_playwright_event_loop` swaps a caller-installed `WindowsSelectorEventLoopPolicy` for the default while Playwright's sync API starts its driver subprocess (#89); a no-op for any other policy, off Windows, and on Python 3.16+. |
 | [`_browser/headless_reauth.py`](../src/notebooklm/_browser/headless_reauth.py) | Layer-3 browser recovery implementation. It maps its browser-specific result onto `_auth.recovery_rungs`, resolves explicit storage paths to their own persistent browser profile, and remains opt-in/local-unattended-only. |
 | [`_browser/oauth_token.py`](../src/notebooklm/_browser/oauth_token.py) | Visible EmbeddedSetup browser capture for the single-use OAuth cookie, returning only a token string or canonical `MasterTokenError`. |
 | [`_auth/recovery_rungs.py`](../src/notebooklm/_auth/recovery_rungs.py) | Neutral process-level registry and closed outcome for the optional blocking L3 implementation. The public auth facade installs a lazy default; recovery reads only this leaf and never imports browser implementation code. |
@@ -1293,7 +1294,7 @@ The cross-command helpers form a small internal CLI stack:
 
 | Module | Role |
 |--------|------|
-| [`cli/runtime.py`](../src/notebooklm/cli/runtime.py) | Leaf runtime helpers: root `--quiet` lookup and the single `asyncio.run(...)` bridge for sync Click handlers. |
+| [`cli/runtime.py`](../src/notebooklm/cli/runtime.py) | Leaf runtime helpers: root `--quiet` lookup and the single `asyncio.run(...)` bridge for sync Click handlers. On Windows the bridge honours `NOTEBOOKLM_WINDOWS_EVENT_LOOP` by passing a loop factory to `asyncio.Runner` on Python 3.11+, leaving the global event-loop policy untouched; Python 3.10 has no loop factory, so there it sets the policy for the duration of each run and then restores it (#2485). |
 | [`cli/auth_runtime.py`](../src/notebooklm/cli/auth_runtime.py) | Shared auth bootstrap, command-body error wrapping, and optional opened-client workflow helper. |
 | [`cli/master_token_login.py`](../src/notebooklm/cli/master_token_login.py) | Command driver for `notebooklm login --master-token[-refresh]`: resolves paths and renders the outcome over the public `master_token_bootstrap` / `master_token_remint` / `assert_account_writable` adapters. Coordination lives in `_auth/master_token_bootstrap.py`; the CLI-side OAuth adapter delegates interactive capture through the lazy `auth.py` capability and scrubs credential-bearing arguments from failure frames (ADR-0023/ADR-0036). |
 | [`cli/services/auth_refresh.py`](../src/notebooklm/cli/services/auth_refresh.py) | Pure re-export of `notebooklm.auth.bootstrap_missing_storage_from_master_token` for `auth refresh`'s missing-storage preflight. `_auth/master_token_bootstrap.py` owns the four-state machine; `_auth/master_token.py` owns the v0.x enum-to-bool collapse. |
@@ -1343,14 +1344,29 @@ preview unless called with `confirm=true`). `notebooklm mcp install <client>`
 wires it into Claude Desktop/Code, Cursor, or Windsurf, and `desktop-extension/`
 packages a one-click `.mcpb` bundle. Full guide:
 [`docs/mcp-guide.md`](./mcp-guide.md).
+Multi-profile mode (`--profiles work,personal`, Web or `--backend android`) adds a
+required `profile` argument to every tool while preserving single-profile schemas.
+Each account has a lazily warmed client and its own detached-chat/research state.
+Request-local selection never changes the process's active profile. Shared
+`_app/profile_client.py` ownership bounds startup and recovery while isolating
+unfinished cancellation cleanup; `_app/profiles.py` validates unique names/paths.
+Web profiles go through `_app/web_profiles.py`: one lifespan-owned `WebProfileSet`
+serializes open attempts (outside each attempt's deadline), refuses a profile whose
+`storage_state.json` session is a copy of a sibling's (salted `__Secure-1PSID`
+and `SID` digests, any match refuses; never logged), mints missing sessions from `master_token.json`, and opens
+each client by explicit path. Signed file URLs carry the issuing profile. HTTP auth
+grants access to all configured profiles. See
+[multi-profile MCP setup](./installation.md#android-multi-profile-mcp) and
+[Web multi-profile MCP](./installation.md#web-multi-profile-mcp).
+
 The [MCP subsystem diagram](https://teng-lin.github.io/notebooklm-py/diagrams/17-mcp-subsystem.html) shows the adapter,
 application-core, client, and remote-transfer boundaries together.
 
 ## REST server (`server/`)
 
-The single-tenant REST server is the third adapter (ADR-0021), opt-in behind the
+The local REST server is the third adapter (ADR-0021), opt-in behind the
 `server` extra and **experimental**. A FastAPI app maps `/v1` routes onto the
-`_app/` cores and the public client namespaces, with one `NotebookLMClient` opened
+`_app/` cores and the public client namespaces, with one `NotebookLMClient` per configured profile opened
 once at the ASGI lifespan inside the server loop (honoring the ADR-0004 loop-
 affinity contract). Every `/v1` request requires a static bearer token
 (constant-time compare) plus a loopback `Host` literal (a DNS-rebinding guard);
@@ -1411,9 +1427,13 @@ adapter surface unless its manifest or route inventory changes.
 
 ### Hosting and persistence limits
 
-Both servers operate one selected NotebookLM account per process. They are single-tenant adapters,
-not multi-user credential routers. Restarting the process replaces the lifespan-owned client and
-loses ephemeral state.
+MCP and REST default to one selected NotebookLM profile per process. Both support static
+Web or Android profiles: MCP selects with a required tool argument and REST with an explicit
+request header. Web profiles must each own a distinct cookie session; copies are refused per
+profile at open time. Each REST profile
+owns its client, recovery state, and pending registry; route-group capacity is shared across the
+process. The server token authorizes all configured profiles, so this is not per-user authorization.
+Restarting a process replaces its lifespan-owned clients and loses ephemeral state.
 
 MCP detached chat tasks are process-owned, bounded, and time-limited. `chat_start` keeps work alive
 past one transport request and `chat_status` reads the in-memory result, but a restart loses the
@@ -2029,6 +2049,7 @@ Per-file index plus the full `src/notebooklm` + `tests` repository tree. The tre
 | `_notebook_metadata.py` | Transport-neutral notebook metadata protocols and composition service; no concrete RPC/source-listing dependency |
 | `_url_utils.py`, `urls.py` | URL parsing/validation internals and the public URL helper facade |
 | `_version_check.py` | Dynamic client-side version deprecation guard |
+| `_windows_asyncio.py` | Version-gated backport of CPython 3.15's selector-transport write fix (#2485); installed by the root CLI group only when `NOTEBOOKLM_WINDOWS_EVENT_LOOP=selector` selects that loop on Windows |
 | `_version_info.py` | Human-facing `version_string()` — package version + short git commit (embedded by `hatch_build.py` at build time, or live `git` from a checkout) |
 | `_chat.py` | Abstract `ChatAPI`, shared chat orchestration, and its bounded recently-deleted-conversation tracker; `delete_conversation` records the id under the conversation lock so a concurrent null-conversation ask can recover the server's real post-POST conversation id (#1875) |
 | `_web/transport/middleware/chain.py` | Constructs the middleware chain in the canonical ADR-0009 order |
@@ -2057,6 +2078,7 @@ Per-file index plus the full `src/notebooklm` + `tests` repository tree. The tre
 | `_browser/browser_capture.py` | One deep browser launch→capture→filter→heal→persist implementation, lazy Playwright; depends downward on typed `_auth` storage/policy owners |
 | `_browser/navigation_errors.py` | Pure `net::ERR_*` and navigation-race/failure classification leaf |
 | `_browser/browser_launch_errors.py` | Pure browser-channel registry and launch-failure triage leaf |
+| `_browser/playwright_event_loop.py` | Windows guard that keeps Playwright's driver off a caller-installed selector event-loop policy |
 | `_browser/headless_reauth.py` | Opt-in layer-3 browser recovery implementation behind `_auth.recovery_rungs` |
 | `_browser/oauth_token.py` | Visible EmbeddedSetup OAuth-cookie capture implementation |
 | `_auth/recovery_rungs.py` | Neutral process registry + closed outcome for the optional blocking L3 implementation; keeps recovery independent of browser code |
@@ -2119,8 +2141,13 @@ src/notebooklm/
 ├── _url_utils.py                # URL validation helpers
 ├── _version_check.py            # Deprecation version guard
 ├── _version_info.py             # version_string(): version + short git commit
+├── _windows_asyncio.py          # Windows CLI: backport of CPython's selector-transport write fix (#2485)
 ├── _redact.py                   # Transport-neutral secret/home-path/file-link scrubber (redact(msg, max_length)); shared chokepoint under both mcp/_errors.py and server/_errors.py
 ├── _app/                        # Transport-neutral business-logic layer (CLI/MCP/HTTP adapters share it)
+│   ├── android_profiles.py      # Cookie-free Android client construction for isolated profile adapters
+│   ├── web_profiles.py          # Web multi-profile WebProfileSet: env refusals, file-only admission (READY/BOOTSTRAP), copied-session refusal when salted __Secure-1PSID/SID digests intersect, serialized open turn, explicit-path from_storage, file-only health
+│   ├── profiles.py              # Shared multi-profile name/path uniqueness validation and per-adapter startup deadlines
+│   ├── profile_client.py        # Loop-bound profile client owner: deadlines, isolated cancellation cleanup, exception forwarding
 │   ├── __init__.py              # Re-exports the neutral primitives
 │   ├── client_config.py         # Explicit bound request-policy configuration for first-party client factories
 │   ├── artifacts.py             # Click-free artifact core: get/rename/delete/export + poll/wait/retry; kind-aware mind-map dispatch (mind_maps.list for rename, notes.list_mind_maps for delete), get_artifact raises ArtifactNotFoundError, typed Rename/Export results + ArtifactStatusView/status_view neutral status DTO (CLI builds every --json envelope from the typed fields)
@@ -2151,6 +2178,9 @@ src/notebooklm/
 │   ├── session.py               # Click-free session-context core: `use` verify_and_set_notebook (injected resolve_notebook_id) + `status` read_status(StatusInputs) read+project -> StatusReport + `auth logout` execute_logout(LogoutInputs) filesystem-teardown -> typed LogoutOutcome (path/context/clear_context helpers injected via bundles; CLI owns Rich render + exit codes)
 │   ├── sharing.py               # Click-free sharing core: status/set_public/set_view_level/add_user/update_user/remove_user (injected resolve_notebook_id; permission/view-level display + str→enum parse stay in cli/share_cmd.py)
 │   ├── skill.py                 # Click-free skill-install core: TARGETS/SCOPES catalog + path/version helpers + classify_target (create/up_to_date/overwrite) + report_mixed_no_clobber_up_to_date (CLI owns the atomic write + packaged-source loader)
+│   ├── content_sanity.py        # Pure thin-text/error/challenge detection shared by recovery and MCP advisories
+│   ├── source_fallback.py       # Opt-in URL recovery, static-copy provenance, and attributed ghost cleanup
+│   ├── source_fetch.py          # Credential-free curl fetch with public DNS pinning and bounded redirects/body/time
 │   ├── source_add.py            # Click-free `source add` core: input detection + URL SSRF/upload-path validation + add workflow (SourceAddPlan/Result; CLI builds the --json source-summary from the typed result via the neutral serialize.source_summary helper)
 │   ├── source_batch.py          # Transport-neutral source-batch limit plus typed local-validation/remapping helpers; continuation comes from public commit-state evidence, never HTTP/category policy
 │   ├── source_clean.py          # Click-free `source clean` core: junk-source classification + batched-deletion orchestration (SourceCleanResult; injected list/delete/confirm callables)
@@ -2178,6 +2208,7 @@ src/notebooklm/
 │   │   ├── notes.py             # Note request builders and projection
 │   │   ├── sharing.py           # Public-link sharing projection
 │   │   ├── notebooks.py         # Project and notebook-guide decoding
+│   │   ├── source_failure.py    # Experimental SourceSettings failure diagnostic through unknown protobuf fields
 │   │   ├── sources.py           # Source projection and enum mapping
 │   │   ├── artifacts.py         # Ledgered artifact/representation projection
 │   │   ├── organization.py      # Heterogeneous organization member decoding
@@ -2425,6 +2456,7 @@ src/notebooklm/
 │   ├── browser_capture.py       # Browser launch→capture→filter→heal→persist core; lazy Playwright
 │   ├── browser_launch_errors.py # Channel registry + launch-failure triage
 │   ├── navigation_errors.py     # Pure navigation-race/failure classification
+│   ├── playwright_event_loop.py # Windows guard: keep Playwright off a selector policy
 │   ├── headless_reauth.py       # Opt-in L3 implementation behind the neutral auth rung
 │   └── oauth_token.py           # Visible EmbeddedSetup OAuth-cookie capture
 ├── _types/                      # Dataclass implementation package re-exported by types.py
@@ -2508,14 +2540,16 @@ src/notebooklm/
 │   ├── __main__.py              # `notebooklm-mcp` entrypoint: argparse (--profile/--transport/--host/--port/--log-level), stderr logging, loopback HTTP bind guard + fail-closed auth guard (non-loopback bind requires a bearer token AND/OR self-hosted OAuth); composes the auth provider (build_auth) and passes it to create_server on the http path
 │   ├── server.py                # create_server(profile, client_factory, auth): FastMCP server; lifespan binds one NotebookLMClient behind a ClientProvider and warms it in the background (never gating the handshake, #2330); register_all tool-registration seam; auth passed explicitly (never reads the token env)
 │   ├── _auth.py                 # Remote-transport bearer auth: McpBearerAuthProvider(TokenVerifier) with constant-time hmac.compare_digest over NOTEBOOKLM_MCP_TOKEN (env-only, never logged/repr'd); build_auth_provider/get_configured_token; build_auth(token, oauth) composes bearer | OAuth | MultiAuth | None (IdP-agnostic) — mirrors server/_auth.py, NOT fastmcp StaticTokenVerifier
-│   ├── _oauth.py                # Optional self-hosted OAuth 2.1 AS for claude.ai (OAuth-only connector UI): SelfHostedOAuthProvider(InMemoryOAuthProvider) + a password-gated /login (override authorize()→stash SDK-validated (client,params) under a single-use sid→/login→InMemoryOAuthProvider.authorize); scrypt password digest + per-IP throttle, capped DCR + evict-oldest pending stash, atomic 0600 persistence of clients+tokens; get_oauth_config/build_oauth_provider (env NOTEBOOKLM_MCP_OAUTH_PASSWORD + _BASE_URL). Composed with the bearer via MultiAuth
+│   ├── _oauth.py                # Optional self-hosted OAuth 2.1 AS for claude.ai (OAuth-only connector UI): SelfHostedOAuthProvider(InMemoryOAuthProvider) + a password-gated /login (override authorize()→stash SDK-validated (client,params) under a single-use sid→/login→InMemoryOAuthProvider.authorize); canonical /mcp resource validation + access-token audience binding preserved through refresh/restart; scrypt password digest + per-IP throttle, capped DCR + evict-oldest pending stash, atomic 0600 persistence of clients+tokens; get_oauth_config/build_oauth_provider (env NOTEBOOKLM_MCP_OAUTH_PASSWORD + _BASE_URL). Composed with the bearer via MultiAuth
+│   ├── _smoke.py                # Shared deployed-server smoke driver: paginated source verification and current Studio artifact selection plus signed upload/download over a real HTTP socket; imported by the release helper and E2E suites so tool renames cannot leave an ungated duplicate
 │   ├── _host_guard.py           # LoopbackHostGuardMiddleware: ASGI guard that rejects HTTP requests with a non-loopback Host header (403; DNS-rebinding guard, #1869) on the loopback-bound HTTP transport via _serving.host_header_is_loopback; skipped when allow_external (REST-parity bearer/OAuth auth is mandatory there) — mirrors server/_auth
 │   ├── _hostupload.py           # Stdio host-upload boundary: no-follow directory/descriptor opens on POSIX and pinned non-reparse Win32 handles, followed by a private temporary copy before client awaits; cleanup on success, failure, or cancellation
 │   ├── _urlcheck.py             # _validate_bare_https_origin(url, env) — shared "bare public https origin" check (https scheme, host, no path/query/fragment); guards the OAuth base URL AND the file-transfer public URL so a /mcp-suffixed/non-https value can't mint broken links
 │   ├── _filelink.py             # HMAC-signed self-describing file-transfer tokens (ADR-0024): FileLinkSigner.sign(payload, ttl→injects exp)/verify(token, op) (stdlib hmac/base64/json; pre-decode length cap, base64url re-pad, compare_digest, exp+op check) + FileTransferConfig(signer, base_url).upload_url(ttl=UPLOAD_TTL 15m; WIDGET_UPLOAD_TTL 1h for the ADR-0027 widget pool)/download_url (DOWNLOAD_TTL 30m); FileLinkError
-│   ├── _fileroutes.py           # register_file_routes(mcp, config): the /files/{dl,ul} custom routes mounted on the FastMCP http app (ADR-0024). GET /files/dl streams the artifact (download core → FileResponse, meaningful filename, inside-tempdir assert, BackgroundTask cleanup); GET /files/ul = minimal upload page (file picker + raw-body fetch POST); POST|PUT /files/ul streams request.stream() into a 0600 temp under a running byte cap (real DoS guard) + Content-Length early 413 → neutral source_add core. Signed token is the sole auth (custom routes bypass the bearer gate); HTML pages set no-referrer/no-store/DENY; local _safe_upload_name (no server/ import)
+│   ├── _fileroutes.py           # register_file_routes(mcp, config): the /files/{dl,ul} custom routes mounted on the FastMCP http app (ADR-0024). GET /files/dl streams the artifact (download core → FileResponse, meaningful filename, inside-tempdir assert, BackgroundTask cleanup); GET /files/ul = minimal upload page (file picker + raw-body fetch POST); POST|PUT /files/ul streams request.stream() into a 0600 temp under a running byte cap (real DoS guard) + Content-Length early 413 → neutral source_add core; unconfirmed registration freezes the single-use jti until expiry to prevent duplicate retries. Signed token is the sole auth (custom routes bypass the bearer gate); HTML pages set no-referrer/no-store/DENY; local _safe_upload_name (no server/ import)
 │   ├── _uploadwidget.py         # register_upload_widget(mcp, config): OPT-IN in-app MCP-App upload widget (ADR-0027, NOTEBOOKLM_MCP_UPLOAD_WIDGET=1 → also auto-enables stateless HTTP). ONE ui:// resource (file-picker HTML, profile=mcp-app mime) + source_add_widget tool; both ui/resourceUri (claude.ai) and openai/outputTemplate (ChatGPT) point at it. Emits the render gates via FastMCP meta=/app=: _meta.ui.domain = sha256("<public-url>/mcp")[:32] + ".claudemcpcontent.com", flat ui/resourceUri, ui.csp; the widget POSTs bytes to /files/ul (reuses ADR-0024). Off the default surface unless enabled
 │   ├── _chattasks.py            # Detached chat asks for chat_start/chat_status (ADR-0024-shaped in-process state): ChatTaskRegistry (bounded + TTL-swept; idempotency-keyed via compute_chat_task_key; asyncio.create_task detachment so the remote transport's ~60s watchdog cancelling the start call cannot kill the generation; lifespan aclose) + ChatTaskEntry/ChatTaskCapacityError
+│   ├── _profiles.py             # Web/Android multi-profile lifespan (serialized Web open turns), bounded client recovery, and required per-tool profile routing
 │   ├── _clientprovider.py       # ClientProvider: lazy, single-flight ownership of the process-wide NotebookLMClient (#2330). The lifespan start()s the open in the BACKGROUND and yields at once, so MCP initialize is never gated on the auth round-trip (15s RotateCookies poke + 30s CSRF fetch + cold-recovery ladder > the client's 30s handshake deadline → CONNECT_TIMEOUT); get() joins the in-flight open under asyncio.shield (a cancelled waiter never aborts it), a failed open is retried by the next call (mid-session re-login recovers), aclose() cancels/closes
 │   ├── _context.py              # AppState dataclass (client_provider + optional file_transfer + cancelled_research + chat_tasks) + async get_client(ctx) (awaits the lazy open) / get_file_transfer(ctx) / get_cancelled_research(ctx) / get_chat_tasks(ctx) (lifespan-bound) + async get_client_from_app(request) (the guarded private-attr accessor for the bare-Request custom routes)
 │   ├── _errors.py               # Structured tool-error projection (CATEGORY_TABLE/ERROR_CODES/mcp_errors/to_tool_error/tool_error_payload) over _app.errors.classify
@@ -2530,6 +2564,7 @@ src/notebooklm/
 │       ├── _fileupload.py       # file-transfer slice of the source tools: _broker_upload (signed-URL upload_required) + _decode_upload_b64/_add_bytes (in-channel base64 byte upload for source_add(source_type="file", bytes_base64=…)) + the shared _add_one plan/execute seam (split from sources.py for the ADR-0008 size budget)
 │       ├── _passthrough.py      # Shared pass-through resolvers (passthrough_notebook_id/passthrough_child_id) for the CLI-shaped _app executors
 │       ├── _preview.py          # title_for_id() — shared id→title lookup for the delete tools' needs_confirmation previews
+│       ├── _studio_delete.py    # explicit-subset delete previews and validation; batches text notes in one write while routing artifacts and mind maps by kind
 │       ├── _studio_items.py     # cross-type Studio plumbing: studio_items (merge notes+artifacts into one items list) + resolve_studio_item (cross-type ref → StudioResolvedItem) for studio_list/studio_rename/studio_delete (split from studio.py for the ADR-0008 size budget)
 │       ├── _studio_download.py  # download plumbing shared by studio.py + _fileroutes.py: consumes _app.download_specs directly; registry-derived DownloadType/DownloadFormat schema aliases + _resolve_artifact_id / _broker_download / transport helpers (split from studio.py for the ADR-0008 size budget)
 │       ├── _studio_payloads.py  # wire-shape projection helpers for the Studio generate/rename tools: _generation_payload (GenerationExecutionResult → response dict; mind-map → bare node tree + mind_map_id via _mind_map_tree/_mind_map_id) + _artifact_rename_payload (split from studio.py for the ADR-0008 size budget)
@@ -2630,8 +2665,10 @@ src/notebooklm/
 └── server/                      # Single-tenant REST API adapter (the third _app adapter, after cli/ and mcp/; behind the optional `server` extra). EXPERIMENTAL: /v1 surface may change, excluded from the api-compat gate. Imports no click/rich/cli.
     ├── __init__.py              # Re-exports create_app + SERVER_NAME; importing it without the `server` extra fails on the fastapi import
     ├── __main__.py              # `notebooklm-server` entry: argparse + NOTEBOOKLM_SERVER_* env defaults + loopback-bind guard + fail-closed token check
-    ├── app.py                   # create_app(*, client_factory=None) -> FastAPI; ASGI lifespan binds one client; public /healthz; auth-gated /v1 mount (docs/redoc/openapi disabled)
-    ├── _context.py              # AppState (lifespan-bound client + pending registry) + get_client / get_pending FastAPI dependencies
+    ├── app.py                   # create_app(...) -> FastAPI; lifespan binds one client per configured profile; public /healthz; authenticated /v1 mount (docs/redoc/openapi disabled)
+    ├── _context.py              # Per-profile AppState (backend, optional WebProfileSet) and ProfileRegistry + selected get_client / get_pending dependencies; backend-labelled 503 for unavailable profiles
+    ├── _profiles.py             # Profile header, configuration validation, and canonical storage-path uniqueness
+    ├── _profile_client.py       # Compatibility import of shared _app/profile_client.py ownership
     ├── _limits.py               # Lifespan-owned REST route-group concurrency limiters for expensive source/chat/research/artifact work
     ├── _auth.py                 # Bearer-token (constant-time, 401) + loopback-Host (DNS-rebinding guard, 403) dependency for /v1
     ├── _errors.py               # ErrorCategory -> HTTP status table + _redact + the classify-once exception handler emitting {error:{category,message}}

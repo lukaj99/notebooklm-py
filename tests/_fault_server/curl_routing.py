@@ -59,14 +59,30 @@ class CurlFaultServer(HttpFaultServer):
         return self
 
 
+# Request deadline for the read and upload scenarios. They inject replies,
+# disconnects and gates, never a timeout, so this only bounds a hang; the test's
+# own 20-second watchdog catches a real one. It must stay well above a loopback
+# TLS handshake on a loaded Windows runner, which has taken over 0.5 seconds.
+# Download scenarios drop the deadline instead (see ``_session_factory``).
+FAULT_REQUEST_TIMEOUT = 5.0
+
+
 class CurlRouting:
     """Own libcurl route lists until sessions and upload workers have closed."""
 
-    def __init__(self, server: CurlFaultServer, *, timeout: float = 0.5) -> None:
+    def __init__(
+        self,
+        server: CurlFaultServer,
+        *,
+        timeout: float = FAULT_REQUEST_TIMEOUT,
+        download_faults: bool = False,
+    ) -> None:
         from curl_cffi import CurlOpt, ffi, lib
 
         self._server = server
         self._timeout = timeout
+        self.download_faults = download_faults
+        self._download_requests = 0
         self.clients: list[CurlCffiAsyncClient] = []
         self.sessions: list[Any] = []
         self.handles: list[Any] = []
@@ -104,6 +120,7 @@ class CurlRouting:
             raise httpx.ConnectError("curl fault route is unmapped")
 
     def _session_factory(self, **kwargs: Any) -> Any:
+        from curl_cffi import CurlOpt
         from curl_cffi.requests import AsyncSession
 
         owner = self
@@ -111,7 +128,34 @@ class CurlRouting:
         class RoutedSession(AsyncSession):
             async def request(self, method: str, url: str, *args: Any, **kw: Any) -> Any:
                 owner.validate(url)
-                return await super().request(method, url, *args, **kw)
+                if not owner.download_faults:
+                    return await super().request(method, url, *args, **kw)
+
+                # Download scenarios first prove a valid transfer, then inject
+                # one body fault. The scenario watchdog owns setup/RPC timing;
+                # a slow TLS handshake must not replace the intended body fault.
+                kw["timeout"] = None
+                options = dict(self.curl_options)
+                options[CurlOpt.CONNECTTIMEOUT_MS] = 0
+                options[CurlOpt.LOW_SPEED_TIME] = 0
+                parsed = urlsplit(url)
+                if (method.upper(), parsed.hostname, parsed.path) == (
+                    "GET",
+                    "lh3.googleusercontent.com",
+                    "/fault-asset",
+                ):
+                    owner._download_requests += 1
+                    if owner._download_requests == 2:
+                        # Keep the original (.5, .5) pair's one-second fault
+                        # budget, applied to lack of body progress, not setup.
+                        options[CurlOpt.LOW_SPEED_LIMIT] = 1
+                        options[CurlOpt.LOW_SPEED_TIME] = 1
+                previous = self.curl_options
+                self.curl_options = options
+                try:
+                    return await super().request(method, url, *args, **kw)
+                finally:
+                    self.curl_options = previous
 
         session = RoutedSession(curl_options=self._options, trust_env=False, **kwargs)
         self.sessions.append(session)
@@ -177,18 +221,19 @@ class CurlRouting:
 
 def build_curl_client(routing: CurlRouting) -> NotebookLMClient:
     client = NotebookLMClient.__new__(NotebookLMClient)
-    timeout = TimeoutOptions(0.5, 0.5, 0.5, 0.5)
+    rpc_timeout = None if routing.download_faults else FAULT_REQUEST_TIMEOUT
+    timeout = TimeoutOptions(*(FAULT_REQUEST_TIMEOUT,) * 4)
     options = normalize_legacy_client_options(
         config=ClientConfig(
             backend=WebBackendConfig(
                 transport=WebTransportOptions(
-                    read_timeout=0.5, write_timeout=0.5, pool_timeout=0.5
+                    read_timeout=rpc_timeout, write_timeout=rpc_timeout, pool_timeout=rpc_timeout
                 ),
                 request=WebRequestOptions(transport="curl_cffi", impersonate="chrome"),
             ),
             retry=RetryOptions(rate_limit_max_retries=0, server_error_max_retries=0),
             transfers=TransferOptions(start_timeout=timeout, finalize_timeout=timeout),
-            features=FeatureOptions(chat_timeout=0.5),
+            features=FeatureOptions(chat_timeout=FAULT_REQUEST_TIMEOUT),
         )
     )
     _assemble_client(

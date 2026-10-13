@@ -14,7 +14,7 @@ from notebooklm import NetworkError, ServerError
 from notebooklm.exceptions import ArtifactDownloadError
 
 from .common import ScenarioResult
-from .curl_routing import CurlFaultServer, CurlRouting, build_curl_client
+from .curl_routing import FAULT_REQUEST_TIMEOUT, CurlFaultServer, CurlRouting, build_curl_client
 from .http import Disconnect, Reply, Stall, Transfer, Truncate
 from .web import list_response, rpc_response
 from .web_transfers import (
@@ -45,7 +45,11 @@ async def _cohort(result: ScenarioResult, server: CurlFaultServer) -> AsyncItera
     cleanup_errors: dict[str, BaseException] = {}
     try:
         await server.__aenter__()
-        routing = CurlRouting(server)
+        routing = (
+            CurlRouting(server, download_faults=True)
+            if result.scenario.startswith("curl_download_")
+            else CurlRouting(server)
+        )
         client = build_curl_client(routing)
         await client.__aenter__()
         yield client
@@ -157,7 +161,10 @@ async def upload_case(result: ScenarioResult, variant: str) -> None:
             source.write_bytes(body)
             task = asyncio.create_task(client.sources.add_file(NOTEBOOK, source))
             if variant == "cancel":
-                await server.wait_for_gate("curl-upload-body")
+                # Registration and upload start each finish a TLS handshake
+                # first; the default two-second gate wait is too tight for a
+                # loaded runner. The test's 20-second watchdog bounds a hang.
+                await server.wait_for_gate("curl-upload-body", timeout=10)
                 task.cancel()
                 await asyncio.sleep(0)
                 result.require("curl_upload_waits_for_worker", not task.done())
@@ -230,11 +237,12 @@ async def download_case(result: ScenarioResult, variant: str) -> None:
             result.require("successful_download_baseline", destination.read_bytes() == MEDIA)
             destination.write_bytes(b"existing")
             task = asyncio.create_task(download())
-            if variant in {"cancel", "close_reopen"}:
-                await server.wait_for_gate("curl-download-body")
+            if variant in {"body_stall", "cancel", "close_reopen"}:
+                await server.wait_for_gate("curl-download-body", timeout=20)
+                result.require("curl_fault_body_observed", True)
                 if variant == "cancel":
                     task.cancel()
-                else:
+                elif variant == "close_reopen":
                     await client.close(drain=False)
             error = None
             try:
@@ -315,8 +323,9 @@ async def run_scenario(
         faults=["curl:valid-baseline", name, "same-client:recovery"],
         cohort_ids=[f"{operation_id}:0"],
         transport="curl_cffi",
-        rpc_timeout=0.5,
-        transfer_timeout=0.5,
+        rpc_timeout=None if name.startswith("curl_download_") else FAULT_REQUEST_TIMEOUT,
+        transfer_timeout=None if name.startswith("curl_download_") else FAULT_REQUEST_TIMEOUT,
+        download_fault_low_speed_seconds=1 if name.startswith("curl_download_") else None,
         rate_limit_max_retries=0,
         server_error_max_retries=0,
         cleanup_timeout=4,

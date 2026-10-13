@@ -11,6 +11,14 @@ This guide covers everything you need to contribute to `notebooklm-py`: architec
 
 ---
 
+## Deterministic operation timeout tests
+
+When testing settlement after dispatch, control the event-loop clock so the
+deadline advances only after the simulated response has recorded its commit
+evidence. Then yield to the real operation timer and assert its cancellation and
+journal outcome. A short wall-clock deadline can instead expire during admission
+on a loaded runner, which exercises a different behavior before the write occurs.
+
 ## Architecture
 
 > **Canonical post-refactor map:** see [`docs/architecture.md`](./architecture.md)
@@ -583,7 +591,7 @@ lock sibling and the two invocations never contend.
    green run that never exercised the adapter surface. Add both extras
    (CI installs `--extra mcp --extra server --extra impersonate`) to run them.
 
-   CI runs the same lint gate with `uv run pre-commit run --all-files`, so local hook results should match the `quality` job. The ordinary suite then runs in a reduced 7-cell compatibility matrix on every PR: Python 3.10–3.14 on Ubuntu, plus one Python 3.12 cell each on macOS and Windows. The separate **Nightly Code Checks** workflow (`nightly-checks.yml`) runs the full 15-cell matrix, coverage, and repository lint against one resolved commit. **Nightly E2E Tests** (`nightly.yml`) runs only authenticated live lanes: full Web on Ubuntu, full Android on macOS, and read-only Web on Windows. Each workflow has its own daily schedule and manual dispatch; an E2E rerun never starts ordinary tests.
+   CI runs the same lint gate with `uv run pre-commit run --all-files`, so local hook results should match the `quality` job. The ordinary suite then runs in a reduced 5-cell compatibility matrix on every PR: Python 3.10, 3.12, and 3.15 on Ubuntu, plus one Python 3.12 cell each on macOS and Windows. The separate **Nightly Code Checks** workflow (`nightly-checks.yml`) runs the full 18-cell matrix, coverage, and repository lint against one resolved commit. **Nightly E2E Tests** (`nightly.yml`) runs only authenticated live lanes: full Web on Ubuntu, full Android on macOS, and read-only Web on Windows. Each workflow has its own daily schedule and manual dispatch; an E2E rerun never starts ordinary tests.
 
 2. **Authenticate:**
    ```bash
@@ -591,7 +599,7 @@ lock sibling and the two invocations never contend.
    ```
 
 3. **Create read-only test notebook** (required for E2E tests):
-   - Create notebook at [NotebookLM](https://notebooklm.google.com)
+   - Create notebook at [NotebookLM](https://notebook.google.com)
    - Add multiple sources (text, URL, etc.)
    - Generate artifacts (audio, quiz, etc.)
    - Set env var: `export NOTEBOOKLM_READ_ONLY_NOTEBOOK_ID="your-id"`
@@ -1548,7 +1556,7 @@ The `RedactingFilter` preserves `record.exc_info` (the live exception object) so
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| `test.yml` | Push/PR | Reduced 7-cell compatibility matrix (Ubuntu × Python 3.10–3.14, plus macOS/Windows on 3.12), linting, type checking |
+| `test.yml` | Push/PR | Reduced 5-cell compatibility matrix (Ubuntu × Python 3.10, 3.12, 3.15, plus macOS/Windows on 3.12), linting, type checking |
 | `fault-stress.yml` | PR, daily 5:45 AM UTC, manual dispatch | Local HTTP/gRPC fault workloads with synthetic credentials and diagnostic report artifacts |
 | `nightly-checks.yml` | Daily 6 AM UTC (`main`), manual dispatch with optional `custom_branch` | Full compatibility matrix, ordinary-test coverage, and repository lint; no live account credentials |
 | `nightly.yml` | Daily 6 AM UTC (`main`), manual dispatch on `main` | Managed-copy full Web/Ubuntu, full Android/macOS, and read-only Web/Windows E2E only; an owner may qualify an open same-repository PR at its pinned head SHA |
